@@ -1,67 +1,145 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Header } from "./Header";
-import { Sidebar } from "./Sidebar";
-import { MobileNav } from "./MobileNav";
-import { FloatingActionButton } from "./FloatingActionButton";
+import Link from "next/link";
+import { 
+  Shield, 
+  Key, 
+  FolderOpen, 
+  FileText, 
+  Archive, 
+  Settings, 
+  LogOut, 
+  Menu,
+  Home,
+  Sun,
+  Moon,
+  Monitor
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { useTheme } from "@/app/providers";
+
+const navigation = [
+  { name: "Dashboard", href: "/", icon: Home },
+  { name: "Credentials", href: "/credentials", icon: Key },
+  { name: "TOTP", href: "/totp", icon: Shield },
+  { name: "Folders", href: "/folders", icon: FolderOpen },
+  { name: "Security Logs", href: "/logs", icon: FileText },
+  { name: "Backups", href: "/backups", icon: Archive },
+  { name: "Settings", href: "/settings", icon: Settings },
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
 
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
+  const getThemeIcon = () => {
+    switch (theme) {
+      case "light": return Sun;
+      case "dark": return Moon;
+      default: return Monitor;
     }
-  }, [pathname, isMobile]);
+  };
+
+  const ThemeIcon = getThemeIcon();
 
   return (
     <div className="min-h-screen bg-background">
-      <Header 
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-        sidebarOpen={sidebarOpen}
-      />
-      
-      <div className="flex">
-        {!isMobile && (
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)} 
-          />
-        )}
-        
-        <main 
-          className={`flex-1 transition-all duration-300 ease-in-out ${
-            !isMobile && sidebarOpen ? 'lg:ml-64' : ''
-          }`}
-        >
-          <div className="p-4 lg:p-6 pt-20">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      {isMobile && (
-        <MobileNav 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
-      
-      <FloatingActionButton />
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform lg:translate-x-0 lg:static lg:inset-0 ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center gap-2 p-6 border-b">
+            <Shield className="h-8 w-8 text-primary" />
+            <h1 className="text-xl font-bold">SecureVault</h1>
+          </div>
+          
+          <nav className="flex-1 p-4 space-y-1">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive 
+                      ? "bg-primary text-primary-foreground" 
+                      : "hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="p-4 border-t space-y-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3"
+              onClick={() => {
+                const themes: Array<"light" | "dark" | "system"> = ["light", "dark", "system"];
+                const currentIndex = themes.indexOf(theme);
+                const nextTheme = themes[(currentIndex + 1) % themes.length];
+                setTheme(nextTheme);
+              }}
+            >
+              <ThemeIcon className="h-4 w-4" />
+              {theme.charAt(0).toUpperCase() + theme.slice(1)} theme
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <div className="flex items-center gap-4 p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div className="flex-1" />
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">JD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
