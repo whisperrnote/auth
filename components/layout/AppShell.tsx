@@ -11,14 +11,14 @@ import {
   Archive, 
   Settings, 
   LogOut, 
-  Menu,
-  Home,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/app/providers";
+import { Header } from "./Header";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -46,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const ThemeIcon = getThemeIcon();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform lg:translate-x-0 lg:relative ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
         <div className="flex flex-col h-full">
@@ -74,50 +74,51 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive 
+                      ? "bg-primary text-primary-foreground" reground"
                       ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-accent hover:text-accent-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground"lick={() => setSidebarOpen(false)}
                   }`}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => setSidebarOpen(false)} <item.icon className="h-5 w-5" />
                 >
                   <item.icon className="h-5 w-5" />
                   {item.name}
                 </Link>
-              );
+              );>
             })}
-          </nav>
+          </nav>          <div className="p-4 border-t space-y-2">
 
-          <div className="p-4 border-t space-y-2">
+          <div className="p-4 border-t space-y-2">nt="ghost"
             <Button
-              variant="ghost"
+              variant="ghost"="w-full justify-start gap-3"
               size="sm"
-              className="w-full justify-start gap-3"
+              className="w-full justify-start gap-3"Array<"light" | "dark" | "system"> = ["light", "dark", "system"];
               onClick={() => {
-                const themes: Array<"light" | "dark" | "system"> = ["light", "dark", "system"];
+                const themes: Array<"light" | "dark" | "system"> = ["light", "dark", "system"]; % themes.length];
                 const currentIndex = themes.indexOf(theme);
                 const nextTheme = themes[(currentIndex + 1) % themes.length];
                 setTheme(nextTheme);
-              }}
-            >
+              }} <ThemeIcon className="h-4 w-4" />
+            >theme.slice(1)} theme
               <ThemeIcon className="h-4 w-4" />
               {theme.charAt(0).toUpperCase() + theme.slice(1)} theme
-            </Button>
+            </Button>nt="ghost"
             <Button
-              variant="ghost"
+              variant="ghost"="w-full justify-start gap-3 text-destructive hover:text-destructive"
               size="sm"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+              className="w-full justify-start gap-3 text-destructive hover:text-destructive" <LogOut className="h-4 w-4" />
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" />>
               Logout
             </Button>
           </div>
         </div>
-      </div>
-
+      </div>      {/* Main content */}
+-1 flex flex-col min-w-0">
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-64">lick={() => setSidebarOpen(true)} sidebarOpen={sidebarOpen} />
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <div className="flex items-center gap-4 p-4">
+          <div className="flex items-center gap-4 p-4">Name="p-6 pt-20"> {/* Added pt-20 to account for the fixed header height */}
             <Button
               variant="ghost"
               size="sm"
