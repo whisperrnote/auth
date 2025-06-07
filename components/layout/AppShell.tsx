@@ -64,7 +64,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Shield className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold">SecureVault</h1>
           </div>
-          
           <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -74,55 +73,56 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive 
-                      ? "bg-primary text-primary-foreground" reground"
                       ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-accent hover:text-accent-foreground"lick={() => setSidebarOpen(false)}
+                      : "hover:bg-accent hover:text-accent-foreground"
                   }`}
-                  onClick={() => setSidebarOpen(false)} <item.icon className="h-5 w-5" />
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <item.icon className="h-5 w-5" />
                   {item.name}
                 </Link>
-              );>
+              );
             })}
-          </nav>          <div className="p-4 border-t space-y-2">
-
-          <div className="p-4 border-t space-y-2">nt="ghost"
+          </nav>
+          <div className="p-4 border-t space-y-2">
             <Button
-              variant="ghost"="w-full justify-start gap-3"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start gap-3"Array<"light" | "dark" | "system"> = ["light", "dark", "system"];
+              className="w-full justify-start gap-3"
               onClick={() => {
-                const themes: Array<"light" | "dark" | "system"> = ["light", "dark", "system"]; % themes.length];
+                const themes: Array<"light" | "dark" | "system"> = ["light", "dark", "system"];
                 const currentIndex = themes.indexOf(theme);
                 const nextTheme = themes[(currentIndex + 1) % themes.length];
                 setTheme(nextTheme);
-              }} <ThemeIcon className="h-4 w-4" />
-            >theme.slice(1)} theme
+              }}
+            >
               <ThemeIcon className="h-4 w-4" />
               {theme.charAt(0).toUpperCase() + theme.slice(1)} theme
-            </Button>nt="ghost"
+            </Button>
             <Button
-              variant="ghost"="w-full justify-start gap-3 text-destructive hover:text-destructive"
+              variant="ghost"
               size="sm"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive" <LogOut className="h-4 w-4" />
+              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
             >
-              <LogOut className="h-4 w-4" />>
+              <LogOut className="h-4 w-4" />
               Logout
             </Button>
           </div>
         </div>
-      </div>      {/* Main content */}
--1 flex flex-col min-w-0">
+      </div>
+
       {/* Main content */}
-      <div className="lg:pl-64">lick={() => setSidebarOpen(true)} sidebarOpen={sidebarOpen} />
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <div className="flex items-center gap-4 p-4">Name="p-6 pt-20"> {/* Added pt-20 to account for the fixed header height */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden"
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <Header onMenuClick={() => setSidebarOpen(true)} sidebarOpen={sidebarOpen} />
+        {/* Page content */}
+        <main className="p-6 pt-20">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-5 w-5" />
