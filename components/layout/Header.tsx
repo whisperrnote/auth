@@ -36,7 +36,7 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">PM</span>
             </div>
-            <h1 className="font-semibold text-lg hidden sm:block">Password Manager</h1>
+            <h1 className="font-semibold text-lg hidden sm:block">Whisperrauth</h1>
           </div>
         </div>
 
