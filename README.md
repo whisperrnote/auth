@@ -107,7 +107,7 @@ Contributions are welcome! 🎉
 
 ---
 
-## 🛡️ Security
+## 🛡️ Security/Privacy
 
 If you discover a security vulnerability, please open an issue or contact the maintainers directly.
 
