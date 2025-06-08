@@ -31,20 +31,23 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
+// Pages that should use the simplified layout (no sidebar/header)
+const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password'];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   
-  // Check if current page is the homepage (landing page)
-  const isHomePage = pathname === '/';
+  // Check if current page should use simplified layout
+  const isSimplifiedLayout = SIMPLIFIED_LAYOUT_PATHS.includes(pathname);
   
-  // Close sidebar by default on homepage
+  // Close sidebar by default on simplified layout pages
   useEffect(() => {
-    if (isHomePage) {
+    if (isSimplifiedLayout) {
       setSidebarOpen(false);
     }
-  }, [isHomePage]);
+  }, [isSimplifiedLayout]);
 
   const getThemeIcon = () => {
     switch (theme) {
@@ -59,8 +62,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const ThemeIcon = getThemeIcon();
 
-  // If it's the homepage, render a simplified layout without sidebar
-  if (isHomePage) {
+  // If it's a simplified layout page, render without sidebar and header
+  if (isSimplifiedLayout) {
     return (
       <div className="min-h-screen bg-background">
         {children}
@@ -88,7 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col h-full">
           <div className="flex items-center gap-2 p-6 border-b">
             <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-xl font-bold">SecureVault</h1>
+            <h1 className="text-xl font-bold">Whisperrauth</h1>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {

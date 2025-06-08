@@ -7,6 +7,9 @@ import { useTheme } from "@/app/providers";
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 
+// Pages that should use the simplified layout (no sidebar/header)
+const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password'];
+
 interface HeaderProps {
   onMenuClick: () => void;
   sidebarOpen: boolean;
@@ -16,8 +19,8 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   
-  // Don't render the header on the homepage
-  if (pathname === '/') {
+  // Don't render the header on simplified layout pages
+  if (SIMPLIFIED_LAYOUT_PATHS.includes(pathname)) {
     return null;
   }
 
