@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Client, Account, ID } from "appwrite";
+import { appwriteAccount, ID } from "@/lib/appwrite";
 
 type Theme = "light" | "dark" | "system";
 
@@ -26,7 +26,7 @@ interface AuthContextType {
   register: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   sendMagicLink: (email: string, url: string) => Promise<void>;
-  sendOTP: (email: string) => Promise<void>;
+  sendOTP: (email: string, usePhrase?: boolean) => Promise<void>;
   verifyOTP: (userId: string, secret: string) => Promise<void>;
   refresh: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
@@ -40,12 +40,6 @@ export function useAuth() {
   if (!context) throw new Error("useAuth must be used within an AppwriteProvider");
   return context;
 }
-
-const appwriteClient = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
-
-const appwriteAccount = new Account(appwriteClient);
 
 function getBaseUrl() {
   if (process.env.NEXT_PUBLIC_APP_BASE_URL) {
@@ -104,8 +98,8 @@ export function AppwriteProvider({ children }: { children: React.ReactNode }) {
     await appwriteAccount.updateMagicURLSession(ID.unique(), email, url);
   };
 
-  const sendOTP = async (email: string) => {
-    await appwriteAccount.createEmailToken(email);
+  const sendOTP = async (email: string, usePhrase: boolean = false) => {
+    await appwriteAccount.createEmailToken(ID.unique(), email, usePhrase);
   };
 
   const verifyOTP = async (userId: string, secret: string) => {
@@ -178,3 +172,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     </ThemeContext.Provider>
   );
 }
+//       <AppwriteProvider>
+//         {children}
+//       </AppwriteProvider>
+//     </ThemeContext.Provider>
+//   );
+// }
