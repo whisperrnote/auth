@@ -6,7 +6,8 @@ import { Shield, Eye, EyeOff, Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { useTheme } from "@/app/providers";
+import { useTheme, useAuth } from "@/app/providers";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,11 +16,17 @@ export default function LoginPage() {
     password: "",
   });
   const { theme, setTheme } = useTheme();
+  const { login } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic
-    console.log("Login attempt:", formData);
+    try {
+      await login(formData.email, formData.password);
+      router.replace("/app");
+    } catch (err: any) {
+      alert(err?.message || "Login failed");
+    }
   };
 
   return (
@@ -110,6 +117,10 @@ export default function LoginPage() {
                   Sign up
                 </Link>
               </p>
+            </div>
+            <div className="flex justify-between mt-4">
+              <Link href="/login/otp" className="text-sm text-primary hover:underline">Sign in with OTP/Magic Link</Link>
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">Forgot password?</Link>
             </div>
           </CardContent>
         </Card>

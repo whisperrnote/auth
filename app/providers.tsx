@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { Client, Account, ID } from "appwrite";
 
 type Theme = "light" | "dark" | "system";
 
@@ -11,6 +12,124 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// --- Appwrite Auth Context ---
+interface User {
+  $id: string;
+  email: string;
+  name?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  sendMagicLink: (email: string, url: string) => Promise<void>;
+  sendOTP: (email: string) => Promise<void>;
+  verifyOTP: (userId: string, secret: string) => Promise<void>;
+  refresh: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (userId: string, secret: string, password: string, passwordAgain: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within an AppwriteProvider");
+  return context;
+}
+
+const appwriteClient = new Client()
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
+
+const appwriteAccount = new Account(appwriteClient);
+
+function getRedirectUrl() {
+  if (typeof window !== "undefined") {
+    return window.location.origin + "/login";
+  }
+  return "";
+}
+
+export function AppwriteProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch current user on mount
+  const fetchUser = async () => {
+    setLoading(true);
+    try {
+      const account = await appwriteAccount.get();
+      setUser(account as User);
+    } catch {
+      setUser(null);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUser();
+    // Listen to storage/session changes for multi-tab logout
+    const handler = () => fetchUser();
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    await appwriteAccount.createEmailSession(email, password);
+    await fetchUser();
+  };
+
+  const register = async (email: string, password: string, name?: string) => {
+    await appwriteAccount.create(ID.unique(), email, password, name);
+    await login(email, password);
+  };
+
+  const logout = async () => {
+    await appwriteAccount.deleteSession("current");
+    setUser(null);
+  };
+
+  const sendMagicLink = async (email: string, url: string) => {
+    await appwriteAccount.createMagicURLSession(ID.unique(), email, url);
+  };
+
+  const sendOTP = async (email: string) => {
+    await appwriteAccount.createEmailToken(email);
+  };
+
+  const verifyOTP = async (userId: string, secret: string) => {
+    await appwriteAccount.createSession(userId, secret);
+    await fetchUser();
+  };
+
+  const refresh = async () => {
+    await fetchUser();
+  };
+
+  const forgotPassword = async (email: string) => {
+    await appwriteAccount.createRecovery(email, getRedirectUrl());
+  };
+
+  const resetPassword = async (userId: string, secret: string, password: string, passwordAgain: string) => {
+    await appwriteAccount.updateRecovery(userId, secret, password, passwordAgain);
+    await fetchUser();
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user, loading, login, register, logout, sendMagicLink, sendOTP, verifyOTP, refresh,
+      forgotPassword, resetPassword
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// --- Theme Provider (unchanged) ---
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
@@ -31,12 +150,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    
     localStorage.setItem("theme", theme);
-    
     const root = document.documentElement;
     root.classList.remove("light", "dark");
-    
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       root.classList.add(systemTheme);
@@ -49,7 +165,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
+      <AppwriteProvider>
+        {children}
+      </AppwriteProvider>
     </ThemeContext.Provider>
   );
 }

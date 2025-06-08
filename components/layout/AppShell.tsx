@@ -18,8 +18,9 @@ import {
   Menu
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useTheme } from "@/app/providers";
+import { useTheme, useAuth } from "@/app/providers";
 import { Header } from "./Header";
+import { useRouter } from "next/navigation";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -38,6 +39,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   
   // Check if current page should use simplified layout
   const isSimplifiedLayout = SIMPLIFIED_LAYOUT_PATHS.includes(pathname);
@@ -69,6 +72,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
     );
+  }
+
+  // Protect all other pages: redirect to /login if not authenticated
+  if (!loading && !user) {
+    if (typeof window !== "undefined") {
+      router.replace("/login");
+    }
+    return null;
   }
 
   // For all other pages, render the full application layout with sidebar

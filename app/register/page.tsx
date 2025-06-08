@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
+import { useAuth } from "@/app/providers";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,14 +20,21 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const { theme, setTheme } = useTheme();
+  const { register } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords don't match");
       return;
     }
-    console.log("Registration attempt:", formData);
+    try {
+      await register(formData.email, formData.password, formData.name);
+      router.replace("/app");
+    } catch (err: any) {
+      alert(err?.message || "Registration failed");
+    }
   };
 
   return (

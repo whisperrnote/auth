@@ -6,6 +6,7 @@ import { Menu, Moon, Sun, Monitor, User } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { useAuth } from "@/app/providers";
 
 // Pages that should use the simplified layout (no sidebar/header)
 const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password'];
@@ -17,6 +18,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   
   // Don't render the header on simplified layout pages
@@ -82,14 +84,20 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
               </Button>
             }
           >
-            <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent rounded-md">
-              Profile
-            </button>
-            <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent rounded-md">
-              Settings
-            </button>
+            <div className="flex flex-col px-3 py-2">
+              <span className="font-medium">{user?.name || user?.email}</span>
+              <span className="text-xs text-muted-foreground">{user?.email}</span>
+            </div>
             <hr className="my-1 border-border" />
-            <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent rounded-md text-destructive">
+            <Link href="/settings">
+              <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent rounded-md">
+                Settings
+              </button>
+            </Link>
+            <button
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent rounded-md text-destructive"
+              onClick={logout}
+            >
               Logout
             </button>
           </DropdownMenu>
