@@ -47,11 +47,18 @@ const appwriteClient = new Client()
 
 const appwriteAccount = new Account(appwriteClient);
 
-function getRedirectUrl() {
+function getBaseUrl() {
+  if (process.env.NEXT_PUBLIC_APP_BASE_URL) {
+    return process.env.NEXT_PUBLIC_APP_BASE_URL;
+  }
   if (typeof window !== "undefined") {
-    return window.location.origin + "/login";
+    return window.location.origin;
   }
   return "";
+}
+
+function getRedirectUrl() {
+  return getBaseUrl() + "/login";
 }
 
 export function AppwriteProvider({ children }: { children: React.ReactNode }) {
