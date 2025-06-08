@@ -86,7 +86,7 @@ export function AppwriteProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await appwriteAccount.createEmailSession(email, password);
+    await appwriteAccount.createEmailPasswordSession(email, password);
     await fetchUser();
   };
 
@@ -101,7 +101,7 @@ export function AppwriteProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendMagicLink = async (email: string, url: string) => {
-    await appwriteAccount.createMagicURLSession(ID.unique(), email, url);
+    await appwriteAccount.updateMagicURLSession(ID.unique(), email, url);
   };
 
   const sendOTP = async (email: string) => {
