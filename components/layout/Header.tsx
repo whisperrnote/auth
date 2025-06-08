@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Menu, Moon, Sun, Monitor, User } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +14,12 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+  
+  // Don't render the header on the homepage
+  if (pathname === '/') {
+    return null;
+  }
 
   const themeOptions = [
     { value: "light", label: "Light", icon: Sun },

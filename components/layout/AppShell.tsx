@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -35,6 +35,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  
+  // Check if current page is the homepage (landing page)
+  const isHomePage = pathname === '/';
+  
+  // Close sidebar by default on homepage
+  useEffect(() => {
+    if (isHomePage) {
+      setSidebarOpen(false);
+    }
+  }, [isHomePage]);
 
   const getThemeIcon = () => {
     switch (theme) {
@@ -49,6 +59,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const ThemeIcon = getThemeIcon();
 
+  // If it's the homepage, render a simplified layout without sidebar
+  if (isHomePage) {
+    return (
+      <div className="min-h-screen bg-background">
+        {children}
+      </div>
+    );
+  }
+
+  // For all other pages, render the full application layout with sidebar
   return (
     <div className="min-h-screen bg-background flex">
       {/* Mobile sidebar overlay */}
