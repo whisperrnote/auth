@@ -160,6 +160,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     } else {
       root.classList.add(theme);
     }
+    // Add glassmorphism class to root for global effect
+    root.classList.add("glass");
   }, [theme, mounted]);
 
   if (!mounted) return null;
@@ -172,8 +174,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     </ThemeContext.Provider>
   );
 }
-//       <AppwriteProvider>
-//         {children}
 //       </AppwriteProvider>
 //     </ThemeContext.Provider>
 //   );
