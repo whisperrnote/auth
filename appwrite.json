@@ -48,7 +48,12 @@
     "collections": [
         {
             "$id": "credentials",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
             "databaseId": "passwordManagerDb",
             "name": "Credentials",
             "enabled": true,
@@ -185,7 +190,12 @@
         },
         {
             "$id": "totpSecrets",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
             "databaseId": "passwordManagerDb",
             "name": "TOTP Secrets",
             "enabled": true,
@@ -297,7 +307,12 @@
         },
         {
             "$id": "folders",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
             "databaseId": "passwordManagerDb",
             "name": "Folders",
             "enabled": true,
@@ -367,7 +382,12 @@
         },
         {
             "$id": "securityLogs",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
             "databaseId": "passwordManagerDb",
             "name": "Security Logs",
             "enabled": true,
@@ -456,7 +476,12 @@
         },
         {
             "$id": "user",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
             "databaseId": "passwordManagerDb",
             "name": "user",
             "enabled": true,
@@ -491,6 +516,14 @@
                     "required": false,
                     "array": false,
                     "default": false
+                },
+                {
+                    "key": "check",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 255,
+                    "default": null
                 }
             ],
             "indexes": []

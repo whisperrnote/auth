@@ -1,6 +1,7 @@
 import { Client, Account, Databases, ID, Query, AuthenticationFactor } from "appwrite";
 import type { Credentials, TotpSecrets, Folders, SecurityLogs, User } from "@/types/appwrite.d";
 import { AuthenticatorType } from "appwrite";
+import { updateMasterpassCheckValue, masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 
 // --- Appwrite Client Setup ---
 const appwriteClient = new Client()
@@ -149,18 +150,21 @@ export class AppwriteService {
   /**
    * Sets the masterpass flag for the user in the database.
    * If the user doc exists, updates it; otherwise, creates it.
+   * Also sets the encrypted check value.
    */
   static async setMasterpassFlag(userId: string, email: string): Promise<void> {
     const userDoc = await this.getUserDoc(userId);
     if (userDoc && userDoc.$id) {
-      await this.updateUserDoc(userDoc.$id, { masterpass: true });
+      await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, userDoc.$id, { masterpass: true });
     } else {
-      await this.createUserDoc({
+      await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, ID.unique(), {
         userId,
         email,
         masterpass: true,
       });
     }
+    // Set the check value
+    await updateMasterpassCheckValue(userId);
   }
 
   // Read with automatic decryption
@@ -733,6 +737,7 @@ export async function setMasterpassFlag(userId: string, email: string): Promise<
 /**
  * Reset master password and wipe all user data.
  * This should be called after 2FA/email verification is successful.
+ * Also resets the check value.
  */
 export async function resetMasterpassAndWipe(userId: string): Promise<void> {
   // Use raw Appwrite database API to avoid decryption
@@ -793,6 +798,18 @@ export async function resetMasterpassAndWipe(userId: string): Promise<void> {
     );
     for (const doc of logs.documents) {
       await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_SECURITYLOGS_ID, doc.$id);
+    }
+  } catch {}
+
+  // After reset, set check value to null (or remove it)
+  try {
+    const userDocs = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      [Query.equal('userId', userId)]
+    );
+    for (const doc of userDocs.documents) {
+      await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, doc.$id, { check: null });
     }
   } catch {}
 }

@@ -50,14 +50,11 @@ export class MasterPassCrypto {
       const encoder = new TextEncoder();
       const userBytes = encoder.encode(userId);
       const userSalt = await crypto.subtle.digest('SHA-256', userBytes);
-
-      // Use first 32 bytes of SHA-256 hash (which is already 32 bytes)
       const combinedSalt = new Uint8Array(userSalt);
-
       const testKey = await this.deriveKey(masterPassword, combinedSalt);
 
-      // CRITICAL: Validate the key by testing against existing encrypted data
-      const isValidPassword = await this.validateMasterPassword(testKey, userId);
+      // Validate using the encrypted check value
+      const isValidPassword = await this.validateMasterPasswordWithCheck(testKey, userId);
       if (!isValidPassword) {
         return false;
       }
@@ -74,6 +71,65 @@ export class MasterPassCrypto {
     }
   }
 
+  // Validate master password by decrypting the check value in user doc
+  private async validateMasterPasswordWithCheck(testKey: CryptoKey, userId: string): Promise<boolean> {
+    try {
+      const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+      const response = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        [Query.equal('userId', userId)]
+      );
+      const userDoc = response.documents[0];
+      if (!userDoc || !userDoc.check) {
+        // No check value yet, treat as first time setup
+        return true;
+      }
+      // Try to decrypt the check value
+      const decrypted = await this.decryptCheckValue(userDoc.check, testKey);
+      return decrypted === userId;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Encrypt the check value (userId)
+  async encryptCheckValue(userId: string): Promise<string> {
+    if (!this.masterKey) throw new Error('Vault is locked');
+    const encoder = new TextEncoder();
+    const plaintext = encoder.encode(JSON.stringify(userId));
+    const iv = crypto.getRandomValues(new Uint8Array(MasterPassCrypto.IV_SIZE));
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      this.masterKey,
+      plaintext
+    );
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    return btoa(String.fromCharCode(...combined));
+  }
+
+  // Decrypt the check value
+  async decryptCheckValue(encryptedData: string, key: CryptoKey): Promise<string> {
+    try {
+      const combined = new Uint8Array(
+        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+      );
+      const iv = combined.slice(0, MasterPassCrypto.IV_SIZE);
+      const encrypted = combined.slice(MasterPassCrypto.IV_SIZE);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        encrypted
+      );
+      const decoder = new TextDecoder();
+      return JSON.parse(decoder.decode(decrypted));
+    } catch {
+      throw new Error('Invalid master password');
+    }
+  }
+
   // Validate master password by testing decryption of existing data
   private async validateMasterPassword(testKey: CryptoKey, userId: string): Promise<boolean> {
     try {
@@ -84,16 +140,17 @@ export class MasterPassCrypto {
       const response = await appwriteDatabases.listDocuments(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_CREDENTIALS_ID,
-        [Query.equal('userId', userId), Query.limit(5)] // Get more docs to find encrypted ones
+        [Query.equal('userId', userId), Query.limit(10)] // Get more docs to find encrypted ones
       );
       
       if (response.documents.length === 0) {
         // No existing data to validate against - this is first time setup
+        // For first-time setup, we accept any password since there's no existing data to test against
         return true;
       }
 
       // Look for any document with encrypted data to test against
-      let hasEncryptedData = false;
+      let foundEncryptedData = false;
       
       for (const doc of response.documents) {
         // Check if this document has encrypted fields that look like base64
@@ -107,33 +164,43 @@ export class MasterPassCrypto {
           doc.username.length > 50 &&
           /^[A-Za-z0-9+/]+=*$/.test(doc.username);
 
+        const hasEncryptedNotes = doc.notes && 
+          typeof doc.notes === 'string' && 
+          doc.notes.length > 50 &&
+          /^[A-Za-z0-9+/]+=*$/.test(doc.notes);
+
+        // Try to decrypt any encrypted field we find
         if (hasEncryptedPassword) {
           await this.testDecryption(doc.password, testKey);
-          hasEncryptedData = true;
-          break;
+          foundEncryptedData = true;
+          break; // Successfully decrypted - password is correct
         } else if (hasEncryptedUsername) {
           await this.testDecryption(doc.username, testKey);
-          hasEncryptedData = true;
-          break;
+          foundEncryptedData = true;
+          break; // Successfully decrypted - password is correct
+        } else if (hasEncryptedNotes) {
+          await this.testDecryption(doc.notes, testKey);
+          foundEncryptedData = true;
+          break; // Successfully decrypted - password is correct
         }
       }
 
-      // If no encrypted data found, this might be a fresh setup or unencrypted data
-      // In this case, we should allow the password (assume first time setup)
-      if (!hasEncryptedData) {
-        console.log('No encrypted data found to validate against - allowing password');
+      // If no encrypted data found, check if we have any data at all
+      if (!foundEncryptedData) {
+        // This could mean:
+        // 1. User has credentials but they're not encrypted yet (legacy data)
+        // 2. User has no credentials at all (first time)
+        // In either case, we should allow the password for now
+        console.log('No encrypted data found to validate against - allowing password (legacy or first-time setup)');
         return true;
       }
 
-      return true; // If we get here, decryption succeeded
+      // If we reach here, we successfully decrypted something
+      return true;
 
     } catch (error) {
       // If any decryption fails, the password is wrong
-      if (error instanceof Error) {
-        console.log('Master password validation failed:', error.message);
-      } else {
-        console.log('Master password validation failed:', error);
-      }
+      console.log('Master password validation failed:', error instanceof Error ? error.message : error);
       return false;
     }
   }
@@ -473,4 +540,23 @@ const decryptDocument = async (doc: any, collectionId: string) => {
 // Add utility function for reset
 export const resetMasterPasswordVault = () => {
   masterPassCrypto.resetMasterPassword();
+};
+
+// Add utility to update the check value in the user doc
+export const updateMasterpassCheckValue = async (userId: string) => {
+  const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+  const response = await appwriteDatabases.listDocuments(
+    APPWRITE_DATABASE_ID,
+    APPWRITE_COLLECTION_USER_ID,
+    [Query.equal('userId', userId)]
+  );
+  const userDoc = response.documents[0];
+  if (!userDoc) return;
+  const check = await masterPassCrypto.encryptCheckValue(userId);
+  await appwriteDatabases.updateDocument(
+    APPWRITE_DATABASE_ID,
+    APPWRITE_COLLECTION_USER_ID,
+    userDoc.$id,
+    { check }
+  );
 };

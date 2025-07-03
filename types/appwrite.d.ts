@@ -50,5 +50,6 @@ export type User = Models.Document & {
   userId: string;
   email: string;
   twofa: boolean | null;
+  check: string | null;
 }
 
