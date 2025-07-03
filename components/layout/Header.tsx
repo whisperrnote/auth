@@ -4,9 +4,9 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Menu, Moon, Sun, Monitor, User } from "lucide-react";
 import { useTheme } from "@/app/providers";
+import { useAppwrite } from "@/app/appwrite-provider";
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
-import { useAuth } from "@/app/providers";
 
 // Pages that should use the simplified layout (no sidebar/header)
 const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password'];
@@ -18,7 +18,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
   const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout } = useAppwrite();
   const pathname = usePathname();
   
   // Don't render the header on simplified layout pages
