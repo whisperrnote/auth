@@ -342,6 +342,14 @@ export class AppwriteService {
     );
   }
 
+  static async deleteUserDoc(id: string): Promise<void> {
+    await appwriteDatabases.deleteDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      id
+    );
+  }
+
   // --- Security Event Logging ---
   static async logSecurityEvent(
     userId: string,
