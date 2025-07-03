@@ -168,13 +168,50 @@ export default function MasterPassPage() {
             {isFirstTime && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Confirm Master Password</label>
-                <Input
-                  type="password"
-                  placeholder="Confirm your master password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Confirm your master password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    onKeyDown={e => {
+                      if (
+                        "getModifierState" in e &&
+                        (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                      ) {
+                        setCapsLock(true);
+                      } else {
+                        setCapsLock(false);
+                      }
+                    }}
+                    onKeyUp={e => {
+                      if (
+                        "getModifierState" in e &&
+                        (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                      ) {
+                        setCapsLock(true);
+                      } else {
+                        setCapsLock(false);
+                      }
+                    }}
+                    onBlur={() => setCapsLock(false)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {capsLock && (
+                  <div className="text-xs text-yellow-700 mt-1">
+                    <span className="font-semibold">Caps Lock is ON</span>
+                  </div>
+                )}
               </div>
             )}
 
