@@ -740,3 +740,10 @@ export async function resetMasterpassAndWipe(userId: string): Promise<void> {
     ...logs.map((l) => AppwriteService.deleteSecurityLog(l.$id)),
   ]);
 }
+
+/**
+ * Search credentials for a user (secure, decrypted).
+ */
+export async function searchCredentials(userId: string, searchTerm: string): Promise<Credentials[]> {
+  return await AppwriteService.searchCredentials(userId, searchTerm);
+}
