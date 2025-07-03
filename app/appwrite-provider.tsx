@@ -32,6 +32,8 @@ interface AppwriteContextType {
   secureDb: any;
   isVaultUnlocked: () => boolean;
   lockVault: () => void;
+  lockApplication: () => void;
+  isApplicationLocked: boolean;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppwriteUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [secureDb, setSecureDb] = useState<any>(null);
+  const [isApplicationLocked, setIsApplicationLocked] = useState(false);
 
   // Fetch current user on mount
   useEffect(() => {
@@ -59,6 +62,16 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const wrapper = createSecureDbWrapper(appwriteDatabases, APPWRITE_DATABASE_ID);
     setSecureDb(wrapper);
+  }, []);
+
+  // Listen for vault lock events
+  useEffect(() => {
+    const handleVaultLocked = () => {
+      setIsApplicationLocked(true);
+    };
+
+    window.addEventListener('vault-locked', handleVaultLocked);
+    return () => window.removeEventListener('vault-locked', handleVaultLocked);
   }, []);
 
   // Auth functions
@@ -103,6 +116,11 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     return masterPassCrypto.isVaultUnlocked();
   };
 
+  const lockApplication = () => {
+    masterPassCrypto.lockApplication();
+    setIsApplicationLocked(true);
+  };
+
   // Add more methods for credentials, totp, folders, logs, etc as needed
 
   return (
@@ -117,6 +135,8 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
         secureDb,
         isVaultUnlocked,
         lockVault,
+        lockApplication,
+        isApplicationLocked,
       }}
     >
       {children}
