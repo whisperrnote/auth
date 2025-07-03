@@ -1,4 +1,5 @@
 import { Client, Account, Databases, ID, Query } from "appwrite";
+import type { Credentials, TotpSecrets, Folders, SecurityLogs, User } from "@/types/appwrite.d";
 
 // --- Appwrite Client Setup ---
 const appwriteClient = new Client()
@@ -17,7 +18,6 @@ export const APPWRITE_COLLECTION_SECURITYLOGS_ID = process.env.APPWRITE_COLLECTI
 export const APPWRITE_COLLECTION_USER_ID = process.env.APPWRITE_COLLECTION_USER_ID || "user";
 
 // --- Collection Structure & Field Mappings ---
-// These must match appwrite.json and database.md exactly
 export const COLLECTION_SCHEMAS = {
   credentials: {
     encrypted: ['username', 'password', 'notes', 'customFields'],
@@ -77,81 +77,10 @@ export const COLLECTION_SCHEMAS = {
   }
 };
 
-// --- Type Definitions ---
-// All fields and types below are consistent with appwrite.json and database.md
-
-export interface Credential {
-  $id?: string;
-  userId: string;
-  name: string;
-  url?: string;
-  username: string;
-  password: string;
-  notes?: string;
-  folderId?: string;
-  tags?: string[];
-  customFields?: string;
-  faviconUrl?: string;
-  createdAt?: string; // datetime, auto
-  updatedAt?: string; // datetime, auto
-  $createdAt?: string;
-  $updatedAt?: string;
-}
-
-export interface TOTPSecret {
-  $id?: string;
-  userId: string;
-  issuer: string;
-  accountName: string;
-  secretKey: string;
-  algorithm?: string; // default "SHA1"
-  digits?: number; // default 6
-  period?: number; // default 30
-  folderId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  $createdAt?: string;
-  $updatedAt?: string;
-}
-
-export interface Folder {
-  $id?: string;
-  userId: string;
-  name: string;
-  parentFolderId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  $createdAt?: string;
-  $updatedAt?: string;
-}
-
-export interface SecurityLog {
-  $id?: string;
-  userId: string;
-  eventType: string;
-  ipAddress?: string;
-  userAgent?: string;
-  details?: string;
-  timestamp: string;
-}
-
-export interface UserDoc {
-  $id?: string;
-  userId: string;
-  email: string;
-  masterpass?: boolean;
-}
-
-// --- Notes ---
-// - All collection and attribute names match appwrite.json exactly.
-// - All types, required/optional fields, and encrypted fields are consistent with the schema.
-// - Indexes and relationships are not represented in code, but all keys and types are correct.
-// - If you add or change attributes in appwrite.json, update these interfaces and COLLECTION_SCHEMAS accordingly.
-
 // --- Secure CRUD Operations ---
 export class AppwriteService {
   // Create with automatic encryption
-  static async createCredential(data: Omit<Credential, '$id' | '$createdAt' | '$updatedAt'>): Promise<Credential> {
+  static async createCredential(data: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>): Promise<Credentials> {
     const encryptedData = await this.encryptDocumentFields(data, 'credentials');
     const doc = await appwriteDatabases.createDocument(
       APPWRITE_DATABASE_ID,
@@ -162,7 +91,7 @@ export class AppwriteService {
     return await this.decryptDocumentFields(doc, 'credentials');
   }
 
-  static async createTOTPSecret(data: Omit<TOTPSecret, '$id' | '$createdAt' | '$updatedAt'>): Promise<TOTPSecret> {
+  static async createTOTPSecret(data: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>): Promise<TotpSecrets> {
     const encryptedData = await this.encryptDocumentFields(data, 'totpSecrets');
     const doc = await appwriteDatabases.createDocument(
       APPWRITE_DATABASE_ID,
@@ -173,57 +102,34 @@ export class AppwriteService {
     return await this.decryptDocumentFields(doc, 'totpSecrets');
   }
 
-  static async createFolder(data: Omit<Folder, '$id' | '$createdAt' | '$updatedAt'>): Promise<Folder> {
+  static async createFolder(data: Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>): Promise<Folders> {
     const doc = await appwriteDatabases.createDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       ID.unique(),
       data
     );
-    // Explicitly cast/convert the returned Document to Folder type
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      name: doc.name,
-      parentFolderId: doc.parentFolderId,
-      $createdAt: doc.$createdAt,
-      $updatedAt: doc.$updatedAt,
-    };
+    return doc as Folders;
   }
 
-  static async createSecurityLog(data: Omit<SecurityLog, '$id'>): Promise<SecurityLog> {
+  static async createSecurityLog(data: Omit<SecurityLogs, '$id'>): Promise<SecurityLogs> {
     const doc = await appwriteDatabases.createDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       ID.unique(),
       data
     );
-    // Explicitly map the returned document to SecurityLog type
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      eventType: doc.eventType,
-      ipAddress: doc.ipAddress,
-      userAgent: doc.userAgent,
-      details: doc.details,
-      timestamp: doc.timestamp,
-    };
+    return doc as SecurityLogs;
   }
 
-  static async createUserDoc(data: Omit<UserDoc, '$id'>): Promise<UserDoc> {
+  static async createUserDoc(data: Omit<User, '$id'>): Promise<User> {
     const doc = await appwriteDatabases.createDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
       ID.unique(),
       data
     );
-    // Explicitly map the returned document to UserDoc type
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      email: doc.email,
-      masterpass: doc.masterpass,
-    };
+    return doc as User;
   }
 
   /**
@@ -252,7 +158,7 @@ export class AppwriteService {
   }
 
   // Read with automatic decryption
-  static async getCredential(id: string): Promise<Credential> {
+  static async getCredential(id: string): Promise<Credentials> {
     const doc = await appwriteDatabases.getDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_CREDENTIALS_ID,
@@ -261,7 +167,7 @@ export class AppwriteService {
     return await this.decryptDocumentFields(doc, 'credentials');
   }
 
-  static async getTOTPSecret(id: string): Promise<TOTPSecret> {
+  static async getTOTPSecret(id: string): Promise<TotpSecrets> {
     const doc = await appwriteDatabases.getDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_TOTPSECRETS_ID,
@@ -270,23 +176,16 @@ export class AppwriteService {
     return await this.decryptDocumentFields(doc, 'totpSecrets');
   }
 
-  static async getFolder(id: string): Promise<Folder> {
+  static async getFolder(id: string): Promise<Folders> {
     const doc = await appwriteDatabases.getDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       id
     );
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      name: doc.name,
-      parentFolderId: doc.parentFolderId,
-      $createdAt: doc.$createdAt,
-      $updatedAt: doc.$updatedAt,
-    };
+    return doc as Folders;
   }
 
-  static async getUserDoc(userId: string): Promise<UserDoc | null> {
+  static async getUserDoc(userId: string): Promise<User | null> {
     try {
       const response = await appwriteDatabases.listDocuments(
         APPWRITE_DATABASE_ID,
@@ -295,36 +194,23 @@ export class AppwriteService {
       );
       const doc = response.documents[0];
       if (!doc) return null;
-      return {
-        $id: doc.$id,
-        userId: doc.userId,
-        email: doc.email,
-        masterpass: doc.masterpass,
-      };
+      return doc as User;
     } catch (error) {
       return null;
     }
   }
 
-  static async getSecurityLog(id: string): Promise<SecurityLog> {
+  static async getSecurityLog(id: string): Promise<SecurityLogs> {
     const doc = await appwriteDatabases.getDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       id
     );
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      eventType: doc.eventType,
-      ipAddress: doc.ipAddress,
-      userAgent: doc.userAgent,
-      details: doc.details,
-      timestamp: doc.timestamp,
-    };
+    return doc as SecurityLogs;
   }
 
   // List with automatic decryption
-  static async listCredentials(userId: string, queries: string[] = []): Promise<Credential[]> {
+  static async listCredentials(userId: string, queries: string[] = []): Promise<Credentials[]> {
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_CREDENTIALS_ID,
@@ -335,7 +221,7 @@ export class AppwriteService {
     );
   }
 
-  static async listTOTPSecrets(userId: string, queries: string[] = []): Promise<TOTPSecret[]> {
+  static async listTOTPSecrets(userId: string, queries: string[] = []): Promise<TotpSecrets[]> {
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_TOTPSECRETS_ID,
@@ -346,43 +232,26 @@ export class AppwriteService {
     );
   }
 
-  static async listFolders(userId: string, queries: string[] = []): Promise<Folder[]> {
+  static async listFolders(userId: string, queries: string[] = []): Promise<Folders[]> {
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       [Query.equal('userId', userId), ...queries]
     );
-    // Explicitly map each document to Folder type
-    return response.documents.map((doc: any) => ({
-      $id: doc.$id,
-      userId: doc.userId,
-      name: doc.name,
-      parentFolderId: doc.parentFolderId,
-      $createdAt: doc.$createdAt,
-      $updatedAt: doc.$updatedAt,
-    }));
+    return response.documents as Folders[];
   }
 
-  static async listSecurityLogs(userId: string, queries: string[] = []): Promise<SecurityLog[]> {
+  static async listSecurityLogs(userId: string, queries: string[] = []): Promise<SecurityLogs[]> {
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       [Query.equal('userId', userId), Query.orderDesc('timestamp'), ...queries]
     );
-    // Explicitly map each document to SecurityLog type
-    return response.documents.map((doc: any) => ({
-      $id: doc.$id,
-      userId: doc.userId,
-      eventType: doc.eventType,
-      ipAddress: doc.ipAddress,
-      userAgent: doc.userAgent,
-      details: doc.details,
-      timestamp: doc.timestamp,
-    }));
+    return response.documents as SecurityLogs[];
   }
 
   // Update with automatic encryption
-  static async updateCredential(id: string, data: Partial<Credential>): Promise<Credential> {
+  static async updateCredential(id: string, data: Partial<Credentials>): Promise<Credentials> {
     const encryptedData = await this.encryptDocumentFields(data, 'credentials');
     const doc = await appwriteDatabases.updateDocument(
       APPWRITE_DATABASE_ID,
@@ -393,7 +262,7 @@ export class AppwriteService {
     return await this.decryptDocumentFields(doc, 'credentials');
   }
 
-  static async updateTOTPSecret(id: string, data: Partial<TOTPSecret>): Promise<TOTPSecret> {
+  static async updateTOTPSecret(id: string, data: Partial<TotpSecrets>): Promise<TotpSecrets> {
     const encryptedData = await this.encryptDocumentFields(data, 'totpSecrets');
     const doc = await appwriteDatabases.updateDocument(
       APPWRITE_DATABASE_ID,
@@ -404,54 +273,34 @@ export class AppwriteService {
     return await this.decryptDocumentFields(doc, 'totpSecrets');
   }
 
-  static async updateFolder(id: string, data: Partial<Folder>): Promise<Folder> {
+  static async updateFolder(id: string, data: Partial<Folders>): Promise<Folders> {
     const doc = await appwriteDatabases.updateDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       id,
       data
     );
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      name: doc.name,
-      parentFolderId: doc.parentFolderId,
-      $createdAt: doc.$createdAt,
-      $updatedAt: doc.$updatedAt,
-    };
+    return doc as Folders;
   }
 
-  static async updateUserDoc(id: string, data: Partial<UserDoc>): Promise<UserDoc> {
+  static async updateUserDoc(id: string, data: Partial<User>): Promise<User> {
     const doc = await appwriteDatabases.updateDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
       id,
       data
     );
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      email: doc.email,
-      masterpass: doc.masterpass,
-    };
+    return doc as User;
   }
 
-  static async updateSecurityLog(id: string, data: Partial<SecurityLog>): Promise<SecurityLog> {
+  static async updateSecurityLog(id: string, data: Partial<SecurityLogs>): Promise<SecurityLogs> {
     const doc = await appwriteDatabases.updateDocument(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       id,
       data
     );
-    return {
-      $id: doc.$id,
-      userId: doc.userId,
-      eventType: doc.eventType,
-      ipAddress: doc.ipAddress,
-      userAgent: doc.userAgent,
-      details: doc.details,
-      timestamp: doc.timestamp,
-    };
+    return doc as SecurityLogs;
   }
 
   // Delete operations
@@ -490,9 +339,9 @@ export class AppwriteService {
     await this.createSecurityLog({
       userId,
       eventType,
-      details: details ? JSON.stringify(details) : undefined,
-      ipAddress,
-      userAgent,
+      details: details ? JSON.stringify(details) : null,
+      ipAddress: ipAddress || null,
+      userAgent: userAgent || null,
       timestamp: new Date().toISOString()
     });
   }
@@ -502,7 +351,6 @@ export class AppwriteService {
     const schema = COLLECTION_SCHEMAS[collectionType];
     const result = { ...data };
 
-    // Import encryption function from master password logic
     const { encryptField } = await import('../app/(protected)/masterpass/logic');
 
     for (const field of schema.encrypted) {
@@ -523,7 +371,6 @@ export class AppwriteService {
     const schema = COLLECTION_SCHEMAS[collectionType];
     const result = { ...doc };
 
-    // Import decryption function from master password logic
     const { decryptField } = await import('../app/(protected)/masterpass/logic');
 
     for (const field of schema.encrypted) {
@@ -532,7 +379,6 @@ export class AppwriteService {
           result[field] = await decryptField(result[field]);
         } catch (error) {
           console.error(`Failed to decrypt field ${field}:`, error);
-          // Return original value as fallback
           result[field] = '[DECRYPTION_FAILED]';
         }
       }
@@ -542,27 +388,26 @@ export class AppwriteService {
   }
 
   // --- Search Operations ---
-  static async searchCredentials(userId: string, searchTerm: string): Promise<Credential[]> {
-    // Note: Due to encryption, we need to fetch all and filter locally
+  static async searchCredentials(userId: string, searchTerm: string): Promise<Credentials[]> {
     const allCredentials = await this.listCredentials(userId);
     const term = searchTerm.toLowerCase();
-    
-    return allCredentials.filter(cred => 
-      cred.name.toLowerCase().includes(term) ||
-      cred.username.toLowerCase().includes(term) ||
+
+    return allCredentials.filter(cred =>
+      cred.name?.toLowerCase().includes(term) ||
+      cred.username?.toLowerCase().includes(term) ||
       (cred.url && cred.url.toLowerCase().includes(term))
     );
   }
 
   // --- Bulk Operations ---
-  static async bulkCreateCredentials(credentials: Omit<Credential, '$id' | '$createdAt' | '$updatedAt'>[]): Promise<Credential[]> {
+  static async bulkCreateCredentials(credentials: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>[]): Promise<Credentials[]> {
     return await Promise.all(credentials.map(cred => this.createCredential(cred)));
   }
 
   static async exportUserData(userId: string): Promise<{
-    credentials: Credential[];
-    totpSecrets: TOTPSecret[];
-    folders: Folder[];
+    credentials: Credentials[];
+    totpSecrets: TotpSecrets[];
+    folders: Folders[];
   }> {
     const [credentials, totpSecrets, folders] = await Promise.all([
       this.listCredentials(userId),
@@ -582,12 +427,3 @@ export {
   ID,
   Query,
 };
-
-// --- Collection Structure Reference ---
-// Credentials: userId, name, url, username(E), password(E), notes(E), folderId, tags, customFields(E), faviconUrl
-// TOTPSecrets: userId, issuer, accountName, secretKey(E), algorithm, digits, period, folderId
-// Folders: userId, name, parentFolderId
-// SecurityLogs: userId, eventType, ipAddress, userAgent, details, timestamp
-// User: userId, email, masterpass
-// (E) = Encrypted field
-// (E) = Encrypted field
