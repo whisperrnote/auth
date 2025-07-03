@@ -514,6 +514,27 @@ export async function checkMfaRequired(): Promise<any> {
   return await appwriteAccount.get();
 }
 
+/**
+ * Add Email as an MFA factor (must be verified first).
+ * This will send a verification email if not already verified.
+ * Returns: { email: string }
+ */
+export async function addEmailFactor(email: string, password: string): Promise<{ email: string }> {
+  // 1. Update email if needed (Appwrite requires a password for this)
+  await appwriteAccount.updateEmail(email, password);
+  // 2. Send verification email (user must follow link to verify)
+  await appwriteAccount.createVerification(window.location.origin + "/verify-email");
+  return { email };
+}
+
+/**
+ * Complete email verification for MFA (after user clicks link in email).
+ * Call this with the userId and secret from the verification link.
+ */
+export async function completeEmailVerification(userId: string, secret: string): Promise<void> {
+  await appwriteAccount.updateVerification(userId, secret);
+}
+
 // --- Export everything ---
 export {
   appwriteClient,
