@@ -203,37 +203,3 @@ export function useAppwrite() {
   if (!ctx) throw new Error("useAppwrite must be used within AppwriteProvider");
   return ctx;
 }
-      value={{
-        user,
-        loading,
-        isAuthenticated: !!user,
-        login,
-        logout,
-        register,
-        refresh,
-        secureDb,
-        isVaultUnlocked,
-        lockVault,
-        lockApplication,
-        isApplicationLocked,
-        userCollectionId: APPWRITE_COLLECTION_USER_ID,
-        resetMasterpass,
-        loginWithEmailPassword: loginWithEmailPasswordFn,
-        registerWithEmailPassword: registerWithEmailPasswordFn,
-        sendEmailOtp: sendEmailOtpFn,
-        completeEmailOtp: completeEmailOtpFn,
-        sendMagicUrl: sendMagicUrlFn,
-        completeMagicUrl: completeMagicUrlFn,
-      }}
-    >
-      {children}
-    </AppwriteContext.Provider>
-  );
-}
-
-// Custom hook for easy access
-export function useAppwrite() {
-  const ctx = useContext(AppwriteContext);
-  if (!ctx) throw new Error("useAppwrite must be used within AppwriteProvider");
-  return ctx;
-}
