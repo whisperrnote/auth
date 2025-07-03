@@ -535,7 +535,24 @@ export async function completeEmailVerification(userId: string, secret: string):
   await appwriteAccount.updateVerification(userId, secret);
 }
 
+/**
+ * Initiate password recovery (send reset email).
+ * @param email User's email
+ * @param redirectUrl URL to redirect after clicking email link (must be allowed in Appwrite console)
+ */
+export async function createPasswordRecovery(email: string, redirectUrl: string) {
+  return await appwriteAccount.createRecovery(email, redirectUrl);
+}
 
+/**
+ * Complete password recovery (reset password).
+ * @param userId User ID from query param
+ * @param secret Secret from query param
+ * @param password New password
+ */
+export async function updatePasswordRecovery(userId: string, secret: string, password: string) {
+  return await appwriteAccount.updateRecovery(userId, secret, password);
+}
 
 // --- Export everything ---
 export {
