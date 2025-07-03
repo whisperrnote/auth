@@ -19,6 +19,8 @@ export const APPWRITE_COLLECTION_TOTPSECRETS_ID = process.env.APPWRITE_COLLECTIO
 export const APPWRITE_COLLECTION_FOLDERS_ID = process.env.APPWRITE_COLLECTION_FOLDERS_ID || "folders";
 // Security Logs
 export const APPWRITE_COLLECTION_SECURITYLOGS_ID = process.env.APPWRITE_COLLECTION_SECURITYLOGS_ID || "securityLogs";
+// User collection (for masterpass tracking)
+export const APPWRITE_COLLECTION_USER_ID = process.env.APPWRITE_COLLECTION_USER_ID || "user";
 
 // --- Export Appwrite SDK objects ---
 export {
@@ -33,3 +35,4 @@ export {
 // TOTPSecrets: userId, issuer, accountName, secretKey, algorithm, digits, period, folderId, createdAt, updatedAt
 // Folders: userId, name, parentFolderId, createdAt, updatedAt
 // SecurityLogs: userId, eventType, ipAddress, userAgent, details, timestamp
+// User: userId, email, masterpass
