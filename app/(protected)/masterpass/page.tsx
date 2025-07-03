@@ -13,18 +13,31 @@ export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isFirstTime, setIsFirstTime] = useState(false);
+  const [error, setError<string | null>(null); // Fix the syntax error
+  const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  const { user } = useAppwrite();
+  const { user, secureDb, userCollectionId } = useAppwrite();
   const router = useRouter();
 
+  // Check masterpass status from database
   useEffect(() => {
-    // Check if user has set up master password before
-    const hasSetupMasterPass = localStorage.getItem(`masterpass_setup_${user?.$id}`);
-    setIsFirstTime(!hasSetupMasterPass);
-  }, [user]);
+    if (!user || !secureDb || !userCollectionId) return;
+    setLoading(true);
+    // Try to fetch user doc and check masterpass flag
+    secureDb
+      .listDocuments(userCollectionId, [`equal("userId","${user.$id}")`])
+      .then((res: any) => {
+        const doc = res.documents?.[0];
+        if (doc && doc.masterpass === true) {
+          setIsFirstTime(false);
+        } else {
+          setIsFirstTime(true);
+        }
+      })
+      .catch(() => setIsFirstTime(true))
+      .finally(() => setLoading(false));
+  }, [user, secureDb, userCollectionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +57,26 @@ export default function MasterPassPage() {
           setLoading(false);
           return;
         }
-        
-        // Mark as setup complete
-        localStorage.setItem(`masterpass_setup_${user?.$id}`, 'true');
+        // Mark as setup complete in DB
+        // Try to find user doc, update or create
+        const userDocRes = await secureDb.listDocuments(userCollectionId, [`equal("userId","${user?.$id || ""}")`]);
+        if (userDocRes.documents?.length > 0) {
+          await secureDb.updateDocument(
+            userCollectionId,
+            userDocRes.documents[0].$id,
+            { masterpass: true }
+          );
+        } else if (user) {
+          await secureDb.createDocument(
+            userCollectionId,
+            undefined,
+            {
+              userId: user.$id,
+              email: user.email,
+              masterpass: true,
+            }
+          );
+        }
       }
 
       // Attempt to unlock vault
@@ -68,10 +98,17 @@ export default function MasterPassPage() {
   };
 
   const handleLogout = () => {
-    // Clear master password setup and logout
-    localStorage.removeItem(`masterpass_setup_${user?.$id}`);
     router.replace('/login');
   };
+
+  // Loading state for DB check
+  if (isFirstTime === null || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-lg text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

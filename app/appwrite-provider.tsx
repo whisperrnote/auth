@@ -9,6 +9,7 @@ import {
   APPWRITE_COLLECTION_TOTPSECRETS_ID,
   APPWRITE_COLLECTION_FOLDERS_ID,
   APPWRITE_COLLECTION_SECURITYLOGS_ID,
+  APPWRITE_COLLECTION_USER_ID,
   ID,
 } from "@/lib/appwrite";
 import { masterPassCrypto, createSecureDbWrapper } from "./(protected)/masterpass/logic";
@@ -34,6 +35,8 @@ interface AppwriteContextType {
   lockVault: () => void;
   lockApplication: () => void;
   isApplicationLocked: boolean;
+  // User collection id for masterpass tracking
+  userCollectionId: string;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -137,6 +140,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
         lockVault,
         lockApplication,
         isApplicationLocked,
+        userCollectionId: APPWRITE_COLLECTION_USER_ID,
       }}
     >
       {children}

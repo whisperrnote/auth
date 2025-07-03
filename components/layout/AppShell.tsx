@@ -15,7 +15,8 @@ import {
   Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useTheme, useAuth } from "@/app/providers";
+import { useTheme } from "@/app/providers";
+import { useAppwrite } from "@/app/appwrite-provider"; // Use useAppwrite instead of useAuth
 import { Header } from "./Header";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -36,7 +37,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout } = useAppwrite(); // Use useAppwrite instead of useAuth
   const router = useRouter();
 
   const isSimplifiedLayout = SIMPLIFIED_LAYOUT_PATHS.includes(pathname);

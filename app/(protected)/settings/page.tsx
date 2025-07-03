@@ -18,13 +18,13 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { useTheme, useAuth } from "@/app/providers";
+import { useTheme } from "@/app/providers"; // This should be useAppwrite
 import clsx from "clsx";
 import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout } = useAppwrite(); // Use useAppwrite instead of useAuth
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
