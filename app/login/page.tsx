@@ -35,9 +35,11 @@ export default function LoginPage() {
       <nav className="border-b border-border">
         <div className="max-w-screen-xl mx-auto flex justify-between items-center h-16 px-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">PM</span>
-            </div>
+            <img
+              src="/images/logo.png"
+              alt="Whisperrauth Logo"
+              className="h-8 w-8 rounded-lg object-contain"
+            />
             <span className="font-semibold text-lg">Whisperrauth</span>
           </div>
           <div>
@@ -60,7 +62,11 @@ export default function LoginPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <Shield className="h-12 w-12 text-primary" />
+              <img
+                src="/images/logo.png"
+                alt="Whisperrauth Logo"
+                className="h-12 w-12 rounded-lg object-contain"
+              />
             </div>
             <CardTitle className="text-2xl">Welcome back</CardTitle>
             <p className="text-sm text-muted-foreground">

@@ -46,9 +46,12 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
           </Button>
           
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">PM</span>
-            </div>
+            {/* Replace PM with logo */}
+            <img
+              src="/images/logo.png"
+              alt="Whisperrauth Logo"
+              className="h-8 w-8 rounded-lg object-contain"
+            />
             <h1 className="font-semibold text-lg hidden sm:block">Whisperrauth</h1>
           </div>
         </div>
