@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
 import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
-import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
+import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query, ID } from "@/lib/appwrite";
+import { checkMfaRequired } from "@/lib/appwrite";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -68,18 +69,20 @@ export default function LoginPage() {
     if (mode === "password") {
       try {
         await login(formData.email, formData.password);
-        // --- 2FA check ---
-        // Fetch user doc by email (assuming email is unique)
-        const resp = await appwriteDatabases.listDocuments(
-          APPWRITE_DATABASE_ID,
-          APPWRITE_COLLECTION_USER_ID,
-          [Query.equal("email", formData.email)]
-        );
-        const userDoc = resp.documents[0];
-        if (userDoc?.twofa) {
-          router.replace("/twofa/access");
-        } else {
+
+        // Check if MFA is required using the official method
+        try {
+          await checkMfaRequired();
+          // If no error, MFA is not required, go to dashboard
           router.replace("/dashboard");
+        } catch (mfaError: any) {
+          if (mfaError.type === "user_more_factors_required") {
+            // MFA is required, redirect to 2FA page
+            router.replace("/twofa/access");
+          } else {
+            // Other error, show it
+            setError(mfaError.message || "Login verification failed");
+          }
         }
       } catch (err: any) {
         setError(err?.message || "Login failed");
@@ -112,7 +115,7 @@ export default function LoginPage() {
     try {
       // @ts-ignore
       const resp = await window.appwriteAccount.createEmailToken(
-        window.ID.unique(),
+        ID.unique(),
         formData.email,
         true
       );
@@ -131,7 +134,7 @@ export default function LoginPage() {
     try {
       // @ts-ignore
       await window.appwriteAccount.createMagicURLToken(
-        window.ID.unique(),
+        ID.unique(),
         formData.email,
         window.location.origin + "/login"
       );

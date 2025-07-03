@@ -10,6 +10,7 @@ import { useTheme } from "@/app/providers";
 import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
+import { checkMfaRequired } from "@/lib/appwrite";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -79,17 +80,20 @@ export default function RegisterPage() {
       }
       try {
         await register(formData.email, formData.password, formData.name);
-        // --- 2FA check ---
-        const resp = await appwriteDatabases.listDocuments(
-          APPWRITE_DATABASE_ID,
-          APPWRITE_COLLECTION_USER_ID,
-          [Query.equal("email", formData.email)]
-        );
-        const userDoc = resp.documents[0];
-        if (userDoc?.twofa) {
-          router.replace("/twofa/access");
-        } else {
+        
+        // Check if MFA is required using the official method
+        try {
+          await checkMfaRequired();
+          // If no error, MFA is not required, go to dashboard
           router.replace("/dashboard");
+        } catch (mfaError: any) {
+          if (mfaError.type === "user_more_factors_required") {
+            // MFA is required, redirect to 2FA page
+            router.replace("/twofa/access");
+          } else {
+            // Other error, show it
+            setError(mfaError.message || "Registration verification failed");
+          }
         }
       } catch (err: any) {
         setError(err?.message || "Registration failed");

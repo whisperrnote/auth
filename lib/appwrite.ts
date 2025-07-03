@@ -1,5 +1,6 @@
-import { Client, Account, Databases, ID, Query } from "appwrite";
+import { Client, Account, Databases, ID, Query, AuthenticationFactor } from "appwrite";
 import type { Credentials, TotpSecrets, Folders, SecurityLogs, User } from "@/types/appwrite.d";
+import { AuthenticatorType } from "appwrite";
 
 // --- Appwrite Client Setup ---
 const appwriteClient = new Client()
@@ -424,6 +425,95 @@ export class AppwriteService {
   }
 }
 
+// --- 2FA / MFA Helpers (Following Official Appwrite Documentation) ---
+
+/**
+ * Generate recovery codes - MUST be done before enabling MFA
+ * These are single-use passwords for account recovery
+ */
+export async function generateRecoveryCodes(): Promise<{ recoveryCodes: string[] }> {
+  return await appwriteAccount.createMfaRecoveryCodes();
+}
+
+/**
+ * List enabled MFA factors for current user
+ * Returns: { totp: boolean, email: boolean, phone: boolean }
+ */
+export async function listMfaFactors(): Promise<{ totp: boolean; email: boolean; phone: boolean }> {
+  return await appwriteAccount.listMfaFactors();
+}
+
+/**
+ * Enable/disable MFA enforcement on the account
+ * Note: User must have at least 2 factors before MFA is enforced
+ */
+export async function updateMfaStatus(enabled: boolean): Promise<any> {
+  return await appwriteAccount.updateMFA(enabled);
+}
+
+/**
+ * Add TOTP authenticator factor (does NOT enable MFA yet)
+ * Returns QR code URL and secret for authenticator app
+ */
+export async function addTotpFactor(): Promise<{ qrUrl: string; secret: string }> {
+  const result = await appwriteAccount.createMfaAuthenticator(AuthenticatorType.Totp);
+  // Appwrite returns 'secret' and 'uri' (not 'qrUrl'), so map accordingly
+  return {
+    qrUrl: result.uri || "",
+    secret: result.secret
+  };
+}
+
+/**
+ * Remove TOTP authenticator factor
+ */
+// export async function removeTotpFactor(): Promise<void> {
+//   return await appwriteAccount.deleteMfaAuthenticator("totp");
+// }
+
+export async function removeTotpFactor(): Promise<void> {
+  await appwriteAccount.deleteMfaAuthenticator(AuthenticatorType.Totp);
+}
+/**
+ * Verify TOTP factor by creating and completing a challenge
+ * This step confirms the authenticator app is working
+ */
+export async function verifyTotpFactor(otp: string): Promise<boolean> {
+  try {
+    // Create challenge for TOTP
+    const challenge = await appwriteAccount.createMfaChallenge(AuthenticationFactor.Totp);
+    // Complete challenge with OTP
+    await appwriteAccount.updateMfaChallenge(challenge.$id, otp);
+    return true;
+  } catch (error) {
+    console.error("TOTP verification failed:", error);
+    return false;
+  }
+}
+
+/**
+ * Create MFA challenge for login flow
+ * factor: "totp" | "email" | "phone" | "recoverycode"
+ */
+export async function createMfaChallenge(factor: "totp" | "email" | "phone" | "recoverycode"): Promise<{ $id: string }> {
+  return await appwriteAccount.createMfaChallenge(AuthenticationFactor.Totp);
+}
+
+/**
+ * Complete MFA challenge with code
+ */
+export async function completeMfaChallenge(challengeId: string, code: string): Promise<any> {
+  return await appwriteAccount.updateMfaChallenge(challengeId, code);
+}
+
+/**
+ * Check if user needs MFA after login
+ * Throws 'user_more_factors_required' error if MFA is needed
+ */
+export async function checkMfaRequired(): Promise<any> {
+  return await appwriteAccount.get();
+}
+
 // --- Export everything ---
 export {
   appwriteClient,
@@ -431,4 +521,14 @@ export {
   appwriteDatabases,
   ID,
   Query,
+  // MFA functions
+  // generateRecoveryCodes,
+  // listMfaFactors,
+  // updateMfaStatus,
+  // addTotpFactor,
+  // removeTotpFactor,
+  // verifyTotpFactor,
+  // createMfaChallenge,
+  // completeMfaChallenge,
+  // checkMfaRequired,
 };
