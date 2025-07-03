@@ -19,6 +19,7 @@ import { useTheme, useAuth } from "@/app/providers";
 import { Header } from "./Header";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 
 // Only these 5 items
 const navigation = [
@@ -29,7 +30,7 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password'];
+const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password', '/masterpass'];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,6 +46,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
   }, [loading, user, isSimplifiedLayout, router]);
+
+  // Check for master password requirement
+  useEffect(() => {
+    if (user && !isSimplifiedLayout) {
+      // Update activity when user interacts with protected pages
+      masterPassCrypto.updateActivity();
+      
+      // Check if vault is unlocked
+      if (!masterPassCrypto.isVaultUnlocked()) {
+        // Store current path for return after unlock
+        sessionStorage.setItem('masterpass_return_to', pathname);
+        router.replace('/masterpass');
+      }
+    }
+  }, [user, isSimplifiedLayout, pathname, router]);
 
   useEffect(() => {
     if (isSimplifiedLayout) setSidebarOpen(false);

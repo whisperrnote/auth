@@ -11,6 +11,7 @@ import {
   APPWRITE_COLLECTION_SECURITYLOGS_ID,
   ID,
 } from "@/lib/appwrite";
+import { masterPassCrypto, createSecureDbWrapper } from "./(protected)/masterpass/logic";
 
 // Types
 interface AppwriteUser {
@@ -27,7 +28,10 @@ interface AppwriteContextType {
   logout: () => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
   refresh: () => Promise<void>;
-  // Add more as needed (CRUD, TOTP, etc)
+  // Secure database access
+  secureDb: any;
+  isVaultUnlocked: () => boolean;
+  lockVault: () => void;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -35,6 +39,7 @@ const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined
 export function AppwriteProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppwriteUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [secureDb, setSecureDb] = useState<any>(null);
 
   // Fetch current user on mount
   useEffect(() => {
@@ -48,6 +53,12 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false);
     })();
+  }, []);
+
+  // Initialize secure database wrapper
+  useEffect(() => {
+    const wrapper = createSecureDbWrapper(appwriteDatabases, APPWRITE_DATABASE_ID);
+    setSecureDb(wrapper);
   }, []);
 
   // Auth functions
@@ -84,6 +95,14 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
+  const lockVault = () => {
+    masterPassCrypto.lock();
+  };
+
+  const isVaultUnlocked = () => {
+    return masterPassCrypto.isVaultUnlocked();
+  };
+
   // Add more methods for credentials, totp, folders, logs, etc as needed
 
   return (
@@ -95,6 +114,9 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
         logout,
         register,
         refresh,
+        secureDb,
+        isVaultUnlocked,
+        lockVault,
       }}
     >
       {children}
