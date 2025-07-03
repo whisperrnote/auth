@@ -18,62 +18,67 @@ export const APPWRITE_COLLECTION_SECURITYLOGS_ID = process.env.APPWRITE_COLLECTI
 export const APPWRITE_COLLECTION_USER_ID = process.env.APPWRITE_COLLECTION_USER_ID || "user";
 
 // --- Collection Structure & Field Mappings ---
+// Dynamically derive encrypted/plaintext fields from the types
+const ENCRYPTED_FIELDS = {
+  credentials: ['username', 'password', 'notes', 'customFields'],
+  totpSecrets: ['secretKey'],
+  folders: [],
+  securityLogs: [],
+  user: [],
+} as const;
+
+function getPlaintextFields<T>(allFields: (keyof T)[], encrypted: readonly string[]): string[] {
+  return allFields.filter(f => !encrypted.includes(f as string)).map(f => f as string);
+}
+
 export const COLLECTION_SCHEMAS = {
   credentials: {
-    encrypted: ['username', 'password', 'notes', 'customFields'],
-    plaintext: [
-      'userId',
-      'name',
-      'url',
-      'folderId',
-      'tags',
-      'faviconUrl',
-      'createdAt',
-      'updatedAt'
-    ]
+    encrypted: ENCRYPTED_FIELDS.credentials,
+    plaintext: getPlaintextFields<Credentials>(
+      [
+        'userId', 'name', 'url', 'username', 'notes', 'folderId', 'tags', 'customFields',
+        'faviconUrl', 'createdAt', 'updatedAt', 'password', '$id', '$createdAt', '$updatedAt'
+      ],
+      ENCRYPTED_FIELDS.credentials
+    ),
   },
   totpSecrets: {
-    encrypted: ['secretKey'],
-    plaintext: [
-      'userId',
-      'issuer',
-      'accountName',
-      'algorithm',
-      'digits',
-      'period',
-      'folderId',
-      'createdAt',
-      'updatedAt'
-    ]
+    encrypted: ENCRYPTED_FIELDS.totpSecrets,
+    plaintext: getPlaintextFields<TotpSecrets>(
+      [
+        'userId', 'issuer', 'accountName', 'secretKey', 'algorithm', 'digits', 'period',
+        'folderId', 'createdAt', 'updatedAt', '$id', '$createdAt', '$updatedAt'
+      ],
+      ENCRYPTED_FIELDS.totpSecrets
+    ),
   },
   folders: {
-    encrypted: [],
-    plaintext: [
-      'userId',
-      'name',
-      'parentFolderId',
-      'createdAt',
-      'updatedAt'
-    ]
+    encrypted: ENCRYPTED_FIELDS.folders,
+    plaintext: getPlaintextFields<Folders>(
+      [
+        'userId', 'name', 'parentFolderId', 'createdAt', 'updatedAt', '$id', '$createdAt', '$updatedAt'
+      ],
+      ENCRYPTED_FIELDS.folders
+    ),
   },
   securityLogs: {
-    encrypted: [],
-    plaintext: [
-      'userId',
-      'eventType',
-      'ipAddress',
-      'userAgent',
-      'details',
-      'timestamp'
-    ]
+    encrypted: ENCRYPTED_FIELDS.securityLogs,
+    plaintext: getPlaintextFields<SecurityLogs>(
+      [
+        'userId', 'eventType', 'ipAddress', 'userAgent', 'details', 'timestamp',
+        '$id', '$createdAt', '$updatedAt'
+      ],
+      ENCRYPTED_FIELDS.securityLogs
+    ),
   },
   user: {
-    encrypted: [],
-    plaintext: [
-      'userId',
-      'email',
-      'masterpass'
-    ]
+    encrypted: ENCRYPTED_FIELDS.user,
+    plaintext: getPlaintextFields<User>(
+      [
+        'userId', 'email', 'masterpass', 'twofa', '$id', '$createdAt', '$updatedAt'
+      ],
+      ENCRYPTED_FIELDS.user
+    ),
   }
 };
 
