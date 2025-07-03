@@ -85,9 +85,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <aside
           className={clsx(
             "hidden lg:flex flex-col w-64 bg-card border-r transition-transform duration-200",
-            "pt-16 h-[calc(100vh-4rem)]"
+            "pt-16 h-[calc(100vh-4rem)] sticky top-16"
           )}
-          style={{ minHeight: 0 }}
+          style={{ minHeight: "calc(100vh - 4rem)" }}
         >
           <div className="flex flex-col h-full">
             <nav className="flex-1 p-4 space-y-1">
