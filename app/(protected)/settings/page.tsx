@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme, useAuth } from "@/app/providers";
 import clsx from "clsx";
+import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -31,6 +32,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [dangerLoading, setDangerLoading] = useState(false);
+  const [vaultTimeout, setVaultTimeoutState] = useState(getVaultTimeout());
 
   // Responsive: single column on mobile, two columns on desktop
   // Animate card appearance (fade-in)
@@ -65,6 +67,13 @@ export default function SettingsPage() {
         setMessage("Account deleted (simulated).");
       }, 1500);
     }
+  };
+
+  const handleVaultTimeoutChange = (minutes: number) => {
+    setVaultTimeout(minutes);
+    setVaultTimeoutState(minutes);
+    setMessage("Vault timeout updated!");
+    setTimeout(() => setMessage(""), 1500);
   };
 
   return (
@@ -159,6 +168,40 @@ export default function SettingsPage() {
                 <AlertTriangle className="h-4 w-4" />
                 View Security Log
               </Button>
+              
+              {/* Vault Timeout Setting */}
+              <div className="pt-4 border-t">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Vault Auto-Lock Timeout</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[5, 10, 15, 30].map((minutes) => (
+                      <Button
+                        key={minutes}
+                        variant={vaultTimeout === minutes ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleVaultTimeoutChange(minutes)}
+                        className="text-xs"
+                      >
+                        {minutes}m
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={vaultTimeout}
+                      onChange={(e) => handleVaultTimeoutChange(parseInt(e.target.value) || 10)}
+                      className="w-20 text-sm"
+                    />
+                    <span className="text-xs text-muted-foreground">minutes</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Vault will auto-lock after {vaultTimeout} minutes of inactivity
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

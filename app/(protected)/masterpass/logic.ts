@@ -1,8 +1,9 @@
 // Enhanced crypto configuration for maximum security with optimal performance
-class MasterPassCrypto {
+export class MasterPassCrypto {
   private static instance: MasterPassCrypto;
   private masterKey: CryptoKey | null = null;
   private isUnlocked = false;
+  private static readonly DEFAULT_TIMEOUT = 10 * 60 * 1000; // 10 minutes default
 
   static getInstance(): MasterPassCrypto {
     if (!MasterPassCrypto.instance) {
@@ -75,15 +76,32 @@ class MasterPassCrypto {
     sessionStorage.removeItem('vault_unlocked');
   }
 
-  // Check if vault is unlocked
+  // Get timeout setting from localStorage or use default
+  private getTimeoutSetting(): number {
+    const saved = localStorage.getItem('vault_timeout_minutes');
+    return saved ? parseInt(saved) * 60 * 1000 : MasterPassCrypto.DEFAULT_TIMEOUT;
+  }
+
+  // Set timeout setting
+  static setTimeoutMinutes(minutes: number): void {
+    localStorage.setItem('vault_timeout_minutes', minutes.toString());
+  }
+
+  // Get timeout in minutes for UI
+  static getTimeoutMinutes(): number {
+    const saved = localStorage.getItem('vault_timeout_minutes');
+    return saved ? parseInt(saved) : 10; // default 10 minutes
+  }
+
+  // Check if vault is unlocked with dynamic timeout
   isVaultUnlocked(): boolean {
     if (!this.isUnlocked || !this.masterKey) return false;
 
-    // Auto-lock after 10 minutes (reduced from 15 for security)
     const unlockTime = sessionStorage.getItem('vault_unlocked');
     if (unlockTime) {
       const elapsed = Date.now() - parseInt(unlockTime);
-      if (elapsed > 10 * 60 * 1000) {
+      const timeout = this.getTimeoutSetting();
+      if (elapsed > timeout) {
         this.lockApplication();
         return false;
       }
@@ -226,6 +244,15 @@ class MasterPassCrypto {
 
 export const masterPassCrypto = MasterPassCrypto.getInstance();
 
+// Export utility functions for settings page
+export const setVaultTimeout = (minutes: number) => {
+  MasterPassCrypto.setTimeoutMinutes(minutes);
+};
+
+export const getVaultTimeout = () => {
+  return MasterPassCrypto.getTimeoutMinutes();
+};
+
 // Utility functions for field-specific encryption
 export const encryptField = async (value: string): Promise<string> => {
   return masterPassCrypto.encryptData(value);
@@ -314,3 +341,14 @@ const decryptDocument = async (doc: any, collectionId: string) => {
 
   return decryptedDoc;
 };
+
+// Persistence summary:
+//
+// - The master key (CryptoKey) and unlock state are kept **only in memory** (class fields) and are NOT persisted to disk or storage.
+// - The unlock timestamp is stored in `sessionStorage` as 'vault_unlocked' to track inactivity timeout. This is cleared on lock.
+// - The vault timeout setting (in minutes) is stored in `localStorage` as 'vault_timeout_minutes' for user configuration.
+// - The master password itself and derived key are NEVER persisted to disk, localStorage, or sessionStorage.
+// - Activity patterns for suspicious activity detection are stored in `sessionStorage` as 'activity_pattern' (array of timestamps).
+// - The master password setup flag is stored in `localStorage` as 'masterpass_setup_{userId}' to know if the user has set a master password.
+//
+// All decrypted data and keys are kept only in memory and are cleared on lock or timeout. No sensitive cryptographic material is persisted beyond the session.
