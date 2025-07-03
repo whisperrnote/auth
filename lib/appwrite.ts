@@ -686,3 +686,41 @@ export async function deleteUserAccount(userId: string) {
   // Optionally, delete Appwrite account (irreversible)
   // await appwriteAccount.delete(); // Only if you want to fully remove the user from Appwrite
 }
+
+/**
+ * Check if user has set master password (returns boolean).
+ */
+export async function hasMasterpass(userId: string): Promise<boolean> {
+  return await AppwriteService.hasMasterpass(userId);
+}
+
+/**
+ * Set master password flag for user (after first setup).
+ */
+export async function setMasterpassFlag(userId: string, email: string): Promise<void> {
+  return await AppwriteService.setMasterpassFlag(userId, email);
+}
+
+/**
+ * Reset master password and wipe all user data.
+ * This should be called after 2FA/email verification is successful.
+ */
+export async function resetMasterpassAndWipe(userId: string): Promise<void> {
+  // Delete all user data (credentials, totp, folders, logs, user doc)
+  const userDoc = await AppwriteService.getUserDoc(userId);
+  if (userDoc && userDoc.$id) {
+    await AppwriteService.deleteUserDoc(userDoc.$id);
+  }
+  const [creds, totps, folders, logs] = await Promise.all([
+    AppwriteService.listCredentials(userId),
+    AppwriteService.listTOTPSecrets(userId),
+    AppwriteService.listFolders(userId),
+    AppwriteService.listSecurityLogs(userId),
+  ]);
+  await Promise.all([
+    ...creds.map((c) => AppwriteService.deleteCredential(c.$id)),
+    ...totps.map((t) => AppwriteService.deleteTOTPSecret(t.$id)),
+    ...folders.map((f) => AppwriteService.deleteFolder(f.$id)),
+    ...logs.map((l) => AppwriteService.deleteSecurityLog(l.$id)),
+  ]);
+}

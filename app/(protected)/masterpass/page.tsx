@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
-import { AppwriteService } from "@/lib/appwrite";
+import { hasMasterpass, setMasterpassFlag } from "@/lib/appwrite";
 
 export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // Fixed syntax
+  const [error, setError] = useState<string | null>(null);
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
   
@@ -25,8 +25,7 @@ export default function MasterPassPage() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    // Use modular AppwriteService for masterpass detection
-    AppwriteService.hasMasterpass(user.$id)
+    hasMasterpass(user.$id)
       .then((present) => setIsFirstTime(!present))
       .catch(() => setIsFirstTime(true))
       .finally(() => setLoading(false));
@@ -52,7 +51,7 @@ export default function MasterPassPage() {
         }
         // Mark as setup complete in DB (modular logic)
         if (user) {
-          await AppwriteService.setMasterpassFlag(user.$id, user.email);
+          await setMasterpassFlag(user.$id, user.email);
         }
       }
 
@@ -65,7 +64,7 @@ export default function MasterPassPage() {
         sessionStorage.removeItem('masterpass_return_to');
         // Immediately re-check masterpass status for consistency
         if (user) {
-          setIsFirstTime(!(await AppwriteService.hasMasterpass(user.$id)));
+          setIsFirstTime(!(await hasMasterpass(user.$id)));
         }
         router.replace(returnTo);
       } else {
