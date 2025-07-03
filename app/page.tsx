@@ -45,7 +45,7 @@ export default function LandingPage() {
 
   const testimonials = [
     {
-      quote: "Whisperrauth has completely transformed how I manage my online security. I finally feel safe online.",
+      quote: "Whisperrauth app has completely transformed how I manage my online security. I finally feel safe online.",
       name: "Sarah Johnson",
       role: "Software Developer",
       stars: 5,
