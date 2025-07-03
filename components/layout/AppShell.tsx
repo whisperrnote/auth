@@ -41,6 +41,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isSimplifiedLayout = SIMPLIFIED_LAYOUT_PATHS.includes(pathname);
 
   useEffect(() => {
+    if (!loading && !user && !isSimplifiedLayout) {
+      router.replace("/login");
+    }
+  }, [loading, user, isSimplifiedLayout, router]);
+
+  useEffect(() => {
     if (isSimplifiedLayout) setSidebarOpen(false);
   }, [isSimplifiedLayout]);
 
@@ -66,11 +72,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Protect all other pages: redirect to /login if not authenticated
+  // Don't render protected content until auth is resolved
   if (!loading && !user) {
-    if (typeof window !== "undefined") {
-      router.replace("/login");
-    }
     return null;
   }
 
