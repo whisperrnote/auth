@@ -89,8 +89,8 @@ export default function LoginPage() {
         // Check if MFA is required using the official method
         try {
           await checkMfaRequired();
-          // If no error, MFA is not required, go to dashboard
-          router.replace("/dashboard");
+          // If no error, MFA is not required, go to masterpass
+          router.replace("/masterpass");
         } catch (mfaError: any) {
           if (mfaError.type === "user_more_factors_required") {
             // MFA is required, redirect to 2FA page
@@ -109,7 +109,7 @@ export default function LoginPage() {
         // --- 2FA check ---
         try {
           await checkMfaRequired();
-          router.replace("/dashboard");
+          router.replace("/masterpass");
         } catch (mfaError: any) {
           if (mfaError.type === "user_more_factors_required") {
             router.replace("/twofa/access");

@@ -1,28 +1,21 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   appwriteAccount,
-  appwriteDatabases,
-  APPWRITE_DATABASE_ID,
-  APPWRITE_COLLECTION_CREDENTIALS_ID,
-  APPWRITE_COLLECTION_TOTPSECRETS_ID,
-  APPWRITE_COLLECTION_FOLDERS_ID,
-  APPWRITE_COLLECTION_SECURITYLOGS_ID,
-  APPWRITE_COLLECTION_USER_ID,
-  ID,
-  Query,
-} from "@/lib/appwrite";
-import { masterPassCrypto, createSecureDbWrapper } from "./(protected)/masterpass/logic";
-import {
   loginWithEmailPassword,
   registerWithEmailPassword,
   sendEmailOtp,
   completeEmailOtp,
   sendMagicUrl,
   completeMagicUrl,
+  resetMasterpassAndWipe,
+  hasMasterpass,
+  logoutAppwrite,
+  ID,
 } from "@/lib/appwrite";
-import { resetMasterpassAndWipe } from "@/lib/appwrite";
+import { masterPassCrypto } from "./(protected)/masterpass/logic";
 
 // Types
 interface AppwriteUser {
@@ -36,24 +29,19 @@ interface AppwriteContextType {
   user: AppwriteUser | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
-  refresh: () => Promise<void>;
-  // Secure database access
-  secureDb: any;
   isVaultUnlocked: () => boolean;
-  lockVault: () => void;
-  lockApplication: () => void;
-  isApplicationLocked: boolean;
-  userCollectionId: string;
+  needsMasterPassword: boolean;
+  logout: () => Promise<void>;
   resetMasterpass: () => Promise<void>;
+  refresh: () => Promise<void>;
   loginWithEmailPassword: (email: string, password: string) => Promise<any>;
   registerWithEmailPassword: (email: string, password: string, name?: string) => Promise<any>;
   sendEmailOtp: (email: string, enablePhrase?: boolean) => Promise<any>;
   completeEmailOtp: (userId: string, otp: string) => Promise<any>;
   sendMagicUrl: (email: string, redirectUrl: string) => Promise<any>;
   completeMagicUrl: (userId: string, secret: string) => Promise<any>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (userId: string, secret: string, password: string, passwordAgain: string) => Promise<void>;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -61,111 +49,105 @@ const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined
 export function AppwriteProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppwriteUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [secureDb, setSecureDb] = useState<any>(null);
-  const [isApplicationLocked, setIsApplicationLocked] = useState(false);
+  const [needsMasterPassword, setNeedsMasterPassword] = useState(false);
 
-  // Fetch current user on mount
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const account = await appwriteAccount.get();
-        setUser(account);
-      } catch {
-        setUser(null);
-      }
-      setLoading(false);
-    })();
-  }, []);
-
-  // Initialize secure database wrapper
-  useEffect(() => {
-    const wrapper = createSecureDbWrapper(appwriteDatabases, APPWRITE_DATABASE_ID);
-    setSecureDb(wrapper);
-  }, []);
-
-  // Listen for vault lock events
-  useEffect(() => {
-    const handleVaultLocked = () => {
-      setIsApplicationLocked(true);
-    };
-
-    window.addEventListener('vault-locked', handleVaultLocked);
-    return () => window.removeEventListener('vault-locked', handleVaultLocked);
-  }, []);
-
-  // Modular auth functions
-  const loginWithEmailPasswordFn = loginWithEmailPassword;
-  const registerWithEmailPasswordFn = registerWithEmailPassword;
-  const sendEmailOtpFn = sendEmailOtp;
-  const completeEmailOtpFn = completeEmailOtp;
-  const sendMagicUrlFn = sendMagicUrl;
-  const completeMagicUrlFn = completeMagicUrl;
-
-  // Auth functions
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    await appwriteAccount.createEmailPasswordSession(email, password);
-    const account = await appwriteAccount.get();
-    setUser(account);
-    setLoading(false);
-  };
-
-  const logout = async () => {
-    setLoading(true);
-    await appwriteAccount.deleteSession("current");
-    setUser(null);
-    setLoading(false);
-  };
-
-  const register = async (email: string, password: string, name?: string) => {
-    setLoading(true);
-    await appwriteAccount.create(ID.unique(), email, password, name);
-    await login(email, password);
-    setLoading(false);
-  };
-
-  const refresh = async () => {
+  // Fetch current user and check master password status
+  const fetchUser = async () => {
     setLoading(true);
     try {
       const account = await appwriteAccount.get();
       setUser(account);
+
+      // Check if user needs master password
+      if (account) {
+        const hasMp = await hasMasterpass(account.$id);
+        setNeedsMasterPassword(!hasMp || !masterPassCrypto.isVaultUnlocked());
+      }
     } catch {
       setUser(null);
+      setNeedsMasterPassword(false);
     }
     setLoading(false);
   };
 
-  // --- Masterpass reset logic ---
+  useEffect(() => {
+    fetchUser();
+
+    // Listen for vault lock events
+    const handleVaultLocked = () => {
+      setNeedsMasterPassword(true);
+    };
+    window.addEventListener('vault-locked', handleVaultLocked);
+
+    // Listen for storage changes (multi-tab logout)
+    const handleStorageChange = () => fetchUser();
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener('vault-locked', handleVaultLocked);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refresh = async () => {
+    await fetchUser();
+  };
+
+  const logout = async () => {
+    await logoutAppwrite();
+    masterPassCrypto.lock();
+    setUser(null);
+    setNeedsMasterPassword(false);
+  };
+
   const resetMasterpass = async () => {
     if (!user) return;
-    setLoading(true);
-    try {
-      await resetMasterpassAndWipe(user.$id);
-      masterPassCrypto.lock();
-      setIsApplicationLocked(true);
-      setUser(null);
-      await appwriteAccount.deleteSession("current");
-    } catch (err) {
-      // Handle error if needed
-    }
-    setLoading(false);
-  };
-
-  const lockVault = () => {
+    await resetMasterpassAndWipe(user.$id);
     masterPassCrypto.lock();
+    setNeedsMasterPassword(true);
   };
 
   const isVaultUnlocked = () => {
     return masterPassCrypto.isVaultUnlocked();
   };
 
-  const lockApplication = () => {
-    masterPassCrypto.lockApplication();
-    setIsApplicationLocked(true);
+  // AUTH FUNCTIONS
+  const loginWithEmailPasswordFn = async (email: string, password: string) => {
+    const result = await loginWithEmailPassword(email, password);
+    await refresh();
+    return result;
   };
 
-  // Add more methods for credentials, totp, folders, logs, etc as needed
+  const registerWithEmailPasswordFn = async (email: string, password: string, name?: string) => {
+    const result = await registerWithEmailPassword(email, password, name);
+    await refresh();
+    return result;
+  };
+
+  const completeEmailOtpFn = async (userId: string, otp: string) => {
+    const result = await completeEmailOtp(userId, otp);
+    await refresh();
+    return result;
+  };
+
+  const completeMagicUrlFn = async (userId: string, secret: string) => {
+    const result = await completeMagicUrl(userId, secret);
+    await refresh();
+    return result;
+  };
+
+  // Password reset flow (from old provider)
+  const forgotPassword = async (email: string) => {
+    // Assumes you have a getRedirectUrl util
+    const getRedirectUrl = () => window.location.origin + "/login";
+    await appwriteAccount.createRecovery(email, getRedirectUrl());
+  };
+
+  const resetPassword = async (userId: string, secret: string, password: string, passwordAgain: string) => {
+    await appwriteAccount.updateRecovery(userId, secret, password, passwordAgain);
+    await fetchUser();
+  };
 
   return (
     <AppwriteContext.Provider
@@ -173,23 +155,19 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         isAuthenticated: !!user,
-        login,
-        logout,
-        register,
-        refresh,
-        secureDb,
         isVaultUnlocked,
-        lockVault,
-        lockApplication,
-        isApplicationLocked,
-        userCollectionId: APPWRITE_COLLECTION_USER_ID,
+        needsMasterPassword,
+        logout,
         resetMasterpass,
+        refresh,
         loginWithEmailPassword: loginWithEmailPasswordFn,
         registerWithEmailPassword: registerWithEmailPasswordFn,
-        sendEmailOtp: sendEmailOtpFn,
+        sendEmailOtp,
         completeEmailOtp: completeEmailOtpFn,
-        sendMagicUrl: sendMagicUrlFn,
+        sendMagicUrl,
         completeMagicUrl: completeMagicUrlFn,
+        forgotPassword,
+        resetPassword,
       }}
     >
       {children}

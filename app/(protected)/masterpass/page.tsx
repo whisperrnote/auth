@@ -21,7 +21,7 @@ export default function MasterPassPage() {
   const [capsLock, setCapsLock] = useState(false);
   const [confirmCapsLock, setConfirmCapsLock] = useState(false);
   
-  const { user, secureDb, userCollectionId } = useAppwrite();
+  const { user, refresh } = useAppwrite();
   const router = useRouter();
 
   // Check masterpass status from database
@@ -62,14 +62,11 @@ export default function MasterPassPage() {
       const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '');
       
       if (success) {
-        // Redirect back to intended page or dashboard
-        const returnTo = sessionStorage.getItem('masterpass_return_to') || '/dashboard';
-        sessionStorage.removeItem('masterpass_return_to');
-        // Immediately re-check masterpass status for consistency
-        if (user) {
-          setIsFirstTime(!(await hasMasterpass(user.$id)));
-        }
-        router.replace(returnTo);
+        // Update provider state
+        await refresh();
+        
+        // Redirect to dashboard
+        router.replace('/dashboard');
       } else {
         setError("Invalid master password");
       }

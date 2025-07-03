@@ -785,17 +785,17 @@ export async function deleteCredential(id: string) {
 
 /**
  * Redirects authenticated users to /masterpass or /dashboard as appropriate.
- * Usage: await redirectIfAuthenticated(user, isVaultUnlocked, router)
  */
 export async function redirectIfAuthenticated(user: any, isVaultUnlocked: () => boolean, router: any) {
   if (user) {
     const hasMp = await hasMasterpass(user.$id);
     if (!hasMp || !isVaultUnlocked()) {
       router.replace("/masterpass");
+      return true;
     } else {
       router.replace("/dashboard");
+      return true;
     }
-    return true;
   }
   return false;
 }

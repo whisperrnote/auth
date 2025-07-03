@@ -70,8 +70,8 @@ export default function TwofaAccessPage() {
     setError(null);
     try {
       await completeMfaChallenge(challengeId, code);
-      // Success! User is now fully authenticated
-      router.replace("/dashboard");
+      // Success! User is now fully authenticated, go to masterpass
+      router.replace("/masterpass");
     } catch (e: any) {
       setError(e.message || "Invalid code");
     }
@@ -203,4 +203,4 @@ export default function TwofaAccessPage() {
     </div>
   );
 }
-          
+

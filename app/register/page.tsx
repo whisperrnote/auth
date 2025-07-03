@@ -111,7 +111,7 @@ export default function RegisterPage() {
         await registerWithEmailPassword(formData.email, formData.password, formData.name);
         try {
           await checkMfaRequired();
-          router.replace("/dashboard");
+          router.replace("/masterpass");
         } catch (mfaError: any) {
           if (mfaError.type === "user_more_factors_required") {
             router.replace("/twofa/access");
@@ -127,7 +127,7 @@ export default function RegisterPage() {
         await completeEmailOtp(formData.userId, formData.otp);
         try {
           await checkMfaRequired();
-          router.replace("/dashboard");
+          router.replace("/masterpass");
         } catch (mfaError: any) {
           if (mfaError.type === "user_more_factors_required") {
             router.replace("/twofa/access");
