@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { masterPassCrypto, updateMasterpassCheckValue } from "./logic";
+import { masterPassCrypto } from "./logic";
 import { hasMasterpass, setMasterpassFlag, logoutAppwrite } from "@/lib/appwrite";
 
 export default function MasterPassPage() {
@@ -69,14 +69,8 @@ export default function MasterPassPage() {
       const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '');
       
       if (success) {
-        // Update the check value after successful unlock
-        if (user) {
-          await updateMasterpassCheckValue(user.$id);
-        }
-        // Update provider state
+        // No need to update check value here; it's set during initial creation only
         await refresh();
-        
-        // Redirect to dashboard
         router.replace('/dashboard');
       } else {
         // Show specific error for wrong password

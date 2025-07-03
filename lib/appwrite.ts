@@ -150,7 +150,7 @@ export class AppwriteService {
   /**
    * Sets the masterpass flag for the user in the database.
    * If the user doc exists, updates it; otherwise, creates it.
-   * Also sets the encrypted check value.
+   * Also sets the encrypted check value (for initial creation only).
    */
   static async setMasterpassFlag(userId: string, email: string): Promise<void> {
     const userDoc = await this.getUserDoc(userId);
@@ -163,8 +163,8 @@ export class AppwriteService {
         masterpass: true,
       });
     }
-    // Set the check value
-    await updateMasterpassCheckValue(userId);
+    // Set the check value for initial creation
+    await masterPassCrypto.setMasterpassCheck(userId);
   }
 
   // Read with automatic decryption
@@ -737,7 +737,7 @@ export async function setMasterpassFlag(userId: string, email: string): Promise<
 /**
  * Reset master password and wipe all user data.
  * This should be called after 2FA/email verification is successful.
- * Also resets the check value.
+ * Also clears the check value.
  */
 export async function resetMasterpassAndWipe(userId: string): Promise<void> {
   // Use raw Appwrite database API to avoid decryption
@@ -801,17 +801,8 @@ export async function resetMasterpassAndWipe(userId: string): Promise<void> {
     }
   } catch {}
 
-  // After reset, set check value to null (or remove it)
-  try {
-    const userDocs = await appwriteDatabases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_COLLECTION_USER_ID,
-      [Query.equal('userId', userId)]
-    );
-    for (const doc of userDocs.documents) {
-      await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, doc.$id, { check: null });
-    }
-  } catch {}
+  // After reset, clear the check value
+  await masterPassCrypto.clearMasterpassCheck(userId);
 }
 
 /**

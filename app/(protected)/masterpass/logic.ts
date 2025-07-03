@@ -53,8 +53,8 @@ export class MasterPassCrypto {
       const combinedSalt = new Uint8Array(userSalt);
       const testKey = await this.deriveKey(masterPassword, combinedSalt);
 
-      // Validate using the encrypted check value
-      const isValidPassword = await this.validateMasterPasswordWithCheck(testKey, userId);
+      // Only verify if check value exists
+      const isValidPassword = await this.verifyMasterpassCheck(testKey, userId);
       if (!isValidPassword) {
         return false;
       }
@@ -71,8 +71,27 @@ export class MasterPassCrypto {
     }
   }
 
-  // Validate master password by decrypting the check value in user doc
-  private async validateMasterPasswordWithCheck(testKey: CryptoKey, userId: string): Promise<boolean> {
+  // Set the check value (for initial master password creation)
+  async setMasterpassCheck(userId: string): Promise<void> {
+    const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+    const response = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      [Query.equal('userId', userId)]
+    );
+    const userDoc = response.documents[0];
+    if (!userDoc) return;
+    const check = await this.encryptCheckValue(userId);
+    await appwriteDatabases.updateDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      userDoc.$id,
+      { check }
+    );
+  }
+
+  // Verify the check value (for unlock)
+  async verifyMasterpassCheck(testKey: CryptoKey, userId: string): Promise<boolean> {
     try {
       const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
       const response = await appwriteDatabases.listDocuments(
@@ -82,15 +101,32 @@ export class MasterPassCrypto {
       );
       const userDoc = response.documents[0];
       if (!userDoc || !userDoc.check) {
-        // No check value yet, treat as first time setup
-        return true;
+        // No check value yet, treat as first time setup (should not happen on unlock)
+        return false;
       }
-      // Try to decrypt the check value
       const decrypted = await this.decryptCheckValue(userDoc.check, testKey);
       return decrypted === userId;
     } catch (error) {
       return false;
     }
+  }
+
+  // Clear the check value (for reset)
+  async clearMasterpassCheck(userId: string): Promise<void> {
+    const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+    const response = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      [Query.equal('userId', userId)]
+    );
+    const userDoc = response.documents[0];
+    if (!userDoc) return;
+    await appwriteDatabases.updateDocument(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      userDoc.$id,
+      { check: null }
+    );
   }
 
   // Encrypt the check value (userId)
