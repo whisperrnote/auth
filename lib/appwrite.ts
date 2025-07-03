@@ -735,23 +735,66 @@ export async function setMasterpassFlag(userId: string, email: string): Promise<
  * This should be called after 2FA/email verification is successful.
  */
 export async function resetMasterpassAndWipe(userId: string): Promise<void> {
-  // Delete all user data (credentials, totp, folders, logs, user doc)
-  const userDoc = await AppwriteService.getUserDoc(userId);
-  if (userDoc && userDoc.$id) {
-    await AppwriteService.deleteUserDoc(userDoc.$id);
-  }
-  const [creds, totps, folders, logs] = await Promise.all([
-    AppwriteService.listCredentials(userId),
-    AppwriteService.listTOTPSecrets(userId),
-    AppwriteService.listFolders(userId),
-    AppwriteService.listSecurityLogs(userId),
-  ]);
-  await Promise.all([
-    ...creds.map((c) => AppwriteService.deleteCredential(c.$id)),
-    ...totps.map((t) => AppwriteService.deleteTOTPSecret(t.$id)),
-    ...folders.map((f) => AppwriteService.deleteFolder(f.$id)),
-    ...logs.map((l) => AppwriteService.deleteSecurityLog(l.$id)),
-  ]);
+  // Use raw Appwrite database API to avoid decryption
+  // Delete user doc
+  try {
+    const userDocs = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      [Query.equal('userId', userId)]
+    );
+    for (const doc of userDocs.documents) {
+      await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, doc.$id);
+    }
+  } catch {}
+
+  // Delete credentials
+  try {
+    const creds = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_CREDENTIALS_ID,
+      [Query.equal('userId', userId)]
+    );
+    for (const doc of creds.documents) {
+      await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_CREDENTIALS_ID, doc.$id);
+    }
+  } catch {}
+
+  // Delete totp secrets
+  try {
+    const totps = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_TOTPSECRETS_ID,
+      [Query.equal('userId', userId)]
+    );
+    for (const doc of totps.documents) {
+      await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_TOTPSECRETS_ID, doc.$id);
+    }
+  } catch {}
+
+  // Delete folders
+  try {
+    const folders = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_FOLDERS_ID,
+      [Query.equal('userId', userId)]
+    );
+    for (const doc of folders.documents) {
+      await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_FOLDERS_ID, doc.$id);
+    }
+  } catch {}
+
+  // Delete security logs
+  try {
+    const logs = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_SECURITYLOGS_ID,
+      [Query.equal('userId', userId)]
+    );
+    for (const doc of logs.documents) {
+      await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_SECURITYLOGS_ID, doc.$id);
+    }
+  } catch {}
 }
 
 /**
