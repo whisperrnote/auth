@@ -23,13 +23,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased bg-[rgb(245,239,230)] text-[rgb(23,23,23)]`}>
         <Providers>
-          <div className="min-h-screen flex flex-col items-center justify-center bg-none">
-            <div className="w-full max-w-4xl p-4 md:p-8 card">
-              <AppShell>{children}</AppShell>
-            </div>
+          <div className="min-h-screen w-full">
+            <AppShell>{children}</AppShell>
           </div>
         </Providers>
       </body>
     </html>
+  );
+}
   );
 }
