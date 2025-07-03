@@ -554,6 +554,50 @@ export async function updatePasswordRecovery(userId: string, secret: string, pas
   return await appwriteAccount.updateRecovery(userId, secret, password);
 }
 
+// --- Email/password login/register ---
+
+/**
+ * Email/password login
+ */
+export async function loginWithEmailPassword(email: string, password: string) {
+  return await appwriteAccount.createEmailPasswordSession(email, password);
+}
+
+/**
+ * Register with email/password
+ */
+export async function registerWithEmailPassword(email: string, password: string, name?: string) {
+  return await appwriteAccount.create(ID.unique(), email, password, name);
+}
+
+/**
+ * Email OTP: Send OTP to email (returns { userId, phrase? })
+ */
+export async function sendEmailOtp(email: string, enablePhrase = false) {
+  return await appwriteAccount.createEmailToken(ID.unique(), email, enablePhrase);
+}
+
+/**
+ * Email OTP: Complete OTP login (returns session)
+ */
+export async function completeEmailOtp(userId: string, otp: string) {
+  return await appwriteAccount.createSession(userId, otp);
+}
+
+/**
+ * Magic URL: Send magic link to email
+ */
+export async function sendMagicUrl(email: string, redirectUrl: string) {
+  return await appwriteAccount.createMagicURLToken(ID.unique(), email, redirectUrl);
+}
+
+/**
+ * Magic URL: Complete magic link login (returns session)
+ */
+export async function completeMagicUrl(userId: string, secret: string) {
+  return await appwriteAccount.createSession(userId, secret);
+}
+
 // --- Export everything ---
 export {
   appwriteClient,

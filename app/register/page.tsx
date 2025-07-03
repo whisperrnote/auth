@@ -29,7 +29,14 @@ export default function RegisterPage() {
     userId: "",
   });
   const { theme, setTheme } = useTheme();
-  const { register, loading } = useAppwrite();
+  const {
+    registerWithEmailPassword,
+    sendEmailOtp,
+    completeEmailOtp,
+    sendMagicUrl,
+    completeMagicUrl,
+    loading,
+  } = useAppwrite();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -79,19 +86,14 @@ export default function RegisterPage() {
         return;
       }
       try {
-        await register(formData.email, formData.password, formData.name);
-        
-        // Check if MFA is required using the official method
+        await registerWithEmailPassword(formData.email, formData.password, formData.name);
         try {
           await checkMfaRequired();
-          // If no error, MFA is not required, go to dashboard
           router.replace("/dashboard");
         } catch (mfaError: any) {
           if (mfaError.type === "user_more_factors_required") {
-            // MFA is required, redirect to 2FA page
             router.replace("/twofa/access");
           } else {
-            // Other error, show it
             setError(mfaError.message || "Registration verification failed");
           }
         }
@@ -100,19 +102,16 @@ export default function RegisterPage() {
       }
     } else if (mode === "otp") {
       try {
-        // @ts-ignore
-        await window.appwriteAccount.createSession(formData.userId, formData.otp);
-        // --- 2FA check ---
-        const resp = await appwriteDatabases.listDocuments(
-          APPWRITE_DATABASE_ID,
-          APPWRITE_COLLECTION_USER_ID,
-          [Query.equal("userId", formData.userId)]
-        );
-        const userDoc = resp.documents[0];
-        if (userDoc?.twofa) {
-          router.replace("/twofa/access");
-        } else {
+        await completeEmailOtp(formData.userId, formData.otp);
+        try {
+          await checkMfaRequired();
           router.replace("/dashboard");
+        } catch (mfaError: any) {
+          if (mfaError.type === "user_more_factors_required") {
+            router.replace("/twofa/access");
+          } else {
+            setError(mfaError.message || "Registration verification failed");
+          }
         }
       } catch (err: any) {
         setError(err?.message || "Invalid OTP.");
@@ -124,12 +123,7 @@ export default function RegisterPage() {
   const handleSendOTP = async () => {
     setError(null);
     try {
-      // @ts-ignore
-      const resp = await window.appwriteAccount.createEmailToken(
-        window.ID.unique(),
-        formData.email,
-        true
-      );
+      const resp = await sendEmailOtp(formData.email, true);
       setOtpSent(true);
       setSecurityPhrase(resp.phrase || "");
       setFormData((f) => ({ ...f, userId: resp.userId }));
@@ -143,12 +137,7 @@ export default function RegisterPage() {
   const handleSendMagic = async () => {
     setError(null);
     try {
-      // @ts-ignore
-      await window.appwriteAccount.createMagicURLToken(
-        window.ID.unique(),
-        formData.email,
-        window.location.origin + "/register"
-      );
+      await sendMagicUrl(formData.email, window.location.origin + "/register");
       setMagicSent(true);
       setTimeout(() => setMagicSent(false), 4000);
     } catch (e: any) {

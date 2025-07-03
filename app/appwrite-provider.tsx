@@ -14,6 +14,14 @@ import {
   Query,
 } from "@/lib/appwrite";
 import { masterPassCrypto, createSecureDbWrapper } from "./(protected)/masterpass/logic";
+import {
+  loginWithEmailPassword,
+  registerWithEmailPassword,
+  sendEmailOtp,
+  completeEmailOtp,
+  sendMagicUrl,
+  completeMagicUrl,
+} from "@/lib/appwrite";
 
 // Types
 interface AppwriteUser {
@@ -39,6 +47,12 @@ interface AppwriteContextType {
   isApplicationLocked: boolean;
   userCollectionId: string;
   resetMasterpass: () => Promise<void>;
+  loginWithEmailPassword: (email: string, password: string) => Promise<any>;
+  registerWithEmailPassword: (email: string, password: string, name?: string) => Promise<any>;
+  sendEmailOtp: (email: string, enablePhrase?: boolean) => Promise<any>;
+  completeEmailOtp: (userId: string, otp: string) => Promise<any>;
+  sendMagicUrl: (email: string, redirectUrl: string) => Promise<any>;
+  completeMagicUrl: (userId: string, secret: string) => Promise<any>;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -78,6 +92,14 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     window.addEventListener('vault-locked', handleVaultLocked);
     return () => window.removeEventListener('vault-locked', handleVaultLocked);
   }, []);
+
+  // Modular auth functions
+  const loginWithEmailPasswordFn = loginWithEmailPassword;
+  const registerWithEmailPasswordFn = registerWithEmailPassword;
+  const sendEmailOtpFn = sendEmailOtp;
+  const completeEmailOtpFn = completeEmailOtp;
+  const sendMagicUrlFn = sendMagicUrl;
+  const completeMagicUrlFn = completeMagicUrl;
 
   // Auth functions
   const login = async (email: string, password: string) => {
@@ -196,6 +218,12 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
         isApplicationLocked,
         userCollectionId: APPWRITE_COLLECTION_USER_ID,
         resetMasterpass,
+        loginWithEmailPassword: loginWithEmailPasswordFn,
+        registerWithEmailPassword: registerWithEmailPasswordFn,
+        sendEmailOtp: sendEmailOtpFn,
+        completeEmailOtp: completeEmailOtpFn,
+        sendMagicUrl: sendMagicUrlFn,
+        completeMagicUrl: completeMagicUrlFn,
       }}
     >
       {children}

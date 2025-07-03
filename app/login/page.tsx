@@ -21,7 +21,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "", otp: "", userId: "" });
   const { theme, setTheme } = useTheme();
-  const { login, loading } = useAppwrite();
+  const {
+    loginWithEmailPassword,
+    sendEmailOtp,
+    completeEmailOtp,
+    sendMagicUrl,
+    completeMagicUrl,
+    loading,
+  } = useAppwrite();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -68,7 +75,7 @@ export default function LoginPage() {
     setError(null);
     if (mode === "password") {
       try {
-        await login(formData.email, formData.password);
+        await loginWithEmailPassword(formData.email, formData.password);
 
         // Check if MFA is required using the official method
         try {
@@ -89,19 +96,17 @@ export default function LoginPage() {
       }
     } else if (mode === "otp") {
       try {
-        // @ts-ignore
-        await window.appwriteAccount.createSession(formData.userId, formData.otp);
+        await completeEmailOtp(formData.userId, formData.otp);
         // --- 2FA check ---
-        const resp = await appwriteDatabases.listDocuments(
-          APPWRITE_DATABASE_ID,
-          APPWRITE_COLLECTION_USER_ID,
-          [Query.equal("userId", formData.userId)]
-        );
-        const userDoc = resp.documents[0];
-        if (userDoc?.twofa) {
-          router.replace("/twofa/access");
-        } else {
+        try {
+          await checkMfaRequired();
           router.replace("/dashboard");
+        } catch (mfaError: any) {
+          if (mfaError.type === "user_more_factors_required") {
+            router.replace("/twofa/access");
+          } else {
+            setError(mfaError.message || "Login verification failed");
+          }
         }
       } catch (err: any) {
         setError(err?.message || "Invalid OTP.");
@@ -113,12 +118,7 @@ export default function LoginPage() {
   const handleSendOTP = async () => {
     setError(null);
     try {
-      // @ts-ignore
-      const resp = await window.appwriteAccount.createEmailToken(
-        ID.unique(),
-        formData.email,
-        true
-      );
+      const resp = await sendEmailOtp(formData.email, true);
       setOtpSent(true);
       setSecurityPhrase(resp.phrase || "");
       setFormData((f) => ({ ...f, userId: resp.userId }));
@@ -132,12 +132,7 @@ export default function LoginPage() {
   const handleSendMagic = async () => {
     setError(null);
     try {
-      // @ts-ignore
-      await window.appwriteAccount.createMagicURLToken(
-        ID.unique(),
-        formData.email,
-        window.location.origin + "/login"
-      );
+      await sendMagicUrl(formData.email, window.location.origin + "/login");
       setMagicSent(true);
       setTimeout(() => setMagicSent(false), 4000);
     } catch (e: any) {
