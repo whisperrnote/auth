@@ -145,16 +145,217 @@ export default function RegisterPage() {
             <img
               src="/images/logo.png"
               alt="Whisperrauth Logo"
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              className="h-8 w-8 rounded-lg object-contain"
+            />
+            <span className="font-semibold text-lg">Whisperrauth</span>
+          </div>
+          <div>
+            <button
+              className="p-2 rounded-full hover:bg-accent"
+              onClick={() => {
+                const nextTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+                setTheme(nextTheme);
+              }}
+            >
+              {theme === 'light' && <Sun className="h-5 w-5" />}
+              {theme === 'dark' && <Moon className="h-5 w-5" />}
+              {theme === 'system' && <Monitor className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md glass shadow-2xl">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <img
+                src="/images/logo.png"
+                alt="Whisperrauth Logo"
+                className="h-12 w-12 rounded-lg object-contain"
+              />
+            </div>
+            <CardTitle className="text-2xl">Create account</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Start securing your passwords today
+            </p>
+          </CardHeader>
+          <CardContent>
+            {/* Mode Switcher */}
+            <div className="flex justify-center gap-2 mb-6">
+              {modeButtons.map((btn) => (
+                <button
+                  key={btn.value}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-md transition-all duration-150
+                    ${mode === btn.value
+                      ? "bg-primary text-white scale-105"
+                      : "bg-white/60 text-[rgb(141,103,72)] hover:bg-primary/20"
+                    }`}
+                  style={{
+                    boxShadow: mode === btn.value
+                      ? "0 4px 16px 0 rgba(141,103,72,0.13)"
+                      : "0 2px 8px 0 rgba(191,174,153,0.10)"
+                  }}
+                  onClick={() => {
+                    setMode(btn.value as Mode);
+                    setError(null);
+                  }}
+                  type="button"
+                >
+                  <btn.icon className="h-5 w-5" />
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name always visible */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Full Name</label>
+                <Input
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              {/* Email always visible */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  placeholder="john@example.com"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setOtpSent(false);
+                    setMagicSent(false);
+                  }}
+                  required
+                />
+              </div>
+              {/* Password registration */}
+              {mode === "password" && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Password</label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create a strong password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Confirm Password</label>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+              {/* OTP registration */}
+              {mode === "otp" && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter OTP"
+                      value={formData.otp}
+                      onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
+                      disabled={!otpSent}
+                      className={`transition-all duration-200 ${!otpSent ? "blur-[2px] opacity-60" : ""}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="glass"
+                      disabled={
+                        !formData.email ||
+                        otpCooldown > 0 ||
+                        loading
+                      }
+                      onClick={handleSendOTP}
+                    >
+                      {otpSent ? (
+                        <Check className="h-5 w-5 text-green-600" />
+                      ) : (
+                        "Get OTP"
+                      )}
+                    </Button>
+                  </div>
+                  {/* Security phrase */}
+                  {securityPhrase && otpSent && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      <span className="font-semibold">Security Phrase:</span> {securityPhrase}
+                    </div>
+                  )}
+                  {/* Countdown */}
+                  {otpCooldown > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Request again in {otpCooldown}s
+                    </div>
+                  )}
+                </>
+              )}
+              {/* Magic Link registration */}
+              {mode === "magic" && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="glass flex-1"
+                    disabled={!formData.email || magicSent || loading}
+                    onClick={handleSendMagic}
+                  >
+                    {magicSent ? (
+                      <Check className="h-5 w-5 text-green-600" />
+                    ) : (
+                      "Get Magic Link"
+                    )}
                   </Button>
                 </div>
-              </div>
+              )}
+              {/* Magic link sent message */}
+              {mode === "magic" && magicSent && (
+                <div className="text-xs text-green-700 mt-2 flex items-center gap-2">
+                  <Check className="h-4 w-4" /> Sent! Check your email for the magic link.
+                </div>
+              )}
               {error && <div className="text-red-600 text-sm">{error}</div>}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating..." : "Create Account"}
-              </Button>
+              {/* Only show submit for password/otp */}
+              {(mode === "password" || (mode === "otp" && otpSent)) && (
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Creating..." : "Create Account"}
+                </Button>
+              )}
             </form>
-
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
