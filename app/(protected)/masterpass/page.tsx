@@ -34,6 +34,13 @@ export default function MasterPassPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
+  // Redirect to login if not logged in
+  useEffect(() => {
+    if (user === null && !loading) {
+      router.replace("/login");
+    }
+  }, [user, loading, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
