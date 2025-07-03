@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
 import { checkMfaRequired } from "@/lib/appwrite";
 import { hasMasterpass } from "@/lib/appwrite";
+import { redirectIfAuthenticated } from "@/lib/appwrite";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -91,6 +92,10 @@ export default function RegisterPage() {
         }
       })();
     }
+  }, [user, router, isVaultUnlocked]);
+
+  useEffect(() => {
+    redirectIfAuthenticated(user, isVaultUnlocked, router);
   }, [user, router, isVaultUnlocked]);
 
   // Handlers
