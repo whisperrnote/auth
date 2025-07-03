@@ -17,6 +17,7 @@ export default function MasterPassPage() {
   const [error, setError] = useState<string | null>(null);
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [capsLock, setCapsLock] = useState(false);
   
   const { user, secureDb, userCollectionId } = useAppwrite();
   const router = useRouter();
@@ -123,6 +124,15 @@ export default function MasterPassPage() {
                   onChange={(e) => setMasterPassword(e.target.value)}
                   required
                   autoFocus
+                  onKeyDown={e => {
+                    if (e.getModifierState && e.getModifierState("CapsLock")) setCapsLock(true);
+                    else setCapsLock(false);
+                  }}
+                  onKeyUp={e => {
+                    if (e.getModifierState && e.getModifierState("CapsLock")) setCapsLock(true);
+                    else setCapsLock(false);
+                  }}
+                  onBlur={() => setCapsLock(false)}
                 />
                 <Button
                   type="button"
@@ -134,6 +144,11 @@ export default function MasterPassPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {capsLock && (
+                <div className="text-xs text-yellow-700 mt-1">
+                  <span className="font-semibold">Caps Lock is ON</span>
+                </div>
+              )}
             </div>
 
             {isFirstTime && (
