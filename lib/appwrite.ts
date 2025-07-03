@@ -799,3 +799,19 @@ export async function redirectIfAuthenticated(user: any, isVaultUnlocked: () => 
   }
   return false;
 }
+
+/**
+ * Logs out the current user from Appwrite and clears session/local storage.
+ * Use this everywhere for a consistent logout experience.
+ */
+export async function logoutAppwrite() {
+  try {
+    await appwriteAccount.deleteSession("current");
+  } catch {}
+  // Clear vault/session data
+  if (typeof window !== "undefined") {
+    sessionStorage.clear();
+    localStorage.removeItem("vault_timeout_minutes");
+    // Optionally clear other app-specific keys here
+  }
+}

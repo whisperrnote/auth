@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
-import { hasMasterpass, setMasterpassFlag } from "@/lib/appwrite";
+import { hasMasterpass, setMasterpassFlag, logoutAppwrite } from "@/lib/appwrite";
 
 export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
@@ -80,7 +80,10 @@ export default function MasterPassPage() {
     setLoading(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setLoading(true);
+    await logoutAppwrite();
+    setLoading(false);
     router.replace('/login');
   };
 
