@@ -124,15 +124,17 @@ export default function MasterPassPage() {
                   onChange={(e) => setMasterPassword(e.target.value)}
                   required
                   autoFocus
-                  onKeyDown={e => {
-                    if (e.getModifierState && e.getModifierState("CapsLock")) setCapsLock(true);
-                    else setCapsLock(false);
+                  onInput={e => {
+                    // Fastest: check caps lock on every input event
+                    if (
+                      "getModifierState" in e.nativeEvent &&
+                      (e.nativeEvent as KeyboardEvent).getModifierState("CapsLock")
+                    ) {
+                      setCapsLock(true);
+                    } else {
+                      setCapsLock(false);
+                    }
                   }}
-                  onKeyUp={e => {
-                    if (e.getModifierState && e.getModifierState("CapsLock")) setCapsLock(true);
-                    else setCapsLock(false);
-                  }}
-                  onBlur={() => setCapsLock(false)}
                 />
                 <Button
                   type="button"
