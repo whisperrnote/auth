@@ -486,7 +486,7 @@
                     "default": null
                 },
                 {
-                    "key": "2fa",
+                    "key": "twofa",
                     "type": "boolean",
                     "required": false,
                     "array": false,

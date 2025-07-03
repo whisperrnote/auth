@@ -49,5 +49,6 @@ export type User = Models.Document & {
   masterpass: boolean | null;
   userId: string;
   email: string;
+  twofa: boolean | null;
 }
 
