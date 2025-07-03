@@ -46,19 +46,16 @@ export class MasterPassCrypto {
   // Unlock vault with master password
   async unlock(masterPassword: string, userId: string): Promise<boolean> {
     try {
-      // Generate stronger, more unique salt
+      // SALT DERIVED ONLY FROM userId (consistent and unique per user)
       const encoder = new TextEncoder();
-      const userBytes = encoder.encode(userId + 'whisperrauth_salt_2024');
+      const userBytes = encoder.encode(userId);
       const userSalt = await crypto.subtle.digest('SHA-256', userBytes);
-      const additionalEntropy = await crypto.subtle.digest('SHA-512', encoder.encode(userId + Date.now()));
 
-      // Combine for 32-byte salt
-      const combinedSalt = new Uint8Array(MasterPassCrypto.SALT_SIZE);
-      combinedSalt.set(new Uint8Array(userSalt.slice(0, 16)));
-      combinedSalt.set(new Uint8Array(additionalEntropy.slice(0, 16)), 16);
+      // Use first 32 bytes of SHA-256 hash (which is already 32 bytes)
+      const combinedSalt = new Uint8Array(userSalt);
 
       const testKey = await this.deriveKey(masterPassword, combinedSalt);
-      
+
       // CRITICAL: Validate the key by testing against existing encrypted data
       const isValidPassword = await this.validateMasterPassword(testKey, userId);
       if (!isValidPassword) {
@@ -81,43 +78,62 @@ export class MasterPassCrypto {
   private async validateMasterPassword(testKey: CryptoKey, userId: string): Promise<boolean> {
     try {
       // Import the database modules to test against real encrypted data
-      const { AppwriteService } = await import('../../../lib/appwrite');
+      const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_CREDENTIALS_ID, Query } = await import('../../../lib/appwrite');
       
-      // Try to get any existing credential to test decryption
-      const credentials = await AppwriteService.listCredentials(userId, []);
+      // Get raw documents WITHOUT automatic decryption
+      const response = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_CREDENTIALS_ID,
+        [Query.equal('userId', userId), Query.limit(5)] // Get more docs to find encrypted ones
+      );
       
-      if (credentials.length === 0) {
+      if (response.documents.length === 0) {
         // No existing data to validate against - this is first time setup
         return true;
       }
 
-      // Test decryption with the first credential that has encrypted data
-      const testCredential = credentials.find(cred => 
-        cred.username || cred.password || cred.notes || cred.customFields
-      );
-
-      if (!testCredential) {
-        // No encrypted data to test against
-        return true;
-      }
-
-      // Try to decrypt one field to validate the password
-      if (testCredential.password) {
-        await this.testDecryption(testCredential.password, testKey);
-        return true;
-      }
+      // Look for any document with encrypted data to test against
+      let hasEncryptedData = false;
       
-      if (testCredential.username) {
-        await this.testDecryption(testCredential.username, testKey);
+      for (const doc of response.documents) {
+        // Check if this document has encrypted fields that look like base64
+        const hasEncryptedPassword = doc.password && 
+          typeof doc.password === 'string' && 
+          doc.password.length > 50 && // Encrypted data is much longer
+          /^[A-Za-z0-9+/]+=*$/.test(doc.password); // Base64 pattern
+          
+        const hasEncryptedUsername = doc.username && 
+          typeof doc.username === 'string' && 
+          doc.username.length > 50 &&
+          /^[A-Za-z0-9+/]+=*$/.test(doc.username);
+
+        if (hasEncryptedPassword) {
+          await this.testDecryption(doc.password, testKey);
+          hasEncryptedData = true;
+          break;
+        } else if (hasEncryptedUsername) {
+          await this.testDecryption(doc.username, testKey);
+          hasEncryptedData = true;
+          break;
+        }
+      }
+
+      // If no encrypted data found, this might be a fresh setup or unencrypted data
+      // In this case, we should allow the password (assume first time setup)
+      if (!hasEncryptedData) {
+        console.log('No encrypted data found to validate against - allowing password');
         return true;
       }
 
-      // If we reach here, no encrypted fields to test - assume valid
-      return true;
+      return true; // If we get here, decryption succeeded
 
     } catch (error) {
       // If any decryption fails, the password is wrong
-      console.log('Master password validation failed:', error.message);
+      if (error instanceof Error) {
+        console.log('Master password validation failed:', error.message);
+      } else {
+        console.log('Master password validation failed:', error);
+      }
       return false;
     }
   }
@@ -428,6 +444,15 @@ const decryptDocument = async (doc: any, collectionId: string) => {
 // - The vault timeout setting (in minutes) is stored in `localStorage` as 'vault_timeout_minutes' for user configuration.
 // - The master password itself and derived key are NEVER persisted to disk, localStorage, or sessionStorage.
 // - Activity patterns for suspicious activity detection are stored in `sessionStorage` as 'activity_pattern' (array of timestamps).
+// - The master password setup flag is stored in `localStorage` as 'masterpass_setup_{userId}' to know if the user has set a master password.
+//
+// All decrypted data and keys are kept only in memory and are cleared on lock or timeout. No sensitive cryptographic material is persisted beyond the session.
+// - The master password setup flag is stored in `localStorage` as 'masterpass_setup_{userId}' to know if the user has set a master password.
+//
+// All decrypted data and keys are kept only in memory and are cleared on lock or timeout. No sensitive cryptographic material is persisted beyond the session.
+// - The master password setup flag is stored in `localStorage` as 'masterpass_setup_{userId}' to know if the user has set a master password.
+//
+// All decrypted data and keys are kept only in memory and are cleared on lock or timeout. No sensitive cryptographic material is persisted beyond the session.
 // - The master password setup flag is stored in `localStorage` as 'masterpass_setup_{userId}' to know if the user has set a master password.
 //
 // All decrypted data and keys are kept only in memory and are cleared on lock or timeout. No sensitive cryptographic material is persisted beyond the session.

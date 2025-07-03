@@ -222,12 +222,6 @@ export class AppwriteService {
       APPWRITE_COLLECTION_CREDENTIALS_ID,
       [Query.equal('userId', userId), ...queries]
     );
-    
-    // Return raw documents without decryption if called during password validation
-    const isValidating = queries.includes('__validation__');
-    if (isValidating) {
-      return response.documents as Credentials[];
-    }
 
     return await Promise.all(
       response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
@@ -408,14 +402,14 @@ export class AppwriteService {
           try {
             result[field] = await decryptField(result[field]);
           } catch (error) {
-            // If decryption fails, it means vault is locked or wrong password
-            throw new Error(`Vault is locked or master password is incorrect`);
+            console.error(`Failed to decrypt field ${field}:`, error);
+            result[field] = '[DECRYPTION_FAILED]';
           }
         }
       }
     } catch (error) {
-      // Re-throw decryption errors to prevent access with wrong password
-      throw error;
+      console.error('Decryption module not available:', error);
+      // Return original document if decryption module can't be loaded
     }
 
     return result;
