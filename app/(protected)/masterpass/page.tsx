@@ -124,17 +124,29 @@ export default function MasterPassPage() {
                   onChange={(e) => setMasterPassword(e.target.value)}
                   required
                   autoFocus
-                  onInput={e => {
-                    // Fastest: check caps lock on every input event
+                  onKeyDown={e => {
+                    // Use getModifierState only for KeyboardEvent
                     if (
-                      "getModifierState" in e.nativeEvent &&
-                      (e.nativeEvent as KeyboardEvent).getModifierState("CapsLock")
+                      "getModifierState" in e &&
+                      (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
                     ) {
                       setCapsLock(true);
                     } else {
                       setCapsLock(false);
                     }
                   }}
+                  onKeyUp={e => {
+                    if (
+                      "getModifierState" in e &&
+                      (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                    ) {
+                      setCapsLock(true);
+                    } else {
+                      setCapsLock(false);
+                    }
+                  }}
+                  // Remove onInput: it does not reliably provide getModifierState for caps lock
+                  onBlur={() => setCapsLock(false)}
                 />
                 <Button
                   type="button"
