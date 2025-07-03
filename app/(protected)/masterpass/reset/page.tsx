@@ -3,34 +3,34 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { listMfaFactors, createMfaChallenge, completeMfaChallenge, addEmailFactor } from "@/lib/appwrite";
 
 export default function MasterpassResetPage() {
   const router = useRouter();
   const { user, resetMasterpass } = useAppwrite();
-  const [factors, setFactors] = useState<{ totp: boolean; email: boolean; phone: boolean } | null>(null);
-  const [selectedFactor, setSelectedFactor] = useState<"totp" | "email" | "recoverycode" | null>(null);
-  const [challengeId, setChallengeId] = useState<string | null>(null);
-  const [code, setCode] = useState("");
-  const [step, setStep] = useState<"verify" | "reset" | "done">("verify");
+  const [step, setStep] = useState<"reset" | "done">("reset");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Redirect to login if not logged in
   useEffect(() => {
     if (!user) {
       router.replace("/login");
-      return;
     }
-    (async () => {
-      try {
-        const mfaFactors = await listMfaFactors();
-        setFactors(mfaFactors);
-        if (mfaFactors.totp) setSelectedFactor("totp");
-        else if (mfaFactors.email) setSelectedFactor("email");
-        else setSelectedFactor(null);
+  }, [user, router]);
+
+  const handleReset = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await resetMasterpass();
+      setStep("done");
+    } catch (e: any) {
+      setError("Failed to reset master password");
+    }
+    setLoading(false);
+  };
       } catch {
         setFactors(null);
       }
