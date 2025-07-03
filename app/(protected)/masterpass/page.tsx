@@ -59,23 +59,27 @@ export default function MasterPassPage() {
           setLoading(false);
           return;
         }
-        // Mark as setup complete in DB (modular logic)
-        if (user) {
-          await setMasterpassFlag(user.$id, user.email);
-        }
-      }
-
-      // Attempt to unlock vault
-      const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '');
-      
-      if (success) {
-        // No need to update check value here; it's set during initial creation only
-        await refresh();
-        router.replace('/dashboard');
-      } else {
-        // Show specific error for wrong password
-        if (isFirstTime) {
+        
+        // Unlock vault with first-time flag
+        const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', true);
+        
+        if (success) {
+          // Mark as setup complete in DB and set check value
+          if (user) {
+            await setMasterpassFlag(user.$id, user.email);
+          }
+          await refresh();
+          router.replace('/dashboard');
+        } else {
           setError("Failed to set master password");
+        }
+      } else {
+        // Existing user - attempt to unlock vault normally
+        const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', false);
+        
+        if (success) {
+          await refresh();
+          router.replace('/dashboard');
         } else {
           setError("Incorrect master password. Please try again.");
         }

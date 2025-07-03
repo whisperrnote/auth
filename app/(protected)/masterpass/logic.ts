@@ -44,7 +44,7 @@ export class MasterPassCrypto {
   }
 
   // Unlock vault with master password
-  async unlock(masterPassword: string, userId: string): Promise<boolean> {
+  async unlock(masterPassword: string, userId: string, isFirstTime: boolean = false): Promise<boolean> {
     try {
       // SALT DERIVED ONLY FROM userId (consistent and unique per user)
       const encoder = new TextEncoder();
@@ -53,7 +53,15 @@ export class MasterPassCrypto {
       const combinedSalt = new Uint8Array(userSalt);
       const testKey = await this.deriveKey(masterPassword, combinedSalt);
 
-      // Only verify if check value exists
+      // For first-time setup, skip verification and just set the key
+      if (isFirstTime) {
+        this.masterKey = testKey;
+        this.isUnlocked = true;
+        sessionStorage.setItem('vault_unlocked', Date.now().toString());
+        return true;
+      }
+
+      // For existing users, verify the check value
       const isValidPassword = await this.verifyMasterpassCheck(testKey, userId);
       if (!isValidPassword) {
         return false;
@@ -61,8 +69,6 @@ export class MasterPassCrypto {
 
       this.masterKey = testKey;
       this.isUnlocked = true;
-
-      // Store unlock timestamp for auto-lock
       sessionStorage.setItem('vault_unlocked', Date.now().toString());
       return true;
     } catch (error) {
@@ -101,12 +107,14 @@ export class MasterPassCrypto {
       );
       const userDoc = response.documents[0];
       if (!userDoc || !userDoc.check) {
-        // No check value yet, treat as first time setup (should not happen on unlock)
+        // No check value yet, this should not happen for existing users
+        console.log('No check value found for existing user');
         return false;
       }
       const decrypted = await this.decryptCheckValue(userDoc.check, testKey);
       return decrypted === userId;
     } catch (error) {
+      console.log('Check value verification failed:', error);
       return false;
     }
   }
