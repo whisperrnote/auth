@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Copy } from "lucide-react";
+import { Copy, Edit, Trash2 } from "lucide-react";
 import clsx from "clsx";
 
 export default function CredentialItem({
   credential,
   onCopy,
   isDesktop,
+  onEdit,
+  onDelete,
 }: {
   credential: any;
   onCopy: (value: string) => void;
   isDesktop: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -64,6 +68,24 @@ export default function CredentialItem({
               <Copy className="h-5 w-5 text-[rgb(141,103,72)]" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={onEdit}
+            aria-label="Edit"
+          >
+            <Edit className="h-5 w-5 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={onDelete}
+            aria-label="Delete"
+          >
+            <Trash2 className="h-5 w-5 text-red-600" />
+          </Button>
         </div>
         {copied && (
           <span className="ml-2 text-xs text-green-600 animate-fade-in-out">Copied!</span>

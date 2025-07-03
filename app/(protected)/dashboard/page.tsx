@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { Folder, BookMarked, Layers } from "lucide-react";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { listCredentials, searchCredentials } from "@/lib/appwrite";
+import { createCredential, updateCredential, deleteCredential, listCredentials, searchCredentials } from "@/lib/appwrite";
 import CredentialItem from "@/components/app/dashboard/CredentialItem";
 import SearchBar from "@/components/app/dashboard/SearchBar";
+import CredentialDialog from "@/components/app/dashboard/CredentialDialog";
 import clsx from "clsx";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,8 @@ export default function DashboardPage() {
   const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
+  const [editCredential, setEditCredential] = useState<any | null>(null);
   const isDesktop = typeof window !== "undefined" ? window.innerWidth > 900 : true;
 
   // Fetch all credentials on mount
@@ -67,6 +70,38 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(value);
   };
 
+  // Add new credential
+  const handleAdd = () => {
+    setEditCredential(null);
+    setShowDialog(true);
+  };
+
+  // Edit credential
+  const handleEdit = (cred: any) => {
+    setEditCredential(cred);
+    setShowDialog(true);
+  };
+
+  // Delete credential
+  const handleDelete = async (cred: any) => {
+    if (!window.confirm("Delete this credential?")) return;
+    setLoading(true);
+    await deleteCredential(cred.$id);
+    const creds = await listCredentials(user.$id);
+    setCredentials(creds);
+    setFiltered(creds);
+    setLoading(false);
+  };
+
+  // Refresh credentials after add/edit
+  const refreshCredentials = async () => {
+    setLoading(true);
+    const creds = await listCredentials(user.$id);
+    setCredentials(creds);
+    setFiltered(creds);
+    setLoading(false);
+  };
+
   return (
     <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
       {/* Desktop AppBar */}
@@ -99,6 +134,9 @@ export default function DashboardPage() {
           <FilterChip label="Collection" icon={BookMarked} />
           <FilterChip label="Kind" icon={Layers} />
         </div>
+        <div className="flex justify-end mb-4">
+          <Button onClick={handleAdd}>+ Add Password</Button>
+        </div>
         {/* Recent Section */}
         <SectionTitle>Recent</SectionTitle>
         <div className="space-y-2 mb-6">
@@ -111,6 +149,8 @@ export default function DashboardPage() {
                 credential={cred}
                 onCopy={handleCopy}
                 isDesktop={isDesktop}
+                onEdit={() => handleEdit(cred)}
+                onDelete={() => handleDelete(cred)}
               />
             ))
           )}
@@ -127,45 +167,19 @@ export default function DashboardPage() {
                 credential={cred}
                 onCopy={handleCopy}
                 isDesktop={isDesktop}
+                onEdit={() => handleEdit(cred)}
+                onDelete={() => handleDelete(cred)}
               />
             ))
           )}
         </div>
       </div>
-    </div>
-  );
-}
-        {/* Filter chips */}
-        <div className="flex flex-wrap items-center py-4">
-          <FilterChip label="Folder" icon={Folder} />
-          <FilterChip label="Collection" icon={BookMarked} />
-          <FilterChip label="Kind" icon={Layers} />
-        </div>
-        {/* Recent Section */}
-        <SectionTitle>Recent</SectionTitle>
-        <div className="space-y-2 mb-6">
-          {[1, 2, 3].map((i) => (
-            <PasswordItem
-              key={i}
-              username={`user${i}@mail.com`}
-              hash="a1b2c3d4e5f6g7h8i9j0"
-              isDesktop={isDesktop}
-            />
-          ))}
-        </div>
-        {/* All Items Section */}
-        <SectionTitle>All Items</SectionTitle>
-        <div className="space-y-2">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <PasswordItem
-              key={i}
-              username={`demo${i + 1}@site.com`}
-              hash={`z9y8x7w6v5u4t3s2r1q${i + 1}`}
-              isDesktop={isDesktop}
-            />
-          ))}
-        </div>
-      </div>
+      <CredentialDialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        initial={editCredential}
+        onSaved={refreshCredentials}
+      />
     </div>
   );
 }

@@ -747,3 +747,31 @@ export async function resetMasterpassAndWipe(userId: string): Promise<void> {
 export async function searchCredentials(userId: string, searchTerm: string): Promise<Credentials[]> {
   return await AppwriteService.searchCredentials(userId, searchTerm);
 }
+
+/**
+ * List all credentials for a user (decrypted).
+ */
+export async function listCredentials(userId: string) {
+  return await AppwriteService.listCredentials(userId);
+}
+
+/**
+ * Create a new credential (encrypted).
+ */
+export async function createCredential(data: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>) {
+  return await AppwriteService.createCredential(data);
+}
+
+/**
+ * Update a credential by document ID (encrypted).
+ */
+export async function updateCredential(id: string, data: Partial<Credentials>) {
+  return await AppwriteService.updateCredential(id, data);
+}
+
+/**
+ * Delete a credential by document ID.
+ */
+export async function deleteCredential(id: string) {
+  return await AppwriteService.deleteCredential(id);
+}
