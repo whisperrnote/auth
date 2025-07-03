@@ -175,9 +175,16 @@ export default function MasterPassPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center flex flex-col gap-2">
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               Logout from Account
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => router.push("/masterpass/reset")}
+            >
+              Reset Master Password
             </Button>
           </div>
         </CardContent>

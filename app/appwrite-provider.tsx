@@ -11,6 +11,7 @@ import {
   APPWRITE_COLLECTION_SECURITYLOGS_ID,
   APPWRITE_COLLECTION_USER_ID,
   ID,
+  Query,
 } from "@/lib/appwrite";
 import { masterPassCrypto, createSecureDbWrapper } from "./(protected)/masterpass/logic";
 
@@ -25,6 +26,7 @@ interface AppwriteUser {
 interface AppwriteContextType {
   user: AppwriteUser | null;
   loading: boolean;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
@@ -35,8 +37,8 @@ interface AppwriteContextType {
   lockVault: () => void;
   lockApplication: () => void;
   isApplicationLocked: boolean;
-  // User collection id for masterpass tracking
   userCollectionId: string;
+  resetMasterpass: () => Promise<void>;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -111,6 +113,57 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
+  // --- Masterpass reset logic ---
+  const resetMasterpass = async () => {
+    // This should be called after 2FA/email verification is successful
+    // 1. Wipe all user data (credentials, totp, folders, etc)
+    // 2. Optionally, wipe user doc
+    // 3. Lock vault
+    // 4. Optionally, log out user
+    if (!user) return;
+    setLoading(true);
+    try {
+      // Delete all user data (credentials, totp, folders)
+      await Promise.all([
+        secureDb.listDocuments(APPWRITE_COLLECTION_CREDENTIALS_ID, [Query.equal("userId", user.$id)]).then((res: any) =>
+          Promise.all(res.documents.map((doc: any) =>
+            secureDb.deleteDocument(APPWRITE_COLLECTION_CREDENTIALS_ID, doc.$id)
+          ))
+        ),
+        secureDb.listDocuments(APPWRITE_COLLECTION_TOTPSECRETS_ID, [Query.equal("userId", user.$id)]).then((res: any) =>
+          Promise.all(res.documents.map((doc: any) =>
+            secureDb.deleteDocument(APPWRITE_COLLECTION_TOTPSECRETS_ID, doc.$id)
+          ))
+        ),
+        secureDb.listDocuments(APPWRITE_COLLECTION_FOLDERS_ID, [Query.equal("userId", user.$id)]).then((res: any) =>
+          Promise.all(res.documents.map((doc: any) =>
+            secureDb.deleteDocument(APPWRITE_COLLECTION_FOLDERS_ID, doc.$id)
+          ))
+        ),
+        secureDb.listDocuments(APPWRITE_COLLECTION_SECURITYLOGS_ID, [Query.equal("userId", user.$id)]).then((res: any) =>
+          Promise.all(res.documents.map((doc: any) =>
+            secureDb.deleteDocument(APPWRITE_COLLECTION_SECURITYLOGS_ID, doc.$id)
+          ))
+        ),
+        // Optionally, delete user doc
+        secureDb.listDocuments(APPWRITE_COLLECTION_USER_ID, [Query.equal("userId", user.$id)]).then((res: any) =>
+          Promise.all(res.documents.map((doc: any) =>
+            secureDb.deleteDocument(APPWRITE_COLLECTION_USER_ID, doc.$id)
+          ))
+        ),
+      ]);
+      // Lock vault and clear session
+      masterPassCrypto.lock();
+      setIsApplicationLocked(true);
+      setUser(null);
+      // Optionally, log out user
+      await appwriteAccount.deleteSession("current");
+    } catch (err) {
+      // Handle error if needed
+    }
+    setLoading(false);
+  };
+
   const lockVault = () => {
     masterPassCrypto.lock();
   };
@@ -131,6 +184,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
+        isAuthenticated: !!user,
         login,
         logout,
         register,
@@ -141,6 +195,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
         lockApplication,
         isApplicationLocked,
         userCollectionId: APPWRITE_COLLECTION_USER_ID,
+        resetMasterpass,
       }}
     >
       {children}

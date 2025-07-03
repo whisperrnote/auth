@@ -535,6 +535,8 @@ export async function completeEmailVerification(userId: string, secret: string):
   await appwriteAccount.updateVerification(userId, secret);
 }
 
+
+
 // --- Export everything ---
 export {
   appwriteClient,
