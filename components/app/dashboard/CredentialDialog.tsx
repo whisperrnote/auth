@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { Eye, EyeOff, RefreshCw, Plus, X } from "lucide-react";
 import Dialog from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createCredential, updateCredential } from "@/lib/appwrite";
 import { useAppwrite } from "@/app/appwrite-provider";
+import { generateRandomPassword } from "@/utils/password";
 
 export default function CredentialDialog({
   open,
@@ -17,15 +19,13 @@ export default function CredentialDialog({
   onSaved: () => void;
 }) {
   const { user } = useAppwrite();
+  const [showPassword, setShowPassword] = useState(false);
+  const [customFields, setCustomFields] = useState<Array<{id: string, label: string, value: string}>>([]);
   const [form, setForm] = useState({
     name: "",
     username: "",
     password: "",
     url: "",
-    notes: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initial) setForm(initial);

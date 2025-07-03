@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Copy, Edit, Trash2 } from "lucide-react";
+import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
 export default function CredentialItem({
@@ -17,12 +17,25 @@ export default function CredentialItem({
   onDelete: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleCopy = () => {
-    onCopy(credential.password);
+  const handleCopy = (value: string) => {
+    onCopy(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
   };
+
+  const getFaviconUrl = (url: string) => {
+    if (!url) return null;
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch {
+      return null;
+    }
+  };
+
+  const faviconUrl = getFaviconUrl(credential.url);
 
   return (
     <div
@@ -34,59 +47,90 @@ export default function CredentialItem({
     >
       <div className="flex items-center px-4 py-3">
         <div className="flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-[rgba(191,174,153,0.7)] flex items-center justify-center">
-            <span>
-              <svg width="24" height="24" fill="none">
-                <circle cx="12" cy="12" r="12" fill="#BFAE99" />
-                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-3.31 0-6 1.34-6 3v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1c0-1.66-2.69-3-6-3Z" fill="#8D6748"/>
-              </svg>
-            </span>
+          <div className="w-10 h-10 rounded-full bg-[rgba(191,174,153,0.7)] flex items-center justify-center overflow-hidden">
+            {faviconUrl ? (
+              <img src={faviconUrl} alt="" className="w-6 h-6" />
+            ) : (
+              <span className="text-[rgb(141,103,72)] font-bold text-sm">
+                {credential.name?.charAt(0)?.toUpperCase() || "?"}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex-1 ml-4">
-          <div className="font-semibold text-[rgb(141,103,72)]">{credential.name}</div>
-          <div className="text-[13px] font-mono text-[rgb(191,174,153)]">{credential.username}</div>
+
+        <div className="flex-1 ml-4 min-w-0">
+          <div className="font-semibold text-[rgb(141,103,72)] truncate">{credential.name}</div>
+          <div className="text-[13px] text-[rgb(191,174,153)] truncate">{credential.username}</div>
+          {isDesktop && (
+            <div className="text-[11px] text-[rgb(191,174,153)] font-mono mt-1">
+              {showPassword ? credential.password : "••••••••••••"}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-1">
+          {/* Copy Username */}
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full"
-            onClick={handleCopy}
-            aria-label="Copy"
+            className="rounded-full h-8 w-8"
+            onClick={() => handleCopy(credential.username)}
+            title="Copy Username"
           >
-            <Copy className="h-5 w-5 text-[rgb(141,103,72)]" />
+            <Copy className="h-4 w-4 text-[rgb(141,103,72)]" />
           </Button>
+
+          {/* Copy Password */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-8 w-8"
+            onClick={() => handleCopy(credential.password)}
+            title="Copy Password"
+          >
+            <Copy className="h-4 w-4 text-blue-600" />
+          </Button>
+
+          {/* Show/Hide Password (Desktop) */}
           {isDesktop && (
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full"
-              onClick={handleCopy}
-              aria-label="Copy"
+              className="rounded-full h-8 w-8"
+              onClick={() => setShowPassword(!showPassword)}
+              title={showPassword ? "Hide Password" : "Show Password"}
             >
-              <Copy className="h-5 w-5 text-[rgb(141,103,72)]" />
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-[rgb(141,103,72)]" />
+              ) : (
+                <Eye className="h-4 w-4 text-[rgb(141,103,72)]" />
+              )}
             </Button>
           )}
+
+          {/* Edit */}
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full"
+            className="rounded-full h-8 w-8"
             onClick={onEdit}
-            aria-label="Edit"
+            title="Edit"
           >
-            <Edit className="h-5 w-5 text-blue-600" />
+            <Edit className="h-4 w-4 text-orange-600" />
           </Button>
+
+          {/* Delete */}
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full"
+            className="rounded-full h-8 w-8"
             onClick={onDelete}
-            aria-label="Delete"
+            title="Delete"
           >
-            <Trash2 className="h-5 w-5 text-red-600" />
+            <Trash2 className="h-4 w-4 text-red-600" />
           </Button>
         </div>
+
         {copied && (
           <span className="ml-2 text-xs text-green-600 animate-fade-in-out">Copied!</span>
         )}

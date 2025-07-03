@@ -641,6 +641,13 @@ export async function listTotpSecrets(userId: string) {
 }
 
 /**
+ * Create a new folder.
+ */
+export async function createFolder(data: Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>) {
+  return await AppwriteService.createFolder(data);
+}
+
+/**
  * Create a new TOTP secret (encrypted).
  */
 export async function createTotpSecret(data: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>) {

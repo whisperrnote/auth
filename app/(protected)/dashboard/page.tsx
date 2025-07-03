@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Folder, BookMarked, Layers } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { createCredential, updateCredential, deleteCredential, listCredentials, searchCredentials } from "@/lib/appwrite";
 import CredentialItem from "@/components/app/dashboard/CredentialItem";
