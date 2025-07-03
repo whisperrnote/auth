@@ -57,28 +57,23 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <DropdownMenu
-            trigger={
-              <Button variant="ghost" size="sm">
-                {theme === "light" && <Sun className="h-4 w-4" />}
-                {theme === "dark" && <Moon className="h-4 w-4" />}
-                {theme === "system" && <Monitor className="h-4 w-4" />}
-              </Button>
-            }
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const nextTheme =
+                theme === "light"
+                  ? "dark"
+                  : theme === "dark"
+                  ? "system"
+                  : "light";
+              setTheme(nextTheme);
+            }}
           >
-            {themeOptions.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                onClick={() => setTheme(value)}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent rounded-md ${
-                  theme === value ? 'bg-accent' : ''
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </DropdownMenu>
+            {theme === "light" && <Sun className="h-4 w-4" />}
+            {theme === "dark" && <Moon className="h-4 w-4" />}
+            {theme === "system" && <Monitor className="h-4 w-4" />}
+          </Button>
 
           <DropdownMenu
             trigger={
