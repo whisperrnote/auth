@@ -75,10 +75,19 @@ export default function MasterPassPage() {
         // Redirect to dashboard
         router.replace('/dashboard');
       } else {
-        setError("Invalid master password");
+        // Show specific error for wrong password
+        if (isFirstTime) {
+          setError("Failed to set master password");
+        } else {
+          setError("Incorrect master password. Please try again.");
+        }
       }
-    } catch (err) {
-      setError("Failed to unlock vault");
+    } catch (err: any) {
+      if (err.message?.includes('Vault is locked') || err.message?.includes('master password is incorrect')) {
+        setError("Incorrect master password. Please try again.");
+      } else {
+        setError("Failed to unlock vault");
+      }
     }
     
     setLoading(false);

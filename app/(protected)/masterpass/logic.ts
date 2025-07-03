@@ -57,7 +57,15 @@ export class MasterPassCrypto {
       combinedSalt.set(new Uint8Array(userSalt.slice(0, 16)));
       combinedSalt.set(new Uint8Array(additionalEntropy.slice(0, 16)), 16);
 
-      this.masterKey = await this.deriveKey(masterPassword, combinedSalt);
+      const testKey = await this.deriveKey(masterPassword, combinedSalt);
+      
+      // CRITICAL: Validate the key by testing against existing encrypted data
+      const isValidPassword = await this.validateMasterPassword(testKey, userId);
+      if (!isValidPassword) {
+        return false;
+      }
+
+      this.masterKey = testKey;
       this.isUnlocked = true;
 
       // Store unlock timestamp for auto-lock
@@ -66,6 +74,77 @@ export class MasterPassCrypto {
     } catch (error) {
       console.error('Failed to unlock vault:', error);
       return false;
+    }
+  }
+
+  // Validate master password by testing decryption of existing data
+  private async validateMasterPassword(testKey: CryptoKey, userId: string): Promise<boolean> {
+    try {
+      // Import the database modules to test against real encrypted data
+      const { AppwriteService } = await import('../../../lib/appwrite');
+      
+      // Try to get any existing credential to test decryption
+      const credentials = await AppwriteService.listCredentials(userId, []);
+      
+      if (credentials.length === 0) {
+        // No existing data to validate against - this is first time setup
+        return true;
+      }
+
+      // Test decryption with the first credential that has encrypted data
+      const testCredential = credentials.find(cred => 
+        cred.username || cred.password || cred.notes || cred.customFields
+      );
+
+      if (!testCredential) {
+        // No encrypted data to test against
+        return true;
+      }
+
+      // Try to decrypt one field to validate the password
+      if (testCredential.password) {
+        await this.testDecryption(testCredential.password, testKey);
+        return true;
+      }
+      
+      if (testCredential.username) {
+        await this.testDecryption(testCredential.username, testKey);
+        return true;
+      }
+
+      // If we reach here, no encrypted fields to test - assume valid
+      return true;
+
+    } catch (error) {
+      // If any decryption fails, the password is wrong
+      console.log('Master password validation failed:', error.message);
+      return false;
+    }
+  }
+
+  // Test decryption with a specific key (without setting it as the master key)
+  private async testDecryption(encryptedData: string, testKey: CryptoKey): Promise<string> {
+    try {
+      // Decode base64
+      const combined = new Uint8Array(
+        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+      );
+
+      // Extract IV and encrypted data
+      const iv = combined.slice(0, MasterPassCrypto.IV_SIZE);
+      const encrypted = combined.slice(MasterPassCrypto.IV_SIZE);
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        testKey,
+        encrypted
+      );
+
+      const decoder = new TextDecoder();
+      const plaintext = decoder.decode(decrypted);
+      return JSON.parse(plaintext);
+    } catch (error) {
+      throw new Error('Test decryption failed - invalid master password');
     }
   }
 

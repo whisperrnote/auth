@@ -82,7 +82,7 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
               </Button>
             }
           >
-            <div className="flex flex-col px-3 py-2">
+            <div className="flex flex-col px-3 py-2 bg-background shadow-lg rounded-md border border-border">
               <span className="font-medium">{user?.name || user?.email}</span>
               <span className="text-xs text-muted-foreground">{user?.email}</span>
             </div>
