@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
+import { AppwriteService } from "@/lib/appwrite";
 
 export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError<string | null>(null); // Fix the syntax error
+  const [error, setError] = useState<string | null>(null); // Fixed syntax
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
   
@@ -22,22 +23,14 @@ export default function MasterPassPage() {
 
   // Check masterpass status from database
   useEffect(() => {
-    if (!user || !secureDb || !userCollectionId) return;
+    if (!user) return;
     setLoading(true);
-    // Try to fetch user doc and check masterpass flag
-    secureDb
-      .listDocuments(userCollectionId, [`equal("userId","${user.$id}")`])
-      .then((res: any) => {
-        const doc = res.documents?.[0];
-        if (doc && doc.masterpass === true) {
-          setIsFirstTime(false);
-        } else {
-          setIsFirstTime(true);
-        }
-      })
+    // Use modular AppwriteService for masterpass detection
+    AppwriteService.hasMasterpass(user.$id)
+      .then((present) => setIsFirstTime(!present))
       .catch(() => setIsFirstTime(true))
       .finally(() => setLoading(false));
-  }, [user, secureDb, userCollectionId]);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,25 +50,9 @@ export default function MasterPassPage() {
           setLoading(false);
           return;
         }
-        // Mark as setup complete in DB
-        // Try to find user doc, update or create
-        const userDocRes = await secureDb.listDocuments(userCollectionId, [`equal("userId","${user?.$id || ""}")`]);
-        if (userDocRes.documents?.length > 0) {
-          await secureDb.updateDocument(
-            userCollectionId,
-            userDocRes.documents[0].$id,
-            { masterpass: true }
-          );
-        } else if (user) {
-          await secureDb.createDocument(
-            userCollectionId,
-            undefined,
-            {
-              userId: user.$id,
-              email: user.email,
-              masterpass: true,
-            }
-          );
+        // Mark as setup complete in DB (modular logic)
+        if (user) {
+          await AppwriteService.setMasterpassFlag(user.$id, user.email);
         }
       }
 
@@ -86,6 +63,10 @@ export default function MasterPassPage() {
         // Redirect back to intended page or dashboard
         const returnTo = sessionStorage.getItem('masterpass_return_to') || '/dashboard';
         sessionStorage.removeItem('masterpass_return_to');
+        // Immediately re-check masterpass status for consistency
+        if (user) {
+          setIsFirstTime(!(await AppwriteService.hasMasterpass(user.$id)));
+        }
         router.replace(returnTo);
       } else {
         setError("Invalid master password");

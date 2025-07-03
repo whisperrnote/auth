@@ -226,6 +226,31 @@ export class AppwriteService {
     };
   }
 
+  /**
+   * Checks if the user has set up a master password (returns true if present in DB).
+   */
+  static async hasMasterpass(userId: string): Promise<boolean> {
+    const userDoc = await this.getUserDoc(userId);
+    return !!(userDoc && userDoc.masterpass === true);
+  }
+
+  /**
+   * Sets the masterpass flag for the user in the database.
+   * If the user doc exists, updates it; otherwise, creates it.
+   */
+  static async setMasterpassFlag(userId: string, email: string): Promise<void> {
+    const userDoc = await this.getUserDoc(userId);
+    if (userDoc && userDoc.$id) {
+      await this.updateUserDoc(userDoc.$id, { masterpass: true });
+    } else {
+      await this.createUserDoc({
+        userId,
+        email,
+        masterpass: true,
+      });
+    }
+  }
+
   // Read with automatic decryption
   static async getCredential(id: string): Promise<Credential> {
     const doc = await appwriteDatabases.getDocument(
