@@ -134,6 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="sm"
+                className="w-full justify-start gap-3 text-destructive hover:text-destructive"
                 onClick={logout}
               >
                 <LogOut className="h-4 w-4" />
