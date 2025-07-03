@@ -19,6 +19,7 @@ export default function MasterPassPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
+  const [confirmCapsLock, setConfirmCapsLock] = useState(false);
   
   const { user, secureDb, userCollectionId } = useAppwrite();
   const router = useRouter();
@@ -180,9 +181,9 @@ export default function MasterPassPage() {
                         "getModifierState" in e &&
                         (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
                       ) {
-                        setCapsLock(true);
+                        setConfirmCapsLock(true);
                       } else {
-                        setCapsLock(false);
+                        setConfirmCapsLock(false);
                       }
                     }}
                     onKeyUp={e => {
@@ -190,12 +191,12 @@ export default function MasterPassPage() {
                         "getModifierState" in e &&
                         (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
                       ) {
-                        setCapsLock(true);
+                        setConfirmCapsLock(true);
                       } else {
-                        setCapsLock(false);
+                        setConfirmCapsLock(false);
                       }
                     }}
-                    onBlur={() => setCapsLock(false)}
+                    onBlur={() => setConfirmCapsLock(false)}
                   />
                   <Button
                     type="button"
@@ -208,7 +209,7 @@ export default function MasterPassPage() {
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-                {capsLock && (
+                {confirmCapsLock && (
                   <div className="text-xs text-yellow-700 mt-1">
                     <span className="font-semibold">Caps Lock is ON</span>
                   </div>
