@@ -17,6 +17,7 @@ export default function MasterPassPage() {
   const [error, setError] = useState<string | null>(null);
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   
   const { user, secureDb, userCollectionId } = useAppwrite();
@@ -125,7 +126,6 @@ export default function MasterPassPage() {
                   required
                   autoFocus
                   onKeyDown={e => {
-                    // Use getModifierState only for KeyboardEvent
                     if (
                       "getModifierState" in e &&
                       (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
@@ -145,7 +145,6 @@ export default function MasterPassPage() {
                       setCapsLock(false);
                     }
                   }}
-                  // Remove onInput: it does not reliably provide getModifierState for caps lock
                   onBlur={() => setCapsLock(false)}
                 />
                 <Button
@@ -153,7 +152,8 @@ export default function MasterPassPage() {
                   variant="ghost"
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -170,7 +170,7 @@ export default function MasterPassPage() {
                 <label className="text-sm font-medium">Confirm Master Password</label>
                 <div className="relative">
                   <Input
-                    type={showPassword ? "text" : "password"}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your master password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -202,14 +202,24 @@ export default function MasterPassPage() {
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
                 {capsLock && (
                   <div className="text-xs text-yellow-700 mt-1">
                     <span className="font-semibold">Caps Lock is ON</span>
+                  </div>
+                )}
+                {confirmPassword.length > 0 && (
+                  <div className="text-xs mt-1">
+                    {confirmPassword === masterPassword ? (
+                      <span className="text-green-700">Passwords match</span>
+                    ) : (
+                      <span className="text-red-700">Passwords do not match</span>
+                    )}
                   </div>
                 )}
               </div>
