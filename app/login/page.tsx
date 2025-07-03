@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Shield, Eye, EyeOff, Moon, Sun, Monitor } from "lucide-react";
+import { Eye, EyeOff, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { useTheme, useAuth } from "@/app/providers";
+import { useTheme } from "@/app/providers";
+import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -16,16 +17,18 @@ export default function LoginPage() {
     password: "",
   });
   const { theme, setTheme } = useTheme();
-  const { login } = useAuth();
+  const { login, loading } = useAppwrite();
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
       await login(formData.email, formData.password);
-      router.replace("/app");
+      router.replace("/dashboard");
     } catch (err: any) {
-      alert(err?.message || "Login failed");
+      setError(err?.message || "Login failed");
     }
   };
 
@@ -107,9 +110,9 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
-
-              <Button type="submit" className="w-full">
-                Sign In
+              {error && <div className="text-red-600 text-sm">{error}</div>}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 

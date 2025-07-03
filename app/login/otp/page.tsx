@@ -1,54 +1,58 @@
 "use client";
 import { useState } from "react";
-import { useAuth } from "@/app/providers";
+import { useAppwrite } from "@/app/appwrite-provider";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 export default function OTPLoginPage() {
-  const { sendMagicLink, sendOTP, verifyOTP } = useAuth();
+  const { loading } = useAppwrite();
   const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [userId, setUserId] = useState("");
   const [secret, setSecret] = useState("");
-  const [mode, setMode] = useState<"magic" | "otp">("magic");
+  const [securityPhrase, setSecurityPhrase] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSend = async () => {
+  // These should be implemented in your AppwriteProvider for real use
+  async function sendOTP(email: string) {
+    setError(null);
     setMessage("");
     try {
-      if (mode === "magic") {
-        await sendMagicLink(email, window.location.origin + "/login");
-        setMessage("Magic link sent! Check your email.");
-      } else {
-        await sendOTP(email);
-        setOtpSent(true);
-        setMessage("OTP sent! Check your email.");
-      }
+      // @ts-ignore
+      const resp = await window.appwriteAccount.createEmailToken(
+        window.ID.unique(),
+        email,
+        true // enable security phrase
+      );
+      setUserId(resp.userId);
+      setSecurityPhrase(resp.phrase || "");
+      setOtpSent(true);
+      setMessage("OTP sent! Check your email.");
     } catch (e: any) {
-      setMessage(e.message || "Error sending link/OTP.");
+      setError(e.message || "Error sending OTP.");
     }
-  };
+  }
 
-  const handleVerify = async () => {
+  async function verifyOTP(userId: string, secret: string) {
+    setError(null);
     setMessage("");
     try {
-      await verifyOTP(userId, secret);
+      // @ts-ignore
+      await window.appwriteAccount.createSession(userId, secret);
       setMessage("Logged in!");
+      window.location.href = "/dashboard";
     } catch (e: any) {
-      setMessage(e.message || "Invalid OTP.");
+      setError(e.message || "Invalid OTP.");
     }
-  };
+  }
 
   return (
     <div className="flex justify-center items-center min-h-screen">
       <Card>
         <CardContent className="p-6 space-y-4">
-          <h2 className="text-xl font-bold mb-2">Sign in with {mode === "magic" ? "Magic Link" : "OTP"}</h2>
-          <div className="flex gap-2 mb-2">
-            <Button variant={mode === "magic" ? "default" : "outline"} onClick={() => setMode("magic")}>Magic Link</Button>
-            <Button variant={mode === "otp" ? "default" : "outline"} onClick={() => setMode("otp")}>OTP</Button>
-          </div>
-          {!otpSent || mode === "magic" ? (
+          <h2 className="text-xl font-bold mb-2">Sign in with OTP</h2>
+          {!otpSent ? (
             <>
               <input
                 className="input w-full"
@@ -57,18 +61,24 @@ export default function OTPLoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
-              <Button className="w-full" onClick={handleSend}>
-                {mode === "magic" ? "Send Magic Link" : "Send OTP"}
+              <Button className="w-full" onClick={() => sendOTP(email)} disabled={loading}>
+                Send OTP
               </Button>
             </>
           ) : (
             <>
+              {securityPhrase && (
+                <div className="mb-2 text-sm text-muted-foreground">
+                  <strong>Security Phrase:</strong> {securityPhrase}
+                </div>
+              )}
               <input
                 className="input w-full"
                 type="text"
                 placeholder="User ID (from email)"
                 value={userId}
                 onChange={e => setUserId(e.target.value)}
+                disabled
               />
               <input
                 className="input w-full"
@@ -77,10 +87,13 @@ export default function OTPLoginPage() {
                 value={secret}
                 onChange={e => setSecret(e.target.value)}
               />
-              <Button className="w-full" onClick={handleVerify}>Verify OTP</Button>
+              <Button className="w-full" onClick={() => verifyOTP(userId, secret)} disabled={loading}>
+                Verify OTP
+              </Button>
             </>
           )}
-          {message && <div className="text-sm text-center text-muted-foreground">{message}</div>}
+          {message && <div className="text-green-700 text-sm text-center">{message}</div>}
+          {error && <div className="text-red-600 text-sm text-center">{error}</div>}
         </CardContent>
       </Card>
     </div>

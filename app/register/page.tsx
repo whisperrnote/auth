@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Shield, Eye, EyeOff, Moon, Sun, Monitor } from "lucide-react";
+import { Eye, EyeOff, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
-import { useAuth } from "@/app/providers";
+import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -20,20 +20,22 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const { theme, setTheme } = useTheme();
-  const { register } = useAuth();
+  const { register, loading } = useAppwrite();
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match");
+      setError("Passwords don't match");
       return;
     }
     try {
       await register(formData.email, formData.password, formData.name);
-      router.replace("/app");
+      router.replace("/dashboard");
     } catch (err: any) {
-      alert(err?.message || "Registration failed");
+      setError(err?.message || "Registration failed");
     }
   };
 
@@ -147,9 +149,9 @@ export default function RegisterPage() {
                   </Button>
                 </div>
               </div>
-
-              <Button type="submit" className="w-full">
-                Create Account
+              {error && <div className="text-red-600 text-sm">{error}</div>}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating..." : "Create Account"}
               </Button>
             </form>
 
