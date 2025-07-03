@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { listMfaFactors, createMfaChallenge, completeMfaChallenge } from "@/lib/appwrite";
+import { useAppwrite } from "@/app/appwrite-provider";
+import { hasMasterpass } from "@/lib/appwrite";
 
 export default function TwofaAccessPage() {
   const router = useRouter();
+  const { user, isVaultUnlocked } = useAppwrite();
   const [factors, setFactors] = useState<{ totp: boolean; email: boolean; phone: boolean } | null>(null);
   const [selectedFactor, setSelectedFactor] = useState<"totp" | "email" | "phone" | "recoverycode" | null>(null);
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -20,6 +23,19 @@ export default function TwofaAccessPage() {
   useEffect(() => {
     loadFactors();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        const hasMp = await hasMasterpass(user.$id);
+        if (!hasMp || !isVaultUnlocked()) {
+          router.replace("/masterpass");
+        } else {
+          router.replace("/dashboard");
+        }
+      })();
+    }
+  }, [user, router, isVaultUnlocked]);
 
   const loadFactors = async () => {
     try {

@@ -11,6 +11,7 @@ import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query, ID } from "@/lib/appwrite";
 import { checkMfaRequired } from "@/lib/appwrite";
+import { hasMasterpass } from "@/lib/appwrite";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -28,6 +29,8 @@ export default function LoginPage() {
     sendMagicUrl,
     completeMagicUrl,
     loading,
+    user,
+    isVaultUnlocked,
   } = useAppwrite();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +71,20 @@ export default function LoginPage() {
       if (otpTimer.current) clearInterval(otpTimer.current);
     };
   }, [otpCooldown]);
+
+  // Redirect if already logged in and needs master password
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        const hasMp = await hasMasterpass(user.$id);
+        if (!hasMp || !isVaultUnlocked()) {
+          router.replace("/masterpass");
+        } else {
+          router.replace("/dashboard");
+        }
+      })();
+    }
+  }, [user, router, isVaultUnlocked]);
 
   // Handlers
   const handleSubmit = async (e: React.FormEvent) => {
