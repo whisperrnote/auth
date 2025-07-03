@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Shield,
@@ -22,6 +22,7 @@ import { useTheme } from "@/app/providers"; // This should be useAppwrite
 import clsx from "clsx";
 import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
 import { useAppwrite } from "@/app/appwrite-provider";
+import TwofaSetup from "@/components/overlays/twofaSetup";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -34,11 +35,22 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [dangerLoading, setDangerLoading] = useState(false);
   const [vaultTimeout, setVaultTimeoutState] = useState(getVaultTimeout());
+  const [showTwofa, setShowTwofa] = useState(false);
+  const [twofaEnabled, setTwofaEnabled] = useState(user?.twofa ?? false);
 
-  // Responsive: single column on mobile, two columns on desktop
-  // Animate card appearance (fade-in)
-  // Animate button presses (ripple/highlight)
-  // Animate error/success messages (fade-in-out)
+  // Optionally, fetch latest 2fa status on mount
+  useEffect(() => {
+    // If userId is available, fetch latest user doc
+    if (user?.userId) {
+      appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        [Query.equal("userId", user.userId)]
+      ).then(resp => {
+        setTwofaEnabled(resp.documents[0]?.twofa ?? false);
+      });
+    }
+  }, [user?.userId]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -157,9 +169,13 @@ export default function SettingsPage() {
                 <Key className="h-4 w-4" />
                 Change Password
               </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
+              <Button
+                variant={twofaEnabled ? "default" : "outline"}
+                className="w-full justify-start gap-2"
+                onClick={() => setShowTwofa(true)}
+              >
                 <Shield className="h-4 w-4" />
-                Setup Two-Factor Authentication
+                {twofaEnabled ? "Manage Two-Factor Authentication" : "Setup Two-Factor Authentication"}
               </Button>
               <Button variant="outline" className="w-full justify-start gap-2">
                 <Smartphone className="h-4 w-4" />
@@ -359,6 +375,14 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+      {showTwofa && (
+        <TwofaSetup
+          open={showTwofa}
+          onClose={() => setShowTwofa(false)}
+          user={user}
+          onStatusChange={setTwofaEnabled}
+        />
+      )}
     </div>
   );
 }

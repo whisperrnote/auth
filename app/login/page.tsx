@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
 import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
+import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -67,7 +68,19 @@ export default function LoginPage() {
     if (mode === "password") {
       try {
         await login(formData.email, formData.password);
-        router.replace("/dashboard");
+        // --- 2FA check ---
+        // Fetch user doc by email (assuming email is unique)
+        const resp = await appwriteDatabases.listDocuments(
+          APPWRITE_DATABASE_ID,
+          APPWRITE_COLLECTION_USER_ID,
+          [Query.equal("email", formData.email)]
+        );
+        const userDoc = resp.documents[0];
+        if (userDoc?.twofa) {
+          router.replace("/twofa/access");
+        } else {
+          router.replace("/dashboard");
+        }
       } catch (err: any) {
         setError(err?.message || "Login failed");
       }
@@ -75,7 +88,18 @@ export default function LoginPage() {
       try {
         // @ts-ignore
         await window.appwriteAccount.createSession(formData.userId, formData.otp);
-        router.replace("/dashboard");
+        // --- 2FA check ---
+        const resp = await appwriteDatabases.listDocuments(
+          APPWRITE_DATABASE_ID,
+          APPWRITE_COLLECTION_USER_ID,
+          [Query.equal("userId", formData.userId)]
+        );
+        const userDoc = resp.documents[0];
+        if (userDoc?.twofa) {
+          router.replace("/twofa/access");
+        } else {
+          router.replace("/dashboard");
+        }
       } catch (err: any) {
         setError(err?.message || "Invalid OTP.");
       }
