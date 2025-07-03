@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers"; // This should be useAppwrite
 import clsx from "clsx";
 import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
+import { useAppwrite } from "@/app/appwrite-provider";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
