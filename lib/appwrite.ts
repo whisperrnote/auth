@@ -26,7 +26,7 @@ const ENCRYPTED_FIELDS = {
   totpSecrets: ['secretKey'],
   folders: [],
   securityLogs: [],
-  user: [],
+  user: [], // Remove 'check' from here - it's manually encrypted
 } as const;
 
 function getPlaintextFields<T>(allFields: (keyof T)[], encrypted: readonly string[]): string[] {
@@ -77,7 +77,7 @@ export const COLLECTION_SCHEMAS = {
     encrypted: ENCRYPTED_FIELDS.user,
     plaintext: getPlaintextFields<User>(
       [
-        'userId', 'email', 'masterpass', 'twofa', '$id', '$createdAt', '$updatedAt'
+        'userId', 'email', 'masterpass', 'twofa', 'check', '$id', '$createdAt', '$updatedAt'
       ],
       ENCRYPTED_FIELDS.user
     ),
@@ -378,17 +378,28 @@ export class AppwriteService {
     const schema = COLLECTION_SCHEMAS[collectionType];
     const result = { ...data };
 
-    const { encryptField } = await import('../app/(protected)/masterpass/logic');
+    try {
+      const { encryptField, masterPassCrypto } = await import('../app/(protected)/masterpass/logic');
 
-    for (const field of schema.encrypted) {
-      if (result[field] !== undefined && result[field] !== null && result[field] !== '') {
-        try {
-          result[field] = await encryptField(result[field]);
-        } catch (error) {
-          console.error(`Failed to encrypt field ${field}:`, error);
-          throw new Error(`Encryption failed for ${field}`);
+      // Check if vault is unlocked before attempting encryption
+      if (!masterPassCrypto.isVaultUnlocked()) {
+        throw new Error('Vault is locked - cannot encrypt data');
+      }
+
+      for (const field of schema.encrypted) {
+        if (result[field] !== undefined && result[field] !== null && result[field] !== '') {
+          try {
+            console.log(`Encrypting field: ${field} for collection: ${collectionType}`);
+            result[field] = await encryptField(result[field]);
+          } catch (error) {
+            console.error(`Failed to encrypt field ${field}:`, error);
+            throw new Error(`Encryption failed for ${field}: ${error}`);
+          }
         }
       }
+    } catch (importError) {
+      console.error('Failed to import encryption module:', importError);
+      throw new Error('Encryption module not available');
     }
 
     return result;
@@ -399,11 +410,18 @@ export class AppwriteService {
     const result = { ...doc };
 
     try {
-      const { decryptField } = await import('../app/(protected)/masterpass/logic');
+      const { decryptField, masterPassCrypto } = await import('../app/(protected)/masterpass/logic');
+
+      // Check if vault is unlocked before attempting decryption
+      if (!masterPassCrypto.isVaultUnlocked()) {
+        console.warn('Vault is locked - returning encrypted data as-is');
+        return result;
+      }
 
       for (const field of schema.encrypted) {
         if (result[field] !== undefined && result[field] !== null && result[field] !== '') {
           try {
+            console.log(`Decrypting field: ${field} for collection: ${collectionType}`);
             result[field] = await decryptField(result[field]);
           } catch (error) {
             console.error(`Failed to decrypt field ${field}:`, error);

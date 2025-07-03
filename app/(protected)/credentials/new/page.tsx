@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { createCredential, createFolder, createTotpSecret } from "@/lib/appwrite";
 import { generateRandomPassword } from "@/utils/password";
+import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 
 export default function NewCredentialPage() {
   const router = useRouter();
@@ -50,10 +51,30 @@ export default function NewCredentialPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    
     try {
-      if (!user) throw new Error("Not authenticated");
+      if (!user?.$id) {
+        throw new Error("Not authenticated");
+      }
+
+      // Check if vault is unlocked before proceeding
+      if (!masterPassCrypto.isVaultUnlocked()) {
+        throw new Error("Vault is locked. Please unlock your vault first.");
+      }
+
+      console.log('Form submission started:', formData.type);
+      console.log('Vault unlocked:', masterPassCrypto.isVaultUnlocked());
+
       if (formData.type === "credential") {
-        await createCredential({
+        console.log('Creating credential with data:', {
+          userId: user.$id,
+          name: formData.name,
+          username: formData.username,
+          hasPassword: !!formData.password,
+          // Don't log password for security
+        });
+
+        const credentialData = {
           userId: user.$id,
           name: formData.name,
           url: formData.url || null,
@@ -66,7 +87,12 @@ export default function NewCredentialPage() {
           faviconUrl: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        });
+        };
+
+        console.log('About to call createCredential...');
+        const result = await createCredential(credentialData);
+        console.log('Credential created successfully:', result);
+        
         router.push("/dashboard");
       } else if (formData.type === "folder") {
         await createFolder({
@@ -78,6 +104,11 @@ export default function NewCredentialPage() {
         });
         router.push("/dashboard");
       } else if (formData.type === "totp") {
+        // Check vault for TOTP as well
+        if (!masterPassCrypto.isVaultUnlocked()) {
+          throw new Error("Vault is locked. Please unlock your vault first.");
+        }
+        
         await createTotpSecret({
           userId: user.$id,
           issuer: formData.name,
@@ -93,10 +124,21 @@ export default function NewCredentialPage() {
         router.push("/totp");
       }
     } catch (e: any) {
-      setError(e.message || "Failed to save.");
+      console.error('Failed to save credential:', e);
+      console.error('Error stack:', e.stack);
+      setError(e.message || "Failed to save credential. Please check if your vault is unlocked.");
     }
     setLoading(false);
   };
+
+  // Don't render if user is not available
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <div className="text-lg text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

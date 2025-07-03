@@ -330,8 +330,12 @@ export class MasterPassCrypto {
 
   // Encrypt data before sending to database
   async encryptData(data: any): Promise<string> {
+    console.log('encryptData called, isVaultUnlocked:', this.isVaultUnlocked());
+    console.log('masterKey exists:', !!this.masterKey);
+    console.log('isUnlocked flag:', this.isUnlocked);
+
     if (!this.isVaultUnlocked()) {
-      throw new Error('Vault is locked');
+      throw new Error('Vault is locked - cannot encrypt data');
     }
 
     try {
@@ -353,10 +357,12 @@ export class MasterPassCrypto {
       combined.set(new Uint8Array(encrypted), iv.length);
 
       // Return base64 encoded string
-      return btoa(String.fromCharCode(...combined));
+      const result = btoa(String.fromCharCode(...combined));
+      console.log('Encryption successful, result length:', result.length);
+      return result;
     } catch (error) {
       console.error('Encryption failed:', error);
-      throw new Error('Failed to encrypt data');
+      throw new Error('Failed to encrypt data: ' + error);
     }
   }
 

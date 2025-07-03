@@ -39,12 +39,15 @@ export default function DashboardPage() {
 
   // Fetch all credentials on mount
   useEffect(() => {
-    if (!user) return;
+    if (!user?.$id) return;
     setLoading(true);
     listCredentials(user.$id)
       .then((creds) => {
         setCredentials(creds);
         setFiltered(creds);
+      })
+      .catch((error) => {
+        console.error('Failed to load credentials:', error);
       })
       .finally(() => setLoading(false));
   }, [user]);
@@ -53,14 +56,19 @@ export default function DashboardPage() {
   const handleSearch = useCallback(
     async (term: string) => {
       setSearchTerm(term);
-      if (!user) return;
+      if (!user?.$id) return;
       if (!term) {
         setFiltered(credentials);
       } else {
         setLoading(true);
-        const results = await searchCredentials(user.$id, term);
-        setFiltered(results);
-        setLoading(false);
+        try {
+          const results = await searchCredentials(user.$id, term);
+          setFiltered(results);
+        } catch (error) {
+          console.error('Search failed:', error);
+        } finally {
+          setLoading(false);
+        }
       }
     },
     [user, credentials]
@@ -85,23 +93,44 @@ export default function DashboardPage() {
 
   // Delete credential
   const handleDelete = async (cred: any) => {
+    if (!user?.$id) return;
     if (!window.confirm("Delete this credential?")) return;
     setLoading(true);
-    await deleteCredential(cred.$id);
-    const creds = await listCredentials(user.$id);
-    setCredentials(creds);
-    setFiltered(creds);
-    setLoading(false);
+    try {
+      await deleteCredential(cred.$id);
+      const creds = await listCredentials(user.$id);
+      setCredentials(creds);
+      setFiltered(creds);
+    } catch (error) {
+      console.error('Failed to delete credential:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Refresh credentials after add/edit
   const refreshCredentials = async () => {
+    if (!user?.$id) return;
     setLoading(true);
-    const creds = await listCredentials(user.$id);
-    setCredentials(creds);
-    setFiltered(creds);
-    setLoading(false);
+    try {
+      const creds = await listCredentials(user.$id);
+      setCredentials(creds);
+      setFiltered(creds);
+    } catch (error) {
+      console.error('Failed to refresh credentials:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Don't render if user is not available
+  if (!user) {
+    return (
+      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex items-center justify-center">
+        <div className="text-lg text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">

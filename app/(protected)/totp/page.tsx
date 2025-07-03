@@ -18,11 +18,18 @@ export default function TOTPPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.$id) return;
     setLoading(true);
+    console.log('Loading TOTP secrets for user:', user.$id);
     listTotpSecrets(user.$id)
-      .then(setTotpCodes)
-      .catch(() => setTotpCodes([]))
+      .then((secrets) => {
+        console.log('TOTP secrets loaded:', secrets.length);
+        setTotpCodes(secrets);
+      })
+      .catch((error) => {
+        console.error('Failed to load TOTP secrets:', error);
+        setTotpCodes([]);
+      })
       .finally(() => setLoading(false));
   }, [user, showNew]);
 
@@ -34,6 +41,7 @@ export default function TOTPPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
+    if (!user?.$id) return;
     if (!confirm("Delete this TOTP code?")) return;
     setLoading(true);
     setError(null);
@@ -41,6 +49,7 @@ export default function TOTPPage() {
       await deleteTotpSecret(id);
       setTotpCodes((codes) => codes.filter((c) => c.$id !== id));
     } catch (e: any) {
+      console.error('Failed to delete TOTP:', e);
       setError(e.message || "Failed to delete TOTP code.");
     }
     setLoading(false);

@@ -109,7 +109,9 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   };
 
   const isVaultUnlocked = () => {
-    return masterPassCrypto.isVaultUnlocked();
+    const unlocked = masterPassCrypto.isVaultUnlocked();
+    console.log('Vault unlock status:', unlocked);
+    return unlocked;
   };
 
   // AUTH FUNCTIONS
