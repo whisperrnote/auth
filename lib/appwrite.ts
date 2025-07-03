@@ -616,3 +616,73 @@ export {
   // completeMfaChallenge,
   // checkMfaRequired,
 };
+
+/**
+ * List all TOTP secrets for a user (decrypted).
+ */
+export async function listTotpSecrets(userId: string) {
+  return await AppwriteService.listTOTPSecrets(userId);
+}
+
+/**
+ * Create a new TOTP secret (encrypted).
+ */
+export async function createTotpSecret(data: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>) {
+  return await AppwriteService.createTOTPSecret(data);
+}
+
+/**
+ * Delete a TOTP secret by document ID.
+ */
+export async function deleteTotpSecret(id: string) {
+  return await AppwriteService.deleteTOTPSecret(id);
+}
+
+/**
+ * Update user profile (name/email).
+ */
+export async function updateUserProfile(userId: string, data: { name?: string; email?: string }) {
+  // Update Appwrite account name/email if changed
+  if (data.name) await appwriteAccount.updateName(data.name);
+  if (data.email) await appwriteAccount.updateEmail(data.email, ""); // Password required if changing email
+  // Update user doc in DB if needed
+  const userDoc = await AppwriteService.getUserDoc(userId);
+  if (userDoc && userDoc.$id) {
+    await AppwriteService.updateUserDoc(userDoc.$id, data);
+  }
+}
+
+/**
+ * Export all user data (credentials, totp, folders).
+ */
+export async function exportAllUserData(userId: string) {
+  return await AppwriteService.exportUserData(userId);
+}
+
+/**
+ * Delete user account and all associated data.
+ */
+export async function deleteUserAccount(userId: string) {
+  // Delete all user data (credentials, totp, folders, logs, user doc)
+  const userDoc = await AppwriteService.getUserDoc(userId);
+  if (userDoc && userDoc.$id) {
+    await AppwriteService.deleteUserDoc(userDoc.$id);
+  }
+  // Delete credentials, totp, folders, logs
+  const [creds, totps, folders, logs] = await Promise.all([
+    AppwriteService.listCredentials(userId),
+    AppwriteService.listTOTPSecrets(userId),
+    AppwriteService.listFolders(userId),
+    AppwriteService.listSecurityLogs(userId),
+  ]);
+  await Promise.all([
+    ...creds.map((c) => AppwriteService.deleteCredential(c.$id)),
+    ...totps.map((t) => AppwriteService.deleteTOTPSecret(t.$id)),
+    ...folders.map((f) => AppwriteService.deleteFolder(f.$id)),
+    ...logs.map((l) => AppwriteService.deleteSecurityLog(l.$id)),
+  ]);
+  // Delete Appwrite account session (log out)
+  await appwriteAccount.deleteSession("current");
+  // Optionally, delete Appwrite account (irreversible)
+  // await appwriteAccount.delete(); // Only if you want to fully remove the user from Appwrite
+}

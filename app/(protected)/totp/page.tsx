@@ -5,9 +5,26 @@ import Link from "next/link";
 import { Shield, Plus, Copy, Edit, Trash2, Timer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useAppwrite } from "@/app/appwrite-provider";
+import { listTotpSecrets, deleteTotpSecret } from "@/lib/appwrite";
+import NewTotpDialog from "@/components/app/totp/new";
 
 export default function TOTPPage() {
+  const { user } = useAppwrite();
+  const [totpCodes, setTotpCodes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNew, setShowNew] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    listTotpSecrets(user.$id)
+      .then(setTotpCodes)
+      .catch(() => setTotpCodes([]))
+      .finally(() => setLoading(false));
+  }, [user, showNew]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -16,44 +33,22 @@ export default function TOTPPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const totpCodes = [
-    {
-      id: "1",
-      issuer: "GitHub",
-      account: "john@example.com",
-      secret: "JBSWY3DPEHPK3PXP",
-      algorithm: "SHA1",
-      digits: 6,
-      period: 30,
-      folder: "Work"
-    },
-    {
-      id: "2",
-      issuer: "Google",
-      account: "john.doe@gmail.com",
-      secret: "HXDMVJECJJWSRB3HWIZR4IFUGFTMXBOZ",
-      algorithm: "SHA1",
-      digits: 6,
-      period: 30,
-      folder: "Personal"
-    },
-    {
-      id: "3",
-      issuer: "AWS",
-      account: "johndoe",
-      secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
-      algorithm: "SHA1",
-      digits: 6,
-      period: 30,
-      folder: "Work"
-    },
-  ];
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this TOTP code?")) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await deleteTotpSecret(id);
+      setTotpCodes((codes) => codes.filter((c) => c.$id !== id));
+    } catch (e: any) {
+      setError(e.message || "Failed to delete TOTP code.");
+    }
+    setLoading(false);
+  };
 
   const generateTOTP = (secret: string, period: number = 30): string => {
-    // Simple mock TOTP generation - in real app, use proper TOTP library
-    const timeStep = Math.floor(currentTime / 1000 / period);
-    const mockCode = ((timeStep % 900000) + 100000).toString();
-    return mockCode.substring(0, 6);
+    // Placeholder: In production, use a TOTP library and decrypt secretKey
+    return "••••••";
   };
 
   const getTimeRemaining = (period: number = 30): number => {
@@ -64,26 +59,28 @@ export default function TOTPPage() {
     navigator.clipboard.writeText(text);
   };
 
-  const TOTPCard = ({ totp }: { totp: typeof totpCodes[0] }) => {
-    const code = generateTOTP(totp.secret, totp.period);
-    const timeRemaining = getTimeRemaining(totp.period);
-    const progress = (timeRemaining / totp.period) * 100;
+  const TOTPCard = ({ totp }: { totp: any }) => {
+    const code = generateTOTP(totp.secretKey, totp.period || 30);
+    const timeRemaining = getTimeRemaining(totp.period || 30);
+    const progress = (timeRemaining / (totp.period || 30)) * 100;
 
     return (
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold">{totp.issuer}</h3>
-            <p className="text-sm text-muted-foreground">{totp.account}</p>
-            <span className="text-xs bg-secondary px-2 py-1 rounded mt-1 inline-block">
-              {totp.folder}
-            </span>
+            <p className="text-sm text-muted-foreground">{totp.accountName}</p>
+            {totp.folderId && (
+              <span className="text-xs bg-secondary px-2 py-1 rounded mt-1 inline-block">
+                {totp.folderId}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm">
+            {/* <Button variant="ghost" size="sm">
               <Edit className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm">
+            </Button> */}
+            <Button variant="ghost" size="sm" onClick={() => handleDelete(totp.$id)}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -143,35 +140,39 @@ export default function TOTPPage() {
           <h1 className="text-3xl font-bold tracking-tight">TOTP Codes</h1>
           <p className="text-muted-foreground">Manage your two-factor authentication codes</p>
         </div>
-        <Link href="/totp/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add TOTP
-          </Button>
-        </Link>
+        <Button onClick={() => setShowNew(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add TOTP
+        </Button>
       </div>
 
-      {totpCodes.length === 0 ? (
+      {error && (
+        <div className="text-red-600 text-sm mb-2">{error}</div>
+      )}
+
+      {loading ? (
+        <Card className="p-12 text-center">Loading...</Card>
+      ) : totpCodes.length === 0 ? (
         <Card className="p-12 text-center">
           <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No TOTP codes found</h3>
           <p className="text-muted-foreground mb-4">
             Start by adding your first two-factor authentication code
           </p>
-          <Link href="/totp/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add TOTP
-            </Button>
-          </Link>
+          <Button onClick={() => setShowNew(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add TOTP
+          </Button>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {totpCodes.map((totp) => (
-            <TOTPCard key={totp.id} totp={totp} />
+            <TOTPCard key={totp.$id} totp={totp} />
           ))}
         </div>
       )}
+
+      <NewTotpDialog open={showNew} onClose={() => setShowNew(false)} />
     </div>
   );
 }

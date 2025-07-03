@@ -23,10 +23,13 @@ import clsx from "clsx";
 import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
 import { useAppwrite } from "@/app/appwrite-provider";
 import TwofaSetup from "@/components/overlays/twofaSetup";
+import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
+import { Query } from "appwrite";
+import { updateUserProfile, exportAllUserData, deleteUserAccount } from "@/lib/appwrite";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user, logout } = useAppwrite(); // Use useAppwrite instead of useAuth
+  const { user, logout } = useAppwrite();
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -55,30 +58,56 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     setMessage("");
-    // Simulate save
-    await new Promise((r) => setTimeout(r, 800));
+    try {
+      if (!user) throw new Error("Not authenticated");
+      await updateUserProfile(user.$id, profile);
+      setMessage("Profile updated!");
+      setTimeout(() => setMessage(""), 1500);
+    } catch (e: any) {
+      setMessage(e.message || "Failed to update profile.");
+    }
     setSaving(false);
-    setMessage("Profile updated!");
-    setTimeout(() => setMessage(""), 1500);
   };
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     setMessage("Exporting data...");
-    setTimeout(() => setMessage("Data exported!"), 1200);
-    setTimeout(() => setMessage(""), 2000);
+    try {
+      if (!user) throw new Error("Not authenticated");
+      const data = await exportAllUserData(user.$id);
+      // Download as JSON file
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "whisperrauth-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      setMessage("Data exported!");
+      setTimeout(() => setMessage(""), 2000);
+    } catch (e: any) {
+      setMessage(e.message || "Failed to export data.");
+    }
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (
       confirm(
         "Are you sure you want to delete your account? This action cannot be undone."
       )
     ) {
       setDangerLoading(true);
-      setTimeout(() => {
+      try {
+        if (!user) throw new Error("Not authenticated");
+        await deleteUserAccount(user.$id);
+        setMessage("Account deleted.");
+        setTimeout(() => {
+          setDangerLoading(false);
+          logout();
+        }, 1500);
+      } catch (e: any) {
         setDangerLoading(false);
-        setMessage("Account deleted (simulated).");
-      }, 1500);
+        setMessage(e.message || "Failed to delete account.");
+      }
     }
   };
 
