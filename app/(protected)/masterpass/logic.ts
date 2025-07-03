@@ -171,6 +171,19 @@ export class MasterPassCrypto {
     sessionStorage.removeItem('vault_unlocked');
   }
 
+  // Reset master password (clear vault and force new setup)
+  resetMasterPassword(): void {
+    this.lockApplication();
+    
+    // Clear any setup flags
+    if (typeof window !== 'undefined') {
+      const userId = sessionStorage.getItem('current_user_id');
+      if (userId) {
+        localStorage.removeItem(`masterpass_setup_${userId}`);
+      }
+    }
+  }
+
   // Get timeout setting from localStorage or use default
   private getTimeoutSetting(): number {
     const saved = localStorage.getItem('vault_timeout_minutes');
@@ -456,3 +469,8 @@ const decryptDocument = async (doc: any, collectionId: string) => {
 // - The master password setup flag is stored in `localStorage` as 'masterpass_setup_{userId}' to know if the user has set a master password.
 //
 // All decrypted data and keys are kept only in memory and are cleared on lock or timeout. No sensitive cryptographic material is persisted beyond the session.
+
+// Add utility function for reset
+export const resetMasterPasswordVault = () => {
+  masterPassCrypto.resetMasterPassword();
+};
