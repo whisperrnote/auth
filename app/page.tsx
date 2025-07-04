@@ -2,12 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Shield, Lock, Key, Fingerprint, RefreshCw, Globe, Check, ChevronRight, Star, Clock, AlertTriangle, Plus, Download, FileText, Search, User, Settings, Moon, Sun, Monitor } from "lucide-react";
+import { Shield, Lock, Key, Fingerprint, RefreshCw, Globe, Check, ChevronRight, Star, Clock, AlertTriangle, Plus, Download, FileText, Search, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
-import { Header } from "@/components/layout/Header";
 import { useRef } from "react";
+import { Navbar } from "@/components/layout/Navbar";
 
 // Copy icon component - used in dashboard preview
 function Copy(props: React.SVGProps<SVGSVGElement>) {
@@ -117,8 +117,8 @@ export default function LandingPage() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Use shared Header component */}
-      <Header onMenuClick={() => {}} sidebarOpen={false} />
+      {/* Use Navbar component instead of Header */}
+      <Navbar />
 
       {/* Hero Section - Adjust padding to account for navbar */}
       <div className="relative py-32 md:py-40 px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
