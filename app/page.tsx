@@ -382,9 +382,11 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-8">
             Join thousands of users who trust Whisperrauth with their passwords.
           </p>
-          <Button size="lg" className="gap-2">
-            Get Started Free <ChevronRight className="h-4 w-4" />
-          </Button>
+                 <Link href="/register">
+            <Button size="lg" className="gap-2">
+              Get Started Free <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
           <p className="mt-4 text-sm text-muted-foreground">
             No credit card required. Free forever with premium options.
           </p>
