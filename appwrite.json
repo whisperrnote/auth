@@ -476,12 +476,7 @@
         },
         {
             "$id": "user",
-            "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
-            ],
+            "$permissions": [],
             "databaseId": "passwordManagerDb",
             "name": "user",
             "enabled": true,
@@ -492,7 +487,7 @@
                     "type": "boolean",
                     "required": false,
                     "array": false,
-                    "default": false
+                    "default": null
                 },
                 {
                     "key": "userId",
@@ -505,7 +500,7 @@
                 {
                     "key": "email",
                     "type": "string",
-                    "required": true,
+                    "required": false,
                     "array": false,
                     "size": 255,
                     "default": null
@@ -515,7 +510,7 @@
                     "type": "boolean",
                     "required": false,
                     "array": false,
-                    "default": false
+                    "default": null
                 },
                 {
                     "key": "check",

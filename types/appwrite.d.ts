@@ -48,7 +48,7 @@ export type SecurityLogs = Models.Document & {
 export type User = Models.Document & {
   masterpass: boolean | null;
   userId: string;
-  email: string;
+  email: string | null;
   twofa: boolean | null;
   check: string | null;
 }
