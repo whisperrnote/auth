@@ -6,9 +6,19 @@ import { Shield, Lock, Key, Fingerprint, RefreshCw, Globe, Check, ChevronRight, 
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
+import { useRef } from "react";
 
 export default function LandingPage() {
   const { theme, setTheme } = useTheme();
+
+  // Add a ref for the demo section
+  const demoRef = useRef<HTMLDivElement>(null);
+
+  const handleViewDemo = () => {
+    if (demoRef.current) {
+      demoRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   const features = [
     {
@@ -131,16 +141,18 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-16">
-          <Button size="lg" className="gap-2">
-            Get Started Free <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button size="lg" variant="outline">
+          <Link href="/register">
+            <Button size="lg" className="gap-2">
+              Get Started Free <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Button size="lg" variant="outline" onClick={handleViewDemo}>
             View Demo
           </Button>
         </div>
 
         {/* Dashboard Preview */}
-        <div className="w-full max-w-5xl rounded-lg overflow-hidden shadow-2xl border dark:border-gray-800 bg-background">
+        <div ref={demoRef} className="w-full max-w-5xl rounded-lg overflow-hidden shadow-2xl border dark:border-gray-800 bg-background">
           {/* Dashboard Header */}
           <div className="border-b px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
