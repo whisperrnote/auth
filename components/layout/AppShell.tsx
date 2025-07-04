@@ -21,6 +21,7 @@ import { Header } from "./Header";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
+import { Navbar } from "./Navbar";
 
 // Only these 5 items
 const navigation = [
@@ -97,8 +98,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Responsive: show sidebar on desktop, bottom bar on mobile
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <Header onMenuClick={() => setSidebarOpen(true)} sidebarOpen={sidebarOpen} />
+      {/* Use Navbar instead of Header */}
+      <Navbar />
 
       <div className="flex-1 flex w-full">
         {/* Sidebar (desktop only) */}
