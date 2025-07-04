@@ -41,19 +41,25 @@ export default function SettingsPage() {
   const [showTwofa, setShowTwofa] = useState(false);
   const [twofaEnabled, setTwofaEnabled] = useState(user?.twofa ?? false);
 
-  // Optionally, fetch latest 2fa status on mount
+  // Fetch latest 2fa status on mount and when dialog closes
   useEffect(() => {
-    // If userId is available, fetch latest user doc
-    if (user?.userId) {
-      appwriteDatabases.listDocuments(
+    if (user?.userId || user?.$id) {
+      fetchTwofaStatus();
+    }
+  }, [user?.userId, user?.$id, showTwofa]); // Add showTwofa to dependencies
+
+  const fetchTwofaStatus = async () => {
+    try {
+      const userDoc = await appwriteDatabases.listDocuments(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_USER_ID,
-        [Query.equal("userId", user.userId)]
-      ).then(resp => {
-        setTwofaEnabled(resp.documents[0]?.twofa ?? false);
-      });
+        [Query.equal("userId", user?.userId || user?.$id)]
+      );
+      setTwofaEnabled(userDoc.documents[0]?.twofa === true);
+    } catch (error) {
+      console.error("Failed to fetch 2FA status:", error);
     }
-  }, [user?.userId]);
+  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -204,7 +210,7 @@ export default function SettingsPage() {
                 onClick={() => setShowTwofa(true)}
               >
                 <Shield className="h-4 w-4" />
-                {twofaEnabled ? "Manage Two-Factor Authentication" : "Setup Two-Factor Authentication"}
+                {twofaEnabled ? "✅ Two-Factor Authentication Enabled" : "Setup Two-Factor Authentication"}
               </Button>
               <Button variant="outline" className="w-full justify-start gap-2">
                 <Smartphone className="h-4 w-4" />
@@ -407,9 +413,17 @@ export default function SettingsPage() {
       {showTwofa && (
         <TwofaSetup
           open={showTwofa}
-          onClose={() => setShowTwofa(false)}
+          onClose={() => {
+            setShowTwofa(false);
+            // Refresh 2FA status after dialog closes
+            setTimeout(fetchTwofaStatus, 500);
+          }}
           user={user}
-          onStatusChange={setTwofaEnabled}
+          onStatusChange={(enabled) => {
+            setTwofaEnabled(enabled);
+            // Also refresh from database to ensure consistency
+            setTimeout(fetchTwofaStatus, 500);
+          }}
         />
       )}
     </div>
