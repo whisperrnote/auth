@@ -338,9 +338,21 @@ export class MasterPassCrypto {
       throw new Error('Vault is locked - cannot encrypt data');
     }
 
+    // Validate input data
+    if (data === null || data === undefined) {
+      throw new Error('Cannot encrypt null or undefined data');
+    }
+
+    // Convert to string if not already
+    const dataToEncrypt = typeof data === 'string' ? data : String(data);
+    
+    if (dataToEncrypt.trim().length === 0) {
+      throw new Error('Cannot encrypt empty string');
+    }
+
     try {
       const encoder = new TextEncoder();
-      const plaintext = encoder.encode(JSON.stringify(data));
+      const plaintext = encoder.encode(JSON.stringify(dataToEncrypt));
 
       // Generate larger IV for enhanced security
       const iv = crypto.getRandomValues(new Uint8Array(MasterPassCrypto.IV_SIZE));
@@ -370,6 +382,15 @@ export class MasterPassCrypto {
   async decryptData(encryptedData: string): Promise<any> {
     if (!this.isVaultUnlocked()) {
       throw new Error('Vault is locked');
+    }
+
+    // Validate input
+    if (!encryptedData || typeof encryptedData !== 'string') {
+      throw new Error('Invalid encrypted data provided');
+    }
+    
+    if (encryptedData.trim().length === 0) {
+      throw new Error('Cannot decrypt empty string');
     }
 
     try {
@@ -478,12 +499,34 @@ export const getVaultTimeout = () => {
   return MasterPassCrypto.getTimeoutMinutes();
 };
 
-// Utility functions for field-specific encryption
+// Utility functions for field-specific encryption with validation
 export const encryptField = async (value: string): Promise<string> => {
+  // Validate input before encryption
+  if (value === null || value === undefined) {
+    throw new Error('Cannot encrypt null or undefined value');
+  }
+  
+  if (typeof value !== 'string') {
+    throw new Error('Can only encrypt string values');
+  }
+  
+  if (value.trim().length === 0) {
+    throw new Error('Cannot encrypt empty string');
+  }
+  
   return masterPassCrypto.encryptData(value);
 };
 
 export const decryptField = async (encryptedValue: string): Promise<string> => {
+  // Validate input before decryption
+  if (!encryptedValue || typeof encryptedValue !== 'string') {
+    throw new Error('Invalid encrypted value provided');
+  }
+  
+  if (encryptedValue.trim().length === 0) {
+    throw new Error('Cannot decrypt empty string');
+  }
+  
   return masterPassCrypto.decryptData(encryptedValue);
 };
 

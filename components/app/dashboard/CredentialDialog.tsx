@@ -73,17 +73,22 @@ export default function CredentialDialog({
     setLoading(true);
     try {
       if (!user) throw new Error("Not authenticated");
-      
-      const credentialData = {
-        name: form.name,
-        username: form.username,
-        password: form.password,
-        url: form.url || null,
-        notes: form.notes || null,
-        tags: form.tags ? form.tags.split(",").map(t => t.trim()) : [],
-        customFields: customFields.length > 0 ? JSON.stringify(customFields) : null,
+
+      // Clean and prepare credential data with proper null handling
+      const credentialData: any = {
+        name: form.name.trim(),
+        username: form.username.trim(),
+        password: form.password.trim(),
+        createdAt: initial && initial.createdAt ? initial.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      if (form.url && form.url.trim()) credentialData.url = form.url.trim();
+      if (form.notes && form.notes.trim()) credentialData.notes = form.notes.trim();
+      if (form.tags && form.tags.trim()) {
+        const tagsArr = form.tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+        if (tagsArr.length > 0) credentialData.tags = tagsArr;
+      }
+      if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields);
 
       if (initial && initial.$id) {
         await updateCredential(initial.$id, credentialData);
@@ -93,7 +98,6 @@ export default function CredentialDialog({
           ...credentialData,
           folderId: null,
           faviconUrl: null,
-          createdAt: new Date().toISOString(),
         });
       }
       onSaved();

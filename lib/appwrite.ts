@@ -381,20 +381,22 @@ export class AppwriteService {
     try {
       const { encryptField, masterPassCrypto } = await import('../app/(protected)/masterpass/logic');
 
-      // Check if vault is unlocked before attempting encryption
       if (!masterPassCrypto.isVaultUnlocked()) {
         throw new Error('Vault is locked - cannot encrypt data');
       }
 
       for (const field of schema.encrypted) {
-        if (result[field] !== undefined && result[field] !== null && result[field] !== '') {
+        const fieldValue = result[field];
+        if (this.shouldEncryptField(fieldValue)) {
           try {
-            console.log(`Encrypting field: ${field} for collection: ${collectionType}`);
-            result[field] = await encryptField(result[field]);
+            result[field] = await encryptField(String(fieldValue));
           } catch (error) {
             console.error(`Failed to encrypt field ${field}:`, error);
             throw new Error(`Encryption failed for ${field}: ${error}`);
           }
+        } else {
+          // Remove the field entirely if it's not a non-empty string
+          delete result[field];
         }
       }
     } catch (importError) {
@@ -419,14 +421,21 @@ export class AppwriteService {
       }
 
       for (const field of schema.encrypted) {
-        if (result[field] !== undefined && result[field] !== null && result[field] !== '') {
+        const fieldValue = result[field];
+        
+        // Only decrypt if the field has encrypted data
+        if (this.shouldDecryptField(fieldValue)) {
           try {
             console.log(`Decrypting field: ${field} for collection: ${collectionType}`);
-            result[field] = await decryptField(result[field]);
+            result[field] = await decryptField(fieldValue);
           } catch (error) {
             console.error(`Failed to decrypt field ${field}:`, error);
             result[field] = '[DECRYPTION_FAILED]';
           }
+        } else {
+          // For null/undefined values, keep them as null
+          result[field] = fieldValue === null ? null : (fieldValue === undefined ? null : fieldValue);
+          console.log(`Skipping decryption for field: ${field} (no encrypted data)`);
         }
       }
     } catch (error) {
@@ -435,6 +444,29 @@ export class AppwriteService {
     }
 
     return result;
+  }
+
+  // Helper method to determine if a field should be encrypted
+  private static shouldEncryptField(value: any): boolean {
+    // Only encrypt if value is a non-empty string
+    return (
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'string' &&
+      value.trim().length > 0
+    );
+  }
+
+  // Helper method to determine if a field should be decrypted
+  private static shouldDecryptField(value: any): boolean {
+    // Only decrypt if value looks like encrypted data (base64 string with reasonable length)
+    return (
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'string' &&
+      value.length > 20 && // Encrypted data should be longer than 20 chars
+      /^[A-Za-z0-9+/]+=*$/.test(value) // Base64 pattern
+    );
   }
 
   // --- Search Operations ---

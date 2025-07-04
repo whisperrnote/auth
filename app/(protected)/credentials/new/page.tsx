@@ -66,33 +66,25 @@ export default function NewCredentialPage() {
       console.log('Vault unlocked:', masterPassCrypto.isVaultUnlocked());
 
       if (formData.type === "credential") {
-        console.log('Creating credential with data:', {
+        // Clean and prepare credential data with proper null handling
+        const credentialData: any = {
           userId: user.$id,
-          name: formData.name,
-          username: formData.username,
-          hasPassword: !!formData.password,
-          // Don't log password for security
-        });
-
-        const credentialData = {
-          userId: user.$id,
-          name: formData.name,
-          url: formData.url || null,
-          username: formData.username,
-          password: formData.password,
-          notes: formData.notes || null,
-          folderId: formData.folder || null,
-          tags: formData.tags ? formData.tags.split(",").map(t => t.trim()) : [],
-          customFields: customFields.length > 0 ? JSON.stringify(customFields) : null,
-          faviconUrl: null,
+          name: formData.name.trim(),
+          username: formData.username.trim(),
+          password: formData.password.trim(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
+        if (formData.url && formData.url.trim()) credentialData.url = formData.url.trim();
+        if (formData.notes && formData.notes.trim()) credentialData.notes = formData.notes.trim();
+        if (formData.folder && formData.folder.trim()) credentialData.folderId = formData.folder.trim();
+        if (formData.tags && formData.tags.trim()) {
+          const tagsArr = formData.tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+          if (tagsArr.length > 0) credentialData.tags = tagsArr;
+        }
+        if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields);
 
-        console.log('About to call createCredential...');
         const result = await createCredential(credentialData);
-        console.log('Credential created successfully:', result);
-        
         router.push("/dashboard");
       } else if (formData.type === "folder") {
         await createFolder({
