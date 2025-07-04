@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { listTotpSecrets, deleteTotpSecret } from "@/lib/appwrite";
 import NewTotpDialog from "@/components/app/totp/new";
+import { authenticator } from "otplib";
 
 export default function TOTPPage() {
   const { user } = useAppwrite();
@@ -56,8 +57,12 @@ export default function TOTPPage() {
   };
 
   const generateTOTP = (secret: string, period: number = 30): string => {
-    // Placeholder: In production, use a TOTP library and decrypt secretKey
-    return "••••••";
+    try {
+      // otplib expects the secret to be a string, period is optional
+      return authenticator.generate(secret);
+    } catch {
+      return "------";
+    }
   };
 
   const getTimeRemaining = (period: number = 30): number => {

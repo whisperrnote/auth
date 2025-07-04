@@ -40,6 +40,7 @@ export default function RegisterPage() {
     loading,
     user,
     isVaultUnlocked,
+    loginWithEmailPassword,
   } = useAppwrite();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +109,13 @@ export default function RegisterPage() {
         return;
       }
       try {
+        // 1. Create the account
         await registerWithEmailPassword(formData.email, formData.password, formData.name);
+
+        // 2. Immediately create a session (login)
+        await loginWithEmailPassword(formData.email, formData.password);
+
+        // 3. Continue with MFA/masterpass logic
         try {
           await checkMfaRequired();
           router.replace("/masterpass");
@@ -120,7 +127,12 @@ export default function RegisterPage() {
           }
         }
       } catch (err: any) {
-        setError(err?.message || "Registration failed");
+        // If error is "user already exists", show a friendly message
+        if (err?.code === 409) {
+          setError("An account with this email already exists.");
+        } else {
+          setError(err?.message || "Registration failed");
+        }
       }
     } else if (mode === "otp") {
       try {
