@@ -63,6 +63,16 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
     }
   };
 
+  // When opening "Add More Factors", pre-tick already enabled factors
+  const handleFactorSelection = () => {
+    // Pre-tick based on currentFactors from Appwrite
+    setSelectedFactors({
+      totp: !!currentFactors?.totp,
+      email: !!currentFactors?.email,
+    });
+    setStep("factors");
+  };
+
   // Step 1: Generate recovery codes FIRST (required by Appwrite)
   const handleStart = async () => {
     setLoading(true);
@@ -72,15 +82,24 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       setRecoveryCodes(codes.recoveryCodes);
       setStep("recovery");
     } catch (e: any) {
-      setError(e.message || "Failed to generate recovery codes.");
+      // If recovery codes already generated, allow user to proceed to factor selection
+      if (
+        e?.message?.toLowerCase().includes("already generated recovery codes") ||
+        e?.code === 409
+      ) {
+        setRecoveryCodes(null);
+        setStep("recovery");
+      } else {
+        setError(e.message || "Failed to generate recovery codes.");
+      }
     }
     setLoading(false);
   };
 
   // Step 2: Choose factors to enable
-  const handleFactorSelection = () => {
-    setStep("factors");
-  };
+  // const handleFactorSelection = () => {
+  //   setStep("factors");
+  // };
 
   // Step 3: Setup TOTP
   const handleSetupTotp = async () => {
@@ -191,6 +210,74 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
     setLoading(false);
   };
 
+  // Modified: Handle factor changes (enable/disable)
+  const handleFactorChange = async (factorType: 'totp' | 'email', enabled: boolean) => {
+    const wasEnabled = factorType === 'totp' ? currentFactors?.totp : currentFactors?.email;
+    
+    setSelectedFactors(prev => ({ ...prev, [factorType]: enabled }));
+    
+    // If unchecking a previously enabled factor, remove it immediately
+    if (wasEnabled && !enabled) {
+      setLoading(true);
+      setError(null);
+      try {
+        if (factorType === 'totp') {
+          await removeTotpFactor();
+        }
+        // Note: Email factor removal would require different Appwrite method
+        // For now, we'll show a warning that email factor cannot be easily removed
+        if (factorType === 'email') {
+          setError("Email factor cannot be easily removed once verified. Contact support if needed.");
+          setSelectedFactors(prev => ({ ...prev, email: true })); // Revert
+          setLoading(false);
+          return;
+        }
+        
+        // Refresh current factors
+        const updatedFactors = await listMfaFactors();
+        setCurrentFactors(updatedFactors);
+        
+        // Check if any factors are still enabled
+        const hasAnyFactors = updatedFactors.totp || updatedFactors.email || updatedFactors.phone;
+        if (!hasAnyFactors) {
+          // No factors left, disable MFA
+          await updateMfaStatus(false);
+          const userDoc = await AppwriteService.getUserDoc(user.$id);
+          if (userDoc && userDoc.$id) {
+            await AppwriteService.updateUserDoc(userDoc.$id, { twofa: false });
+          }
+          onStatusChange(false);
+          setIsCurrentlyEnabled(false);
+        }
+      } catch (e: any) {
+        setError(e.message || `Failed to remove ${factorType} factor`);
+        // Revert the checkbox
+        setSelectedFactors(prev => ({ ...prev, [factorType]: wasEnabled }));
+      }
+      setLoading(false);
+    }
+  };
+
+  // Modified: Continue button logic
+  const handleContinue = () => {
+    // Only setup factors that are newly selected (not already enabled)
+    const needsTotp = selectedFactors.totp && !currentFactors?.totp;
+    const needsEmail = selectedFactors.email && !currentFactors?.email;
+    
+    if (!needsTotp && !needsEmail) {
+      // No new factors to setup, just finalize
+      finalizeSetup();
+      return;
+    }
+    
+    // Setup new factors in order of priority
+    if (needsTotp) {
+      handleSetupTotp();
+    } else if (needsEmail) {
+      handleSetupEmail();
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose}>
       <div className="p-6 max-w-md w-full bg-white rounded-lg shadow-lg">
@@ -221,7 +308,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button onClick={handleStart} disabled={loading}>
+                  <Button onClick={handleFactorSelection} disabled={loading}>
                     Add More Factors
                   </Button>
                   <Button variant="destructive" onClick={handleDisable} disabled={loading}>
@@ -237,11 +324,16 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
           <>
             <p className="mb-2 font-semibold text-red-600">Save your recovery codes!</p>
             <p className="mb-2 text-sm">These codes can be used to access your account if you lose your authenticator:</p>
-            {recoveryCodes && (
+            {recoveryCodes ? (
               <div className="mb-4">
                 <ul className="text-xs bg-gray-100 p-2 rounded font-mono">
                   {recoveryCodes.map(code => <li key={code}>{code}</li>)}
                 </ul>
+              </div>
+            ) : (
+              <div className="mb-4 text-xs text-muted-foreground">
+                Recovery codes have already been generated and cannot be shown again.<br />
+                If you have saved them, continue to the next step.
               </div>
             )}
             <p className="text-xs text-muted-foreground mb-4">Save these codes in a secure place. They will not be shown again.</p>
@@ -255,44 +347,54 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
           <>
             <p className="mb-4 text-sm">Choose which authentication factors to enable:</p>
             <div className="space-y-3 mb-4">
-              <label className="flex items-center gap-3">
+              <label className="flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-accent/50">
                 <input
                   type="checkbox"
                   checked={selectedFactors.totp}
-                  onChange={(e) => setSelectedFactors(prev => ({ ...prev, totp: e.target.checked }))}
+                  onChange={(e) => handleFactorChange('totp', e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4"
                 />
-                <div>
-                  <div className="font-medium">Authenticator App (TOTP)</div>
+                <div className="flex-1">
+                  <div className="font-medium flex items-center gap-2">
+                    Authenticator App (TOTP)
+                    {currentFactors?.totp && (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                        ✓ Active
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground">Use Google Authenticator, Authy, etc.</div>
                 </div>
               </label>
               
-              <label className="flex items-center gap-3">
+              <label className="flex items-center gap-3 p-3 rounded-lg border transition-colors hover:bg-accent/50">
                 <input
                   type="checkbox"
                   checked={selectedFactors.email}
-                  onChange={(e) => setSelectedFactors(prev => ({ ...prev, email: e.target.checked }))}
+                  onChange={(e) => handleFactorChange('email', e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4"
                 />
-                <div>
-                  <div className="font-medium">Email Verification</div>
+                <div className="flex-1">
+                  <div className="font-medium flex items-center gap-2">
+                    Email Verification
+                    {currentFactors?.email && (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                        ✓ Active
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground">Receive codes via email</div>
                 </div>
               </label>
             </div>
             
             <Button 
-              onClick={() => {
-                if (selectedFactors.totp) {
-                  handleSetupTotp();
-                } else if (selectedFactors.email) {
-                  handleSetupEmail();
-                } else {
-                  setError("Please select at least one authentication factor.");
-                }
-              }} 
+              onClick={handleContinue}
               disabled={loading || (!selectedFactors.totp && !selectedFactors.email)}
             >
-              Continue
+              {loading ? "Processing..." : "Continue"}
             </Button>
           </>
         )}

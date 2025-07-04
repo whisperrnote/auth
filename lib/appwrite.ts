@@ -950,3 +950,52 @@ export async function logoutAppwrite() {
     // Optionally clear other app-specific keys here
   }
 }
+
+/**
+ * Remove individual MFA factors and update user doc accordingly
+ */
+export async function removeMfaFactor(factorType: 'totp' | 'email' | 'phone'): Promise<void> {
+  if (factorType === 'totp') {
+    await removeTotpFactor();
+  }
+  // Add handling for other factor types as Appwrite supports them
+  // Note: Email factor removal is not straightforward in Appwrite
+  // as verified emails are tied to the account itself
+}
+
+/**
+ * Get detailed MFA status including individual factor information
+ */
+export async function getMfaStatus(): Promise<{
+  enabled: boolean;
+  factors: { totp: boolean; email: boolean; phone: boolean };
+  requiresSetup: boolean;
+}> {
+  try {
+    const factors = await listMfaFactors();
+    const hasAnyFactor = factors.totp || factors.email || factors.phone;
+    
+    // Check if MFA is enforced (this would throw an error if not authenticated properly)
+    let mfaEnabled = false;
+    try {
+      await checkMfaRequired();
+      mfaEnabled = false; // If no error, MFA is not required
+    } catch (error: any) {
+      if (error.type === 'user_more_factors_required') {
+        mfaEnabled = true;
+      }
+    }
+    
+    return {
+      enabled: mfaEnabled,
+      factors,
+      requiresSetup: hasAnyFactor && !mfaEnabled
+    };
+  } catch (error) {
+    return {
+      enabled: false,
+      factors: { totp: false, email: false, phone: false },
+      requiresSetup: false
+    };
+  }
+}
