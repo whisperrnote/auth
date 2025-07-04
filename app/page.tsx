@@ -6,7 +6,29 @@ import { Shield, Lock, Key, Fingerprint, RefreshCw, Globe, Check, ChevronRight, 
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
+import { Header } from "@/components/layout/Header";
 import { useRef } from "react";
+
+// Copy icon component - used in dashboard preview
+function Copy(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
 
 export default function LandingPage() {
   const { theme, setTheme } = useTheme();
@@ -95,38 +117,8 @@ export default function LandingPage() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Landing page navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">PM</span>
-              </div>
-              <span className="font-semibold text-lg">Whisperrauth</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                className="p-2 rounded-full hover:bg-accent"
-                onClick={() => {
-                  const nextTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
-                  setTheme(nextTheme);
-                }}
-              >
-                {theme === 'light' && <Sun className="h-5 w-5" />}
-                {theme === 'dark' && <Moon className="h-5 w-5" />}
-                {theme === 'system' && <Monitor className="h-5 w-5" />}
-              </button>
-              <Link href="/login">
-                <Button variant="outline" size="sm">Sign in</Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm">Sign up</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Use shared Header component */}
+      <Header onMenuClick={() => {}} sidebarOpen={false} />
 
       {/* Hero Section - Adjust padding to account for navbar */}
       <div className="relative py-32 md:py-40 px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
@@ -152,7 +144,7 @@ export default function LandingPage() {
         </div>
 
         {/* Dashboard Preview */}
-        <div ref={demoRef} className="w-full max-w-5xl rounded-lg overflow-hidden shadow-2xl border dark:border-gray-800 bg-background">
+        <div ref={demoRef} className="w-full max-w-5xl rounded-lg overflow-hidden shadow-2xl border dark:border-gray-800 bg-background relative">
           {/* Dashboard Header */}
           <div className="border-b px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -348,8 +340,8 @@ export default function LandingPage() {
           {testimonials.map((testimonial, i) => (
             <div key={i} className="bg-card p-8 rounded-lg border relative">
               <div className="flex mb-4">
-                {[...Array(testimonial.stars)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                {[...Array(testimonial.stars)].map((_, j) => (
+                  <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
               <p className="italic mb-6">"{testimonial.quote}"</p>
@@ -399,26 +391,5 @@ export default function LandingPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-// Copy icon component - used in dashboard preview
-function Copy(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-    </svg>
   );
 }
