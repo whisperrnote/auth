@@ -13,6 +13,7 @@ import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Q
 import { checkMfaRequired } from "@/lib/appwrite";
 import { hasMasterpass } from "@/lib/appwrite";
 import { redirectIfAuthenticated } from "@/lib/appwrite";
+import { Navbar } from "@/components/layout/Navbar";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -158,32 +159,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Simple navbar for login page */}
-      <nav className="border-b border-border">
-        <div className="max-w-screen-xl mx-auto flex justify-between items-center h-16 px-4">
-          <div className="flex items-center gap-2">
-            <img
-              src="/images/logo.png"
-              alt="Whisperrauth Logo"
-              className="h-8 w-8 rounded-lg object-contain"
-            />
-            <span className="font-semibold text-lg">Whisperrauth</span>
-          </div>
-          <div>
-            <button
-              className="p-2 rounded-full hover:bg-accent"
-              onClick={() => {
-                const nextTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
-                setTheme(nextTheme);
-              }}
-            >
-              {theme === 'light' && <Sun className="h-5 w-5" />}
-              {theme === 'dark' && <Moon className="h-5 w-5" />}
-              {theme === 'system' && <Monitor className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* Use Navbar component */}
+      <Navbar />
 
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md glass shadow-2xl">

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { listMfaFactors, createMfaChallenge, completeMfaChallenge } from "@/lib/appwrite";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { hasMasterpass, redirectIfAuthenticated } from "@/lib/appwrite";
+import { Navbar } from "@/components/layout/Navbar";
 
 export default function TwofaAccessPage() {
   const router = useRouter();
@@ -83,123 +84,126 @@ export default function TwofaAccessPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Two-Factor Authentication</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Additional verification required
-          </p>
-        </CardHeader>
-        <CardContent>
-          {!challengeId ? (
-            // Factor selection
-            <div className="space-y-4">
-              <p className="text-sm">Choose your verification method:</p>
-              
-              {factors.totp && (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Two-Factor Authentication</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Additional verification required
+            </p>
+          </CardHeader>
+          <CardContent>
+            {!challengeId ? (
+              // Factor selection
+              <div className="space-y-4">
+                <p className="text-sm">Choose your verification method:</p>
+                
+                {factors.totp && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleCreateChallenge("totp")}
+                    disabled={loading}
+                  >
+                    📱 Authenticator App
+                  </Button>
+                )}
+                
+                {factors.email && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleCreateChallenge("email")}
+                    disabled={loading}
+                  >
+                    ✉️ Email Code
+                  </Button>
+                )}
+                
+                {factors.phone && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleCreateChallenge("phone")}
+                    disabled={loading}
+                  >
+                    📞 SMS Code
+                  </Button>
+                )}
+                
+                <div className="pt-4 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowRecovery(!showRecovery)}
+                  >
+                    Use recovery code instead
+                  </Button>
+                  
+                  {showRecovery && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => handleCreateChallenge("recoverycode")}
+                        disabled={loading}
+                      >
+                        🔑 Recovery Code
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // Code entry
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm mb-2">
+                    {selectedFactor === "totp" && "Enter the code from your authenticator app:"}
+                    {selectedFactor === "email" && "Enter the code sent to your email:"}
+                    {selectedFactor === "phone" && "Enter the code sent to your phone:"}
+                    {selectedFactor === "recoverycode" && "Enter your recovery code:"}
+                  </p>
+                  <Input
+                    placeholder={selectedFactor === "recoverycode" ? "Recovery code" : "6-digit code"}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    maxLength={selectedFactor === "recoverycode" ? 10 : 6}
+                  />
+                </div>
+                
                 <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => handleCreateChallenge("totp")}
-                  disabled={loading}
+                  onClick={handleCompleteChallenge}
+                  disabled={loading || !code}
+                  className="w-full"
                 >
-                  📱 Authenticator App
+                  {loading ? "Verifying..." : "Verify"}
                 </Button>
-              )}
-              
-              {factors.email && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => handleCreateChallenge("email")}
-                  disabled={loading}
-                >
-                  ✉️ Email Code
-                </Button>
-              )}
-              
-              {factors.phone && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => handleCreateChallenge("phone")}
-                  disabled={loading}
-                >
-                  📞 SMS Code
-                </Button>
-              )}
-              
-              <div className="pt-4 border-t">
+                
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full"
-                  onClick={() => setShowRecovery(!showRecovery)}
+                  onClick={() => {
+                    setChallengeId(null);
+                    setCode("");
+                    setError(null);
+                  }}
                 >
-                  Use recovery code instead
+                  Choose different method
                 </Button>
-                
-                {showRecovery && (
-                  <div className="mt-2">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => handleCreateChallenge("recoverycode")}
-                      disabled={loading}
-                    >
-                      🔑 Recovery Code
-                    </Button>
-                  </div>
-                )}
               </div>
-            </div>
-          ) : (
-            // Code entry
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm mb-2">
-                  {selectedFactor === "totp" && "Enter the code from your authenticator app:"}
-                  {selectedFactor === "email" && "Enter the code sent to your email:"}
-                  {selectedFactor === "phone" && "Enter the code sent to your phone:"}
-                  {selectedFactor === "recoverycode" && "Enter your recovery code:"}
-                </p>
-                <Input
-                  placeholder={selectedFactor === "recoverycode" ? "Recovery code" : "6-digit code"}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  maxLength={selectedFactor === "recoverycode" ? 10 : 6}
-                />
-              </div>
-              
-              <Button
-                onClick={handleCompleteChallenge}
-                disabled={loading || !code}
-                className="w-full"
-              >
-                {loading ? "Verifying..." : "Verify"}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setChallengeId(null);
-                  setCode("");
-                  setError(null);
-                }}
-              >
-                Choose different method
-              </Button>
-            </div>
-          )}
-          
-          {error && (
-            <div className="text-red-600 text-sm mt-4 text-center">{error}</div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+            
+            {error && (
+              <div className="text-red-600 text-sm mt-4 text-center">{error}</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
