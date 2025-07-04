@@ -120,6 +120,15 @@ export default function MasterPassPage() {
               <Lock className="h-8 w-8 text-primary" />
             </div>
           </div>
+          {/* Account name/email for personalization */}
+          {user && (
+            <div className="mb-2">
+              <span className="font-semibold text-base">{user.name || user.email}</span>
+              {user.email && user.name && (
+                <div className="text-xs text-muted-foreground">{user.email}</div>
+              )}
+            </div>
+          )}
           <CardTitle className="text-2xl">
             {isFirstTime ? "Set Master Password" : "Unlock Vault"}
           </CardTitle>

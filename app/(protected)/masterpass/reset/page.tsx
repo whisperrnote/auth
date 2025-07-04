@@ -43,6 +43,15 @@ export default function MasterpassResetPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          {/* Account name/email for personalization */}
+          {user && (
+            <div className="mb-2">
+              <span className="font-semibold text-base">{user.name || user.email}</span>
+              {user.email && user.name && (
+                <div className="text-xs text-muted-foreground">{user.email}</div>
+              )}
+            </div>
+          )}
           <CardTitle className="text-2xl">Reset Master Password</CardTitle>
           <p className="text-sm text-muted-foreground">
             {step === "reset"
@@ -92,4 +101,3 @@ export default function MasterpassResetPage() {
     </div>
   );
 }
-          
