@@ -32,7 +32,7 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/forgot-password', '/masterpass', '/masterpass/reset'];
+const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/reset-password', '/masterpass', '/masterpass/reset'];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

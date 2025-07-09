@@ -82,8 +82,12 @@ export default function ResetPasswordPage() {
               </form>
             ) : (
               <form onSubmit={handleRequest} className="space-y-3">
+                <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700">
+                  Email address
+                </label>
                 <input
-                  className="input w-full"
+                  id="reset-email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                   type="email"
                   placeholder="Your email"
                   value={email}
