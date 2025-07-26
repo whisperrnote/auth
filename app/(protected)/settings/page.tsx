@@ -33,7 +33,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
-  });
+  }); // email is shown but not editable
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [dangerLoading, setDangerLoading] = useState(false);
@@ -66,7 +66,8 @@ export default function SettingsPage() {
     setMessage("");
     try {
       if (!user) throw new Error("Not authenticated");
-      await updateUserProfile(user.$id, profile);
+      // Only allow updating the name, not the email
+      await updateUserProfile(user.$id, { name: profile.name });
       setMessage("Profile updated!");
       setTimeout(() => setMessage(""), 1500);
     } catch (e: any) {
@@ -157,15 +158,13 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
-                <Input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) =>
-                    setProfile({ ...profile, email: e.target.value })
-                  }
-                  autoComplete="email"
-                />
-              </div>
+<Input
+                   type="email"
+                   value={profile.email}
+                   readOnly
+                   disabled
+                   autoComplete="email"
+                 />              </div>
               <Button
                 onClick={handleSaveProfile}
                 disabled={saving}

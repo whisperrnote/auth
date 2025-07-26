@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
+// Add advanced checkbox state
+
 import Dialog from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -18,6 +21,7 @@ export default function NewTotpDialog({ open, onClose }: { open: boolean; onClos
     digits: 6,
     period: 30,
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,28 +72,43 @@ export default function NewTotpDialog({ open, onClose }: { open: boolean; onClos
             required
           />
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Digits</label>
-          <Input
-            type="number"
-            value={form.digits}
-            min={6}
-            max={8}
-            onChange={e => setForm({ ...form, digits: Number(e.target.value) })}
-            required
+        <div className="flex items-center space-x-2 pt-2">
+          <input
+            id="show-advanced"
+            type="checkbox"
+            checked={showAdvanced}
+            onChange={() => setShowAdvanced(!showAdvanced)}
           />
+          <label htmlFor="show-advanced" className="text-sm select-none cursor-pointer">Advanced</label>
         </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Period (seconds)</label>
-          <Input
-            type="number"
-            value={form.period}
-            min={15}
-            max={60}
-            onChange={e => setForm({ ...form, period: Number(e.target.value) })}
-            required
-          />
-        </div>
+        {showAdvanced && (
+          <>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Digits</label>
+              <Input
+                type="number"
+                value={form.digits}
+                min={6}
+                max={8}
+                disabled
+                readOnly
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Period (seconds)</label>
+              <Input
+                type="number"
+                value={form.period}
+                min={15}
+                max={60}
+                disabled
+                readOnly
+                required
+              />
+            </div>
+          </>
+        )}
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <div className="flex gap-2">
           <Button type="submit" className="flex-1" disabled={loading}>
