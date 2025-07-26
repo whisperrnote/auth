@@ -27,6 +27,8 @@ function FilterChip({ label, icon: Icon }: { label: string; icon: any }) {
   );
 }
 
+import VaultGuard from "@/components/layout/VaultGuard";
+
 export default function DashboardPage() {
   const { user } = useAppwrite();
   const [credentials, setCredentials] = useState<any[]>([]);
@@ -132,9 +134,9 @@ export default function DashboardPage() {
     );
   }
 
-  return (
-    <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
-      {/* Desktop AppBar */}
+   return (
+    <VaultGuard>
+      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">      {/* Desktop AppBar */}
       <div className="hidden md:block">
         <div className="h-20 px-8 flex items-center bg-white/40 rounded-b-3xl shadow-md" style={{boxShadow: "0 8px 24px 0 rgba(141,103,72,0.13)"}}>
           <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] drop-shadow-md mr-8">

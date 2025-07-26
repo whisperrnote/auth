@@ -235,5 +235,6 @@ export default function TOTPPage() {
         </div>
       </Dialog>
     </div>
+    </VaultGuard>
   );
 }

@@ -103,7 +103,8 @@ export default function SharingPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
+    <VaultGuard>
+      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
       <div className="w-full max-w-2xl mx-auto px-4 md:px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
           <UserPlus className="h-8 w-8 text-[rgb(141,103,72)]" />
