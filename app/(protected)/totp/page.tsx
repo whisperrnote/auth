@@ -82,8 +82,8 @@ export default function TOTPPage() {
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="font-semibold">{totp.issuer}</h3>
-            <p className="text-sm text-muted-foreground">{totp.accountName}</p>
+            <h3 className="font-semibold truncate max-w-[180px]" title={totp.issuer}>{totp.issuer}</h3>
+            <p className="text-sm text-muted-foreground truncate max-w-[180px]" title={totp.accountName}>{totp.accountName}</p>
             {totp.folderId && (
               <span className="text-xs bg-secondary px-2 py-1 rounded mt-1 inline-block">
                 {totp.folderId}
