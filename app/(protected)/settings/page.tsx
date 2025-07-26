@@ -27,6 +27,8 @@ import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } 
 import { Query } from "appwrite";
 import { updateUserProfile, exportAllUserData, deleteUserAccount } from "@/lib/appwrite";
 
+import VaultGuard from "@/components/layout/VaultGuard";
+
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAppwrite();
@@ -426,5 +428,5 @@ export default function SettingsPage() {
         />
       )}
     </div>
-  );
-}
+    </VaultGuard>
+   );}

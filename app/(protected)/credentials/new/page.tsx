@@ -10,6 +10,9 @@ import { useAppwrite } from "@/app/appwrite-provider";
 import { createCredential, createFolder, createTotpSecret } from "@/lib/appwrite";
 import { generateRandomPassword } from "@/utils/password";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
+import VaultGuard from "@/components/layout/VaultGuard";
+
+import VaultGuard from "@/components/layout/VaultGuard";
 
 export default function NewCredentialPage() {
   const router = useRouter();
@@ -125,12 +128,12 @@ export default function NewCredentialPage() {
 
   // Don't render if user is not available
   if (!user) {
-    return (
-      <div className="space-y-6">
-        <div className="text-lg text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+   return (
+    <VaultGuard>
+      <div className="space-y-6">        <div className="text-lg text-muted-foreground">Loading...</div>
+    </div>
+    </VaultGuard>
+   );  }
 
   return (
     <div className="space-y-6">

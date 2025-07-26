@@ -10,6 +10,7 @@ import { listTotpSecrets, deleteTotpSecret } from "@/lib/appwrite";
 import NewTotpDialog from "@/components/app/totp/new";
 import { authenticator } from "otplib";
 import Dialog from "@/components/ui/Dialog";
+import VaultGuard from "@/components/layout/VaultGuard";
 
 export default function TOTPPage() {
   const [search, setSearch] = useState("");
