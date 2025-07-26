@@ -227,7 +227,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       required
@@ -250,7 +250,7 @@ export default function LoginPage() {
                   <div className="flex items-center gap-2">
                     <Input
                       type="text"
-                      placeholder="Enter OTP"
+                      
                       value={formData.otp}
                       onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
                       disabled={!otpSent}
