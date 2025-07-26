@@ -12,6 +12,7 @@ import { authenticator } from "otplib";
 import Dialog from "@/components/ui/Dialog";
 
 export default function TOTPPage() {
+  const [search, setSearch] = useState("");
   const { user } = useAppwrite();
   const [totpCodes, setTotpCodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,6 +166,17 @@ export default function TOTPPage() {
         <div className="text-red-600 text-sm mb-2">{error}</div>
       )}
 
+       {/* Search Bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search TOTP codes..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full max-w-xs px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-primary text-sm"
+        />
+      </div>
+
       {loading ? (
         <Card className="p-12 text-center">Loading...</Card>
       ) : totpCodes.length === 0 ? (
@@ -181,12 +193,20 @@ export default function TOTPPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {totpCodes.map((totp) => (
-            <TOTPCard key={totp.$id} totp={totp} />
-          ))}
+          {totpCodes
+            .filter(totp => {
+              const q = search.trim().toLowerCase();
+              if (!q) return true;
+              return (
+                (totp.issuer && totp.issuer.toLowerCase().includes(q)) ||
+                (totp.accountName && totp.accountName.toLowerCase().includes(q))
+              );
+            })
+            .map((totp) => (
+              <TOTPCard key={totp.$id} totp={totp} />
+            ))}
         </div>
       )}
-
       <NewTotpDialog open={showNew} onClose={() => setShowNew(false)} />
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, id: null })}>
