@@ -223,14 +223,13 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Password</label>
                   <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      required
-                    />
-                    <Button
+                     <Input
+                       type={showPassword ? "text" : "password"}
+                       placeholder="Enter your password"
+                       value={formData.password}
+                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                       required
+                     />                    <Button
                       type="button"
                       variant="ghost"
                       size="sm"
