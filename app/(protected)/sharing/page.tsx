@@ -97,7 +97,7 @@ export default function SharingPage() {
   };
 
   const handleCopy = (email: string) => {
-    navigator.clipboard.writeText(`https://app.whisperrauth.com/invite/${email}`);
+    navigator.clipboard.writeText(`https://auth.whisperrnote.space/login?email=${encodeURIComponent(email)}`);
     setCopied(email);
     setTimeout(() => setCopied(null), 1200);
   };
