@@ -86,7 +86,7 @@ export function DropdownMenu({
         <div
           className={`absolute z-50 mt-2 ${
             align === "right" ? "right-0" : "left-0"
-          } bg-popover border border-border rounded-md shadow-md overflow-hidden`}
+          } bg-card border border-border rounded-md shadow-md overflow-hidden`}
           style={{ width }}
           role="menu"
         >

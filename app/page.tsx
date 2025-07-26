@@ -123,10 +123,7 @@ export default function LandingPage() {
 
        {/* Hero Section - Adjust padding to account for navbar */}
        <div className="relative py-32 md:py-40 px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-         {/* Public Password Generator */}
-         <div className="w-full max-w-2xl mx-auto">
-           <PasswordGenerator />
-         </div>        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_25%_at_50%_25%,var(--tw-gradient-from)_0%,var(--tw-gradient-to)_100%)] from-primary/20 to-transparent dark:from-primary/10"></div>
+         <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_25%_at_50%_25%,var(--tw-gradient-from)_0%,var(--tw-gradient-to)_100%)] from-primary/20 to-transparent dark:from-primary/10"></div>
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 max-w-4xl">
           Your Passwords. <span className="text-primary">Protected</span>. Everywhere.

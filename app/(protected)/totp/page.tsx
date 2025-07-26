@@ -9,6 +9,7 @@ import { useAppwrite } from "@/app/appwrite-provider";
 import { listTotpSecrets, deleteTotpSecret } from "@/lib/appwrite";
 import NewTotpDialog from "@/components/app/totp/new";
 import { authenticator } from "otplib";
+import Dialog from "@/components/ui/Dialog";
 
 export default function TOTPPage() {
   const { user } = useAppwrite();

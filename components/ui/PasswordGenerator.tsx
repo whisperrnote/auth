@@ -62,7 +62,7 @@ export default function PasswordGenerator() {
   };
 
   return (
-    <div className="w-full max-w-[380px] p-2">
+    <div className="w-full max-w-[380px] p-2 bg-card rounded-md shadow-md">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold text-base">Password Generator</span>
