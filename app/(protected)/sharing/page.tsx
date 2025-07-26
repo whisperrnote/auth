@@ -82,6 +82,8 @@ function SharedWithItem({ name, email }: { name: string; email: string }) {
   );
 }
 
+import VaultGuard from "@/components/layout/VaultGuard";
+
 export default function SharingPage() {
   const [invites, setInvites] = useState([]);
   const [sharedWith, setSharedWith] = useState([]);
@@ -105,47 +107,48 @@ export default function SharingPage() {
   return (
     <VaultGuard>
       <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
-      <div className="w-full max-w-2xl mx-auto px-4 md:px-8 py-8">
-        <div className="flex items-center gap-3 mb-6">
-          <UserPlus className="h-8 w-8 text-[rgb(141,103,72)]" />
-          <h1 className="text-3xl font-bold text-[rgb(141,103,72)] drop-shadow-md">Sharing Center</h1>
-        </div>
-        {/* Invite Form */}
-        <div className="mb-8">
-          <SectionTitle>Invite Someone</SectionTitle>
-          <SharingInviteForm onInvite={handleInvite} loading={loading} />
-        </div>
-        {/* Pending/Accepted Invites */}
-        <div className="mb-8">
-          <SectionTitle>Pending Invitations</SectionTitle>
-          {invites.length === 0 && (
-            <div className="text-muted-foreground text-sm py-4">No invitations sent yet.</div>
-          )}
-          {invites.map(invite => (
-            <InviteItem
-              key={invite.email}
-              email={invite.email}
-              status={invite.status}
-              onCopy={() => handleCopy(invite.email)}
-            />
-          ))}
-          {copied && (
-            <div className="text-green-700 text-xs mt-2 animate-fade-in-out">
-              Invite link copied!
-            </div>
-          )}
-        </div>
-        {/* Shared With */}
-        <div>
-          <SectionTitle>Shared With</SectionTitle>
-          {sharedWith.length === 0 && (
-            <div className="text-muted-foreground text-sm py-4">No one has access yet.</div>
-          )}
-          {sharedWith.map(person => (
-            <SharedWithItem key={person.email} name={person.name} email={person.email} />
-          ))}
+        <div className="w-full max-w-2xl mx-auto px-4 md:px-8 py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <UserPlus className="h-8 w-8 text-[rgb(141,103,72)]" />
+            <h1 className="text-3xl font-bold text-[rgb(141,103,72)] drop-shadow-md">Sharing Center</h1>
+          </div>
+          {/* Invite Form */}
+          <div className="mb-8">
+            <SectionTitle>Invite Someone</SectionTitle>
+            <SharingInviteForm onInvite={handleInvite} loading={loading} />
+          </div>
+          {/* Pending/Accepted Invites */}
+          <div className="mb-8">
+            <SectionTitle>Pending Invitations</SectionTitle>
+            {invites.length === 0 && (
+              <div className="text-muted-foreground text-sm py-4">No invitations sent yet.</div>
+            )}
+            {invites.map(invite => (
+              <InviteItem
+                key={invite.email}
+                email={invite.email}
+                status={invite.status}
+                onCopy={() => handleCopy(invite.email)}
+              />
+            ))}
+            {copied && (
+              <div className="text-green-700 text-xs mt-2 animate-fade-in-out">
+                Invite link copied!
+              </div>
+            )}
+          </div>
+          {/* Shared With */}
+          <div>
+            <SectionTitle>Shared With</SectionTitle>
+            {sharedWith.length === 0 && (
+              <div className="text-muted-foreground text-sm py-4">No one has access yet.</div>
+            )}
+            {sharedWith.map(person => (
+              <SharedWithItem key={person.email} name={person.name} email={person.email} />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </VaultGuard>
   );
 }

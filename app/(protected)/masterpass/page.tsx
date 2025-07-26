@@ -10,6 +10,8 @@ import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
 import { hasMasterpass, setMasterpassFlag, logoutAppwrite } from "@/lib/appwrite";
 
+import VaultGuard from "@/components/layout/VaultGuard";
+
 export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

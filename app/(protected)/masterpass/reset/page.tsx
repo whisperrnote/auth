@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { resetMasterpassAndWipe } from "@/lib/appwrite";
 
+import VaultGuard from "@/components/layout/VaultGuard";
+
 export default function MasterpassResetPage() {
   const router = useRouter();
   const { user } = useAppwrite();
@@ -40,7 +42,8 @@ export default function MasterpassResetPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <VaultGuard>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           {/* Account name/email for personalization */}
@@ -99,5 +102,6 @@ export default function MasterpassResetPage() {
         </CardContent>
       </Card>
     </div>
+    </VaultGuard>
   );
 }

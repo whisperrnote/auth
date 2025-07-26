@@ -12,7 +12,6 @@ import { generateRandomPassword } from "@/utils/password";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 import VaultGuard from "@/components/layout/VaultGuard";
 
-import VaultGuard from "@/components/layout/VaultGuard";
 
 export default function NewCredentialPage() {
   const router = useRouter();
