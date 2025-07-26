@@ -83,14 +83,8 @@ function SharedWithItem({ name, email }: { name: string; email: string }) {
 }
 
 export default function SharingPage() {
-  const [invites, setInvites] = useState([
-    { email: "alice@mail.com", status: "pending" },
-    { email: "bob@mail.com", status: "accepted" },
-  ]);
-  const [sharedWith, setSharedWith] = useState([
-    { name: "Charlie", email: "charlie@mail.com" },
-    { name: "Dana", email: "dana@mail.com" },
-  ]);
+  const [invites, setInvites] = useState([]);
+  const [sharedWith, setSharedWith] = useState([]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
