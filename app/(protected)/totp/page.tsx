@@ -17,6 +17,7 @@ export default function TOTPPage() {
   const [showNew, setShowNew] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
 
   useEffect(() => {
     if (!user?.$id) return;
@@ -43,7 +44,6 @@ export default function TOTPPage() {
 
   const handleDelete = async (id: string) => {
     if (!user?.$id) return;
-    if (!confirm("Delete this TOTP code?")) return;
     setLoading(true);
     setError(null);
     try {
@@ -55,6 +55,7 @@ export default function TOTPPage() {
     }
     setLoading(false);
   };
+
 
   const generateTOTP = (secret: string, period: number = 30): string => {
     try {
@@ -94,10 +95,9 @@ export default function TOTPPage() {
             {/* <Button variant="ghost" size="sm">
               <Edit className="h-4 w-4" />
             </Button> */}
-            <Button variant="ghost" size="sm" onClick={() => handleDelete(totp.$id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+<Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: totp.$id })}>
+               <Trash2 className="h-4 w-4" />
+             </Button>          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -187,6 +187,32 @@ export default function TOTPPage() {
       )}
 
       <NewTotpDialog open={showNew} onClose={() => setShowNew(false)} />
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, id: null })}>
+        <div className="p-6">
+          <h2 className="text-lg font-bold mb-2">Delete TOTP Code</h2>
+          <p className="mb-4">Are you sure you want to delete this TOTP code? This action cannot be undone.</p>
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={async () => {
+                if (deleteDialog.id) await handleDelete(deleteDialog.id);
+                setDeleteDialog({ open: false, id: null });
+              }}
+            >
+              Delete
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => setDeleteDialog({ open: false, id: null })}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }
