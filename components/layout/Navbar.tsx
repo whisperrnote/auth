@@ -1,11 +1,12 @@
 "use client";
 
-import { Sun, Moon, Monitor, User, LogOut } from "lucide-react";
+import { Sun, Moon, Monitor, User, LogOut, Key } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import Link from "next/link";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { Button } from "@/components/ui/Button";
 import { useState } from "react";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -23,20 +24,30 @@ export function Navbar() {
           />
           <span className="font-semibold text-lg">Whisperrauth</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <button
-            className="p-2 rounded-full hover:bg-accent"
-            onClick={() => {
-              const nextTheme =
-                theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
-              setTheme(nextTheme);
-            }}
-          >
-            {theme === "light" && <Sun className="h-5 w-5" />}
-            {theme === "dark" && <Moon className="h-5 w-5" />}
-            {theme === "system" && <Monitor className="h-5 w-5" />}
-          </button>
-          {!user ? (
+         <div className="flex items-center gap-2">
+           {/* Password Generator Dropdown */}
+           <DropdownMenu
+             trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
+             width="400px"
+             align="right"
+           >
+             <div className="p-2">
+               {/* Refactored Password Generator component */}
+               {require("@/components/ui/PasswordGenerator").default()}
+             </div>
+           </DropdownMenu>
+           <button
+             className="p-2 rounded-full hover:bg-accent"
+             onClick={() => {
+               const nextTheme =
+                 theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
+               setTheme(nextTheme);
+             }}
+           >
+             {theme === "light" && <Sun className="h-5 w-5" />}
+             {theme === "dark" && <Moon className="h-5 w-5" />}
+             {theme === "system" && <Monitor className="h-5 w-5" />}
+           </button>          {!user ? (
             <Link href="/login">
               <Button size="sm" variant="outline">
                 Sign in
