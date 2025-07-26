@@ -248,18 +248,16 @@ export default function RegisterPage() {
               {/* Email always visible */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
-                <Input
-                  type="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData({ ...formData, email: e.target.value });
-                    setOtpSent(false);
-                    setMagicSent(false);
-                  }}
-                  required
-                />
-              </div>
+                 <Input
+                   type="email"
+                   value={formData.email}
+                   onChange={(e) => {
+                     setFormData({ ...formData, email: e.target.value });
+                     setOtpSent(false);
+                     setMagicSent(false);
+                   }}
+                   required
+                 />              </div>
               {/* Password registration */}
               {mode === "password" && (
                 <>
