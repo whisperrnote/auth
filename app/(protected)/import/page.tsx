@@ -86,11 +86,24 @@ export default function ImportPage() {
             <Button variant={importType === "json" ? "default" : "outline"} onClick={() => setImportType("json")}>JSON</Button>
           </div>
         </div>
-        <div>
-          <label className="font-medium">Select File</label>
-          <Input type="file" accept={importType === "json" ? ".json" : ".csv"} onChange={handleFileChange} />
-        </div>
-        <Button onClick={handleImport} disabled={importing || !file} className="w-full">
+         <div>
+           <label className="font-medium">Select File Format</label>
+           {importType === "bitwarden" ? (
+             <div className="flex gap-2 mt-2">
+               <Button variant="default" disabled>JSON (.json)</Button>
+               <Button variant="outline" disabled>CSV (.csv)</Button>
+               <Button variant="outline" disabled>Encrypted JSON (.json)</Button>
+               <Button variant="outline" disabled>ZIP (.zip)</Button>
+             </div>
+           ) : null}
+           <label className="font-medium mt-4 block">Select File</label>
+           <Input
+             type="file"
+             accept={importType === "bitwarden" ? ".json" : importType === "json" ? ".json" : ".csv"}
+             onChange={handleFileChange}
+             disabled={importType === "bitwarden" ? false : false}
+           />
+         </div>        <Button onClick={handleImport} disabled={importing || !file} className="w-full">
           {importing ? "Importing..." : "Import"}
         </Button>
         {error && <div className="text-red-600 text-sm">{error}</div>}
