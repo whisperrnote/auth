@@ -93,7 +93,7 @@ export default function ImportPage() {
                <Button variant="default" disabled>JSON (.json)</Button>
                <Button variant="outline" disabled>CSV (.csv)</Button>
                <Button variant="outline" disabled>Encrypted JSON (.json)</Button>
-               <Button variant="outline" disabled>ZIP (.zip)</Button>
+               <Button variant="outline" disabled>ZIP (.zip, with attachments)</Button>
              </div>
            ) : null}
            <label className="font-medium mt-4 block">Select File</label>
