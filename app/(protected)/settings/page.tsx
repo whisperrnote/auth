@@ -29,6 +29,20 @@ import { updateUserProfile, exportAllUserData, deleteUserAccount } from "@/lib/a
 
 import VaultGuard from "@/components/layout/VaultGuard";
 
+// Hook to detect if sidebar is visible (desktop) or not (mobile)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024); // Tailwind 'lg' breakpoint
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
+import ImportSection from "./ImportSection";
+
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAppwrite();
@@ -351,11 +365,17 @@ export default function SettingsPage() {
                 <Download className="h-4 w-4" />
                 Export All Data
               </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Upload className="h-4 w-4" />
-                Import Data
-              </Button>
-            </CardContent>
+<Button
+  asChild
+  variant="outline"
+  className="w-full justify-start gap-2"
+>
+  <a href="/import">
+    <Upload className="h-4 w-4" />
+    Import Data
+  </a>
+</Button>
+</CardContent>
           </Card>
 
           {/* Danger Zone */}

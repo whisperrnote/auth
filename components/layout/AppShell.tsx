@@ -4,17 +4,17 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Shield,
-  Settings,
-  LogOut,
-  Sun,
-  Moon,
-  Monitor,
-  Home,
-  PlusCircle,
-  Share2,
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
+   Shield,
+   Settings,
+   LogOut,
+   Sun,
+   Moon,
+   Monitor,
+   Home,
+   PlusCircle,
+   Share2,
+   Upload,
+ } from "lucide-react";import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/app/providers";
 import { useAppwrite } from "@/app/appwrite-provider"; // Use useAppwrite instead of useAuth
 import { Header } from "./Header";
@@ -29,6 +29,7 @@ const navigation = [
   { name: "Sharing", href: "/sharing", icon: Share2 },
   { name: "New", href: "/credentials/new", icon: PlusCircle, big: true },
   { name: "TOTP", href: "/totp", icon: Shield },
+  { name: "Import", href: "/import", icon: Upload }, // Added Import before Settings
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -172,31 +173,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Bottom bar (mobile only) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t flex lg:hidden justify-around items-center h-16 shadow-md">
-        {navigation.map((item, idx) => {
-          const isActive = pathname === item.href;
-          const isBig = item.big;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={clsx(
-                "flex flex-col items-center justify-center",
-                isBig ? "scale-110" : "",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-primary"
-              )}
-              aria-label={item.name}
-            >
-              <item.icon className={clsx("mb-1", isBig ? "h-8 w-8" : "h-5 w-5")} />
-              <span className={clsx("text-xs", isBig && "font-semibold")}>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
+       {/* Bottom bar (mobile only) */}
+       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t flex lg:hidden justify-around items-center h-16 shadow-md">
+         {navigation.filter(item => item.name !== "Import").map((item, idx) => {
+           const isActive = pathname === item.href;
+           const isBig = item.big;
+           return (
+             <Link
+               key={item.name}
+               href={item.href}
+               className={clsx(
+                 "flex flex-col items-center justify-center",
+                 isBig ? "scale-110" : "",
+                 isActive
+                   ? "text-primary"
+                   : "text-muted-foreground hover:text-primary"
+               )}
+               aria-label={item.name}
+             >
+               <item.icon className={clsx("mb-1", isBig ? "h-8 w-8" : "h-5 w-5")} />
+               <span className={clsx("text-xs", isBig && "font-semibold")}>{item.name}</span>
+             </Link>
+           );
+         })}
+       </nav>    </div>
   );
 }
 
