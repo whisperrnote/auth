@@ -26,13 +26,12 @@ export function Navbar() {
         </Link>
          <div className="flex items-center gap-2">
            {/* Password Generator Dropdown */}
-           <DropdownMenu
-             trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
-             width="400px"
-             align="right"
-           >
-             <div className="p-2">
-               {/* Refactored Password Generator component */}
+<DropdownMenu
+         trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
+         width="400px"
+         align="right"
+         className="sm:w-[400px] w-[calc(6ch+3.5rem)] max-w-xs"
+       >         <div className="p-2 inline-block w-auto min-w-0 sm:block sm:w-full">               {/* Refactored Password Generator component */}
                {require("@/components/ui/PasswordGenerator").default()}
              </div>
            </DropdownMenu>

@@ -61,8 +61,8 @@ export default function PasswordGenerator() {
     setLength(val);
   };
 
-  return (
-    <div className="w-full max-w-[380px] p-2 bg-card rounded-md shadow-md">
+   return (
+    <div className="w-full sm:max-w-[380px] max-w-xs p-2 bg-card rounded-md shadow-md">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold text-base">Password Generator</span>
@@ -73,25 +73,51 @@ export default function PasswordGenerator() {
               onChange={e => setShowHistory(e.target.checked)}
               className="accent-primary"
             />
-            <span>Show history</span>
+            <span className="sm:inline hidden">Show history</span>
+            <span className="inline sm:hidden">History</span>
           </label>
         </div>
-        <div className="flex gap-2 items-center">
-          <Input
-            ref={inputRef}
-            type="text"
-            value={password}
-            readOnly
-            className="font-mono text-base flex-1 bg-muted/50 cursor-default select-all"
-            aria-label="Generated password"
-          />
-          <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password">
-            <Copy className="h-4 w-4" />
-            {copied && <span className="ml-1 text-xs">Copied!</span>}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={handleGenerate} title="Generate new password">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+        <div>
+          {/* Mobile: vertical layout */}
+          <div className="sm:hidden flex flex-col gap-2 items-stretch w-auto">
+            <textarea
+              className="font-mono text-base w-[6ch] bg-muted/50 cursor-default select-all rounded px-2 py-1 min-h-[2.5rem] resize-none text-center"
+              value={password.slice(0, 6)}
+              readOnly
+              rows={2}
+              aria-label="Generated password"
+              style={{ wordBreak: 'break-all' }}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-7 w-7">
+              <Copy className="h-4 w-4" />
+              {copied && <span className="ml-1 text-xs">Copied!</span>}
+            </Button>
+            <Button type="button" onClick={handleGenerate} className="w-full mt-1">
+              Generate Password
+            </Button>
+          </div>
+          {/* Desktop: horizontal layout as before */}
+          <div className="hidden sm:flex flex-row gap-2 w-full items-center">
+            <div className="flex-1 relative items-center">
+              <Input
+                ref={inputRef}
+                type="text"
+                value={password}
+                readOnly
+                className="font-mono text-base w-full bg-muted/50 cursor-default select-all"
+                aria-label="Generated password"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+                <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-7 w-7">
+                  <Copy className="h-4 w-4" />
+                  {copied && <span className="ml-1 text-xs">Copied!</span>}
+                </Button>
+              </div>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={handleGenerate} title="Generate new password">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs">Length</span>
@@ -136,7 +162,7 @@ export default function PasswordGenerator() {
                   <li key={i} className="flex items-center gap-2 text-xs font-mono bg-muted/30 rounded px-2 py-1">
                     <span className="truncate flex-1" title={item.value}>{item.value}</span>
                     <span className="text-[10px] text-muted-foreground">{new Date(item.ts).toLocaleTimeString()}</span>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => {navigator.clipboard.writeText(item.value)}} title="Copy">
+                    <Button type="button" size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(item.value) }} title="Copy">
                       <Copy className="h-3 w-3" />
                     </Button>
                   </li>
@@ -149,4 +175,3 @@ export default function PasswordGenerator() {
     </div>
   );
 }
-

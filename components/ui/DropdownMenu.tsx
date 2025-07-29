@@ -84,10 +84,7 @@ export function DropdownMenu({
       {/* Dropdown content */}
       {isOpen && (
         <div
-          className={`absolute z-50 mt-2 ${
-            align === "right" ? "right-0" : "left-0"
-          } bg-card border border-border rounded-md shadow-md overflow-hidden`}
-          style={{ width }}
+          className={`absolute z-50 mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 bg-white dark:bg-neutral-900 border border-border rounded-md shadow-md overflow-hidden w-[95vw] max-w-[400px] mx-2 sm:mx-0`}
           role="menu"
         >
           <div className="py-1 text-popover-foreground">{children}</div>
