@@ -8,6 +8,7 @@ import { createCredential, updateCredential, deleteCredential, listCredentials, 
 import CredentialItem from "@/components/app/dashboard/CredentialItem";
 import SearchBar from "@/components/app/dashboard/SearchBar";
 import CredentialDialog from "@/components/app/dashboard/CredentialDialog";
+import PasswordGenerator from "@/components/ui/PasswordGenerator";
 import clsx from "clsx";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -142,23 +143,25 @@ export default function DashboardPage() {
         {/* Desktop AppBar */}
         <div className="hidden md:block">
 <div className="h-20 px-8 flex items-center bg-card rounded-b-3xl shadow-md">
-             <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md mr-8">
-               WhisperrAuth
-             </span>
-             <div className="flex-1 bg-card rounded-full">
-               <SearchBar onSearch={handleSearch} />
-             </div>
-           </div>        </div>
+  <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md mr-8">
+    WhisperrAuth
+  </span>
+  <div className="flex-1 bg-card rounded-full">
+    <SearchBar onSearch={handleSearch} />
+  </div>
+
+</div>        </div>
         {/* Mobile AppBar */}
         <div className="md:hidden">
-<div className="h-[70px] flex items-center justify-center bg-card !bg-card shadow-md relative">
-             <span className="font-bold text-[26px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md">
-               WhisperrAuth
-             </span>
-             <div className="absolute left-0 right-0 bottom-0 px-2 pb-2 bg-card rounded-full">
-               <SearchBar onSearch={handleSearch} />
-             </div>
-           </div>        </div>
+<div className="h-[70px] flex items-center justify-between bg-card shadow-md relative px-4">
+  <span className="font-bold text-[26px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md">
+    WhisperrAuth
+  </span>
+
+  <div className="absolute left-0 right-0 bottom-0 px-2 pb-2 bg-card rounded-full">
+    <SearchBar onSearch={handleSearch} />
+  </div>
+</div>        </div>
         {/* Main Content */}
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-6 bg-card rounded-lg shadow">
           {/* Filter chips */}
