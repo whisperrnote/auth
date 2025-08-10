@@ -1,5 +1,6 @@
 import type { Credentials, TotpSecrets, Folders } from '@/types/appwrite.d';
-import type { BitwardenExport, BitwardenItem, BitwardenFolder, BITWARDEN_ITEM_TYPES } from './bitwarden-types';
+import type { BitwardenExport, BitwardenItem, BitwardenFolder } from './bitwarden-types';
+import { BITWARDEN_ITEM_TYPES } from './bitwarden-types';
 
 export interface ImportMapping {
   folders: Map<string, string>; // Bitwarden folder ID -> Our folder ID
