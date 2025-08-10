@@ -31,9 +31,9 @@
                 "limit": 0,
                 "sessionsLimit": 10,
                 "passwordHistory": 0,
-                "passwordDictionary": false,
-                "personalDataCheck": false,
-                "sessionAlerts": false,
+                "passwordDictionary": true,
+                "personalDataCheck": true,
+                "sessionAlerts": true,
                 "mockNumbers": []
             }
         }
@@ -65,7 +65,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "name",
@@ -73,7 +74,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "url",
@@ -81,7 +83,8 @@
                     "required": false,
                     "array": false,
                     "size": 1024,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "username",
@@ -89,7 +92,8 @@
                     "required": true,
                     "array": false,
                     "size": 10000,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "notes",
@@ -97,7 +101,8 @@
                     "required": false,
                     "array": false,
                     "size": 65535,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "folderId",
@@ -105,7 +110,8 @@
                     "required": false,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "tags",
@@ -113,7 +119,8 @@
                     "required": false,
                     "array": true,
                     "size": 100,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "customFields",
@@ -121,7 +128,8 @@
                     "required": false,
                     "array": false,
                     "size": 65535,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "faviconUrl",
@@ -129,7 +137,8 @@
                     "required": false,
                     "array": false,
                     "size": 1024,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "createdAt",
@@ -153,7 +162,8 @@
                     "required": true,
                     "array": false,
                     "size": 3000,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 }
             ],
             "indexes": [
@@ -207,7 +217,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "issuer",
@@ -215,7 +226,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "accountName",
@@ -223,7 +235,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "secretKey",
@@ -231,7 +244,8 @@
                     "required": true,
                     "array": false,
                     "size": 10000,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "folderId",
@@ -239,7 +253,8 @@
                     "required": false,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "createdAt",
@@ -263,7 +278,8 @@
                     "required": false,
                     "array": false,
                     "size": 10,
-                    "default": "SHA1"
+                    "default": "SHA1",
+                    "encrypt": false
                 },
                 {
                     "key": "digits",
@@ -282,6 +298,14 @@
                     "min": -9223372036854775808,
                     "max": 9223372036854775807,
                     "default": 30
+                },
+                {
+                    "key": "url",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "format": "url",
+                    "default": null
                 }
             ],
             "indexes": [
@@ -324,7 +348,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "name",
@@ -332,7 +357,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "parentFolderId",
@@ -340,7 +366,8 @@
                     "required": false,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "createdAt",
@@ -399,7 +426,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "eventType",
@@ -407,7 +435,8 @@
                     "required": true,
                     "array": false,
                     "size": 100,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "ipAddress",
@@ -415,7 +444,8 @@
                     "required": false,
                     "array": false,
                     "size": 45,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "userAgent",
@@ -423,7 +453,8 @@
                     "required": false,
                     "array": false,
                     "size": 512,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "details",
@@ -431,7 +462,8 @@
                     "required": false,
                     "array": false,
                     "size": 65535,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "timestamp",
@@ -476,7 +508,12 @@
         },
         {
             "$id": "user",
-            "$permissions": [],
+            "$permissions": [
+                "create(\"users\")",
+                "read(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
             "databaseId": "passwordManagerDb",
             "name": "user",
             "enabled": true,
@@ -495,7 +532,8 @@
                     "required": true,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "email",
@@ -503,7 +541,8 @@
                     "required": false,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 },
                 {
                     "key": "twofa",
@@ -518,7 +557,8 @@
                     "required": false,
                     "array": false,
                     "size": 255,
-                    "default": null
+                    "default": null,
+                    "encrypt": false
                 }
             ],
             "indexes": []
