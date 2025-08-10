@@ -23,7 +23,7 @@ export function Navbar() {
             alt="Whisperrauth Logo"
             className="h-8 w-8 rounded-lg object-contain"
           />
-          <span className="font-semibold text-lg">Whisperrauth</span>
+          <span className="font-semibold text-lg hidden sm:inline">Whisperrauth</span>
         </Link>
         <div className="flex items-center gap-2">
           {/* Password Generator Dropdown */}
