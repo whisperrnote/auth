@@ -75,7 +75,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
 
     // Listen for vault lock events
     const handleVaultLocked = () => {
-      setNeedsMasterPassword(true);
+      setTimeout(() => setNeedsMasterPassword(true), 0);
     };
     window.addEventListener('vault-locked', handleVaultLocked);
 
