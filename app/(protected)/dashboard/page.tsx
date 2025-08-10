@@ -20,7 +20,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function FilterChip({ label, icon: Icon }: { label: string; icon: any }) {
   return (
-    <div className="flex items-center px-4 py-2 bg-primary rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700 !bg-primary dark:!bg-neutral-800">
+    <div className="flex items-center px-4 py-2 bg-[rgb(141,103,72)] rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700">
       <Icon className="h-5 w-5 text-white dark:text-primary" />
       <span className="ml-2 font-semibold text-[15px] text-white dark:text-primary">{label}</span>
     </div>
