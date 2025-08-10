@@ -12,7 +12,7 @@ import clsx from "clsx";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[22px] font-bold text-[rgb(141,103,72)] mb-2 drop-shadow-sm">
+    <h2 className="text-[22px] font-bold text-[rgb(141,103,72)] dark:text-primary mb-2 drop-shadow-sm">
       {children}
     </h2>
   );
@@ -20,9 +20,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function FilterChip({ label, icon: Icon }: { label: string; icon: any }) {
   return (
-    <div className="flex items-center px-4 py-2 bg-white/60 rounded-full shadow-sm border border-[rgba(191,174,153,0.4)] mr-3 mb-2">
+    <div className="flex items-center px-4 py-2 bg-white/60 dark:bg-neutral-800 rounded-full shadow-sm border border-[rgba(191,174,153,0.4)] dark:border-neutral-700 mr-3 mb-2">
       <Icon className="h-5 w-5 text-[rgb(141,103,72)]" />
-      <span className="ml-2 text-[rgb(141,103,72)] font-semibold text-[15px]">{label}</span>
+      <span className="ml-2 text-[rgb(141,103,72)] dark:text-primary font-semibold text-[15px]">{label}</span>
     </div>
   );
 }
@@ -128,20 +128,21 @@ export default function DashboardPage() {
   // Don't render if user is not available
   if (!user) {
     return (
-      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex items-center justify-center">
-        <div className="text-lg text-muted-foreground">Loading...</div>
+      <div className="w-full min-h-screen bg-background dark:bg-neutral-900 flex items-center justify-center">
+        <div className="text-lg text-muted-foreground dark:text-foreground">Loading...</div>
       </div>
     );
   }
 
    return (
     <VaultGuard>
+  {/* Ensures dark mode is inherited for all children */}
       {/* Main Dashboard Content */}
-      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
+      <div className="w-full min-h-screen bg-background dark:bg-neutral-900 flex flex-col">
         {/* Desktop AppBar */}
         <div className="hidden md:block">
-          <div className="h-20 px-8 flex items-center bg-white/40 rounded-b-3xl shadow-md" style={{boxShadow: "0 8px 24px 0 rgba(141,103,72,0.13)"}}>
-            <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] drop-shadow-md mr-8">
+          <div className="h-20 px-8 flex items-center bg-white/40 dark:bg-neutral-800/80 rounded-b-3xl shadow-md" style={{boxShadow: "0 8px 24px 0 rgba(141,103,72,0.13)"}}>
+            <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md mr-8">
               WhisperrAuth
             </span>
             <div className="flex-1">
@@ -151,8 +152,8 @@ export default function DashboardPage() {
         </div>
         {/* Mobile AppBar */}
         <div className="md:hidden">
-          <div className="h-[70px] flex items-center justify-center bg-white/70 shadow-md relative">
-            <span className="font-bold text-[26px] tracking-wider text-[rgb(141,103,72)] drop-shadow-md">
+          <div className="h-[70px] flex items-center justify-center bg-white/70 dark:bg-neutral-800/80 shadow-md relative">
+            <span className="font-bold text-[26px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md">
               WhisperrAuth
             </span>
             <div className="absolute left-0 right-0 bottom-0 px-2 pb-2">
@@ -161,7 +162,7 @@ export default function DashboardPage() {
           </div>
         </div>
         {/* Main Content */}
-        <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-6">
+        <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-6 bg-background dark:bg-neutral-900 rounded-lg shadow">
           {/* Filter chips */}
           <div className="flex flex-wrap items-center py-4">
             <FilterChip label="Folder" icon={Folder} />
@@ -173,9 +174,9 @@ export default function DashboardPage() {
           </div>
           {/* Recent Section */}
           <SectionTitle>Recent</SectionTitle>
-          <div className="space-y-2 mb-6">
+          <div className="space-y-2 mb-6 text-foreground dark:text-foreground">
             {loading ? (
-              <div>Loading...</div>
+              <div className="text-foreground dark:text-foreground">Loading...</div>
             ) : (
               filtered.slice(0, 3).map((cred) => (
                 <CredentialItem
@@ -191,9 +192,9 @@ export default function DashboardPage() {
           </div>
           {/* All Items Section */}
           <SectionTitle>All Items</SectionTitle>
-          <div className="space-y-2">
+          <div className="space-y-2 text-foreground dark:text-foreground">
             {loading ? (
-              <div>Loading...</div>
+              <div className="text-foreground dark:text-foreground">Loading...</div>
             ) : (
               filtered.map((cred) => (
                 <CredentialItem
