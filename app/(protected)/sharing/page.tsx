@@ -46,7 +46,7 @@ function InviteItem({ email, status, onCopy }: { email: string; status: string; 
     <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-card border border-border mb-2 shadow-sm">
       <div className="flex items-center gap-3">
         <Mail className="h-5 w-5 text-primary" />
-        <span className="font-medium text-[rgb(141,103,72)]">{email}</span>
+        <span className="font-medium text-primary">{email}</span>
         <span className={clsx(
           "ml-2 text-xs font-semibold px-2 py-1 rounded",
           status === "pending"
@@ -73,9 +73,9 @@ function InviteItem({ email, status, onCopy }: { email: string; status: string; 
 
 function SharedWithItem({ name, email }: { name: string; email: string }) {
   return (
-    <div className="flex items-center px-4 py-3 rounded-xl bg-white/70 border border-[rgba(191,174,153,0.3)] mb-2 shadow-sm">
-      <Users className="h-5 w-5 text-[rgb(141,103,72)] mr-3" />
-      <span className="font-medium text-[rgb(141,103,72)]">{name}</span>
+    <div className="flex items-center px-4 py-3 rounded-xl bg-card border border-border mb-2 shadow-sm">
+      <Users className="h-5 w-5 text-primary mr-3" />
+      <span className="font-medium text-primary">{name}</span>
       <span className="ml-2 text-sm text-secondary">{email}</span>
     </div>
   );
@@ -108,7 +108,7 @@ export default function SharingPage() {
       <div className="w-full min-h-screen bg-background flex flex-col">
         <div className="w-full max-w-2xl mx-auto px-4 md:px-8 py-8">
           <div className="flex items-center gap-3 mb-6">
-            <UserPlus className="h-8 w-8 text-[rgb(141,103,72)]" />
+            <UserPlus className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold text-primary drop-shadow-md">Sharing Center</h1>
           </div>
           {/* Invite Form */}

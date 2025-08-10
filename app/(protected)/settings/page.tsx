@@ -143,10 +143,10 @@ export default function SettingsPage() {
 
   return (
     <VaultGuard>
-      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col items-center py-8 px-2 animate-fade-in">
+      <div className="w-full min-h-screen bg-background flex flex-col items-center py-8 px-2 animate-fade-in">
       <div className="w-full max-w-5xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-[rgb(141,103,72)] drop-shadow-sm">
+          <h1 className="text-3xl font-bold tracking-tight text-primary drop-shadow-sm">
             Settings
           </h1>
           <p className="text-muted-foreground">
