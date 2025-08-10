@@ -366,14 +366,12 @@ export default function SettingsPage() {
                 Export All Data
               </Button>
 <Button
-  asChild
   variant="outline"
   className="w-full justify-start gap-2"
+  onClick={() => window.location.href = '/import'}
 >
-  <a href="/import">
-    <Upload className="h-4 w-4" />
-    Import Data
-  </a>
+  <Upload className="h-4 w-4" />
+  Import Data
 </Button>
 </CardContent>
           </Card>
