@@ -30,6 +30,8 @@ function FilterChip({ label, icon: Icon }: { label: string; icon: any }) {
 
 import VaultGuard from "@/components/layout/VaultGuard";
 
+import CredentialDetail from "@/components/app/dashboard/CredentialDetail";
+
 export default function DashboardPage() {
   const { user } = useAppwrite();
   const [credentials, setCredentials] = useState<any[]>([]);
@@ -38,7 +40,19 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editCredential, setEditCredential] = useState<any | null>(null);
+  const [selectedCredential, setSelectedCredential] = useState<any | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const isDesktop = typeof window !== "undefined" ? window.innerWidth > 900 : true;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 900);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Fetch all credentials on mount
   useEffect(() => {
@@ -180,15 +194,18 @@ export default function DashboardPage() {
               <div className="text-foreground dark:text-foreground">Loading...</div>
             ) : (
               filtered.slice(0, 3).map((cred) => (
-                <CredentialItem
-                  key={cred.$id}
-                  credential={cred}
-                  onCopy={handleCopy}
-                  isDesktop={isDesktop}
-                  onEdit={() => handleEdit(cred)}
-                  onDelete={() => handleDelete(cred)}
-                />
-              ))
+<CredentialItem
+  key={cred.$id}
+  credential={cred}
+  onCopy={handleCopy}
+  isDesktop={isDesktop}
+  onEdit={() => handleEdit(cred)}
+  onDelete={() => handleDelete(cred)}
+  onClick={() => {
+    setSelectedCredential(cred);
+    setShowDetail(true);
+  }}
+/>              ))
             )}
           </div>
           {/* All Items Section */}
@@ -198,15 +215,18 @@ export default function DashboardPage() {
               <div className="text-foreground dark:text-foreground">Loading...</div>
             ) : (
               filtered.map((cred) => (
-                <CredentialItem
-                  key={cred.$id}
-                  credential={cred}
-                  onCopy={handleCopy}
-                  isDesktop={isDesktop}
-                  onEdit={() => handleEdit(cred)}
-                  onDelete={() => handleDelete(cred)}
-                />
-              ))
+<CredentialItem
+  key={cred.$id}
+  credential={cred}
+  onCopy={handleCopy}
+  isDesktop={isDesktop}
+  onEdit={() => handleEdit(cred)}
+  onDelete={() => handleDelete(cred)}
+  onClick={() => {
+    setSelectedCredential(cred);
+    setShowDetail(true);
+  }}
+/>              ))
             )}
           </div>
         </div>
@@ -216,6 +236,26 @@ export default function DashboardPage() {
           initial={editCredential}
           onSaved={refreshCredentials}
         />
+
+        {/* Credential Detail Sidebar/Overlay */}
+        {showDetail && selectedCredential && (
+          <>
+            {/* Backdrop blur overlay for mobile */}
+            {isMobile && (
+              <div 
+                className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300" 
+                onClick={() => setShowDetail(false)}
+                style={{ backdropFilter: 'blur(4px)' }}
+              />
+            )}
+            <CredentialDetail
+              credential={selectedCredential}
+              onClose={() => setShowDetail(false)}
+              isMobile={isMobile}
+            />
+          </>
+        )}
+
       </div>
     </VaultGuard>
    );}
