@@ -69,7 +69,16 @@ export class ImportService {
 
       const bitwardenData: BitwardenExport = parsedData;
       const mappedData = analyzeBitwardenExport(bitwardenData, userId);
-      
+
+      // Enhanced error handling for empty or skipped credentials
+      if (mappedData.credentials.length === 0) {
+        let errorMsg = "No login credentials found in file. Make sure you exported your vault as JSON and that it contains login items.";
+        if (mappedData.mapping.statistics.skippedItems > 0) {
+          errorMsg += ` ${mappedData.mapping.statistics.skippedItems} item(s) were skipped. Only items of type 'login' with valid login data are imported.`;
+        }
+        throw new Error(errorMsg);
+      }
+
       const totalItems = mappedData.folders.length + mappedData.credentials.length + mappedData.totpSecrets.length;
 
       // Stage 2: Import folders
