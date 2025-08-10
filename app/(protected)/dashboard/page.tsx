@@ -128,7 +128,7 @@ export default function DashboardPage() {
   // Don't render if user is not available
   if (!user) {
     return (
-      <div className="w-full min-h-screen bg-background dark:bg-neutral-900 flex items-center justify-center">
+      <div className="w-full min-h-screen bg-background flex items-center justify-center">
         <div className="text-lg text-muted-foreground dark:text-foreground">Loading...</div>
       </div>
     );
@@ -138,10 +138,10 @@ export default function DashboardPage() {
     <VaultGuard>
   {/* Ensures dark mode is inherited for all children */}
       {/* Main Dashboard Content */}
-      <div className="w-full min-h-screen bg-background dark:bg-neutral-900 flex flex-col">
+      <div className="w-full min-h-screen bg-background flex flex-col">
         {/* Desktop AppBar */}
         <div className="hidden md:block">
-          <div className="h-20 px-8 flex items-center bg-white/40 dark:bg-neutral-800/80 rounded-b-3xl shadow-md" style={{boxShadow: "0 8px 24px 0 rgba(141,103,72,0.13)"}}>
+          <div className="h-20 px-8 flex items-center bg-card rounded-b-3xl shadow-md" style={{boxShadow: "0 8px 24px 0 rgba(141,103,72,0.13)"}}>
             <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md mr-8">
               WhisperrAuth
             </span>
@@ -162,7 +162,7 @@ export default function DashboardPage() {
           </div>
         </div>
         {/* Main Content */}
-        <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-6 bg-background dark:bg-neutral-900 rounded-lg shadow">
+        <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-6 bg-card rounded-lg shadow">
           {/* Filter chips */}
           <div className="flex flex-wrap items-center py-4">
             <FilterChip label="Folder" icon={Folder} />

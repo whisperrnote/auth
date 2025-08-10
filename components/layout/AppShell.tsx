@@ -174,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
        {/* Bottom bar (mobile only) */}
-       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background dark:bg-neutral-900 border-t flex lg:hidden justify-around items-center h-16 shadow-md">
+       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t flex lg:hidden justify-around items-center h-16 shadow-md">
          {navigation.filter(item => item.name !== "Import").map((item, idx) => {
            const isActive = pathname === item.href;
            const isBig = item.big;

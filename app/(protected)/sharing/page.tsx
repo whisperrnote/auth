@@ -7,7 +7,7 @@ import clsx from "clsx";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[22px] font-bold text-[rgb(141,103,72)] mb-2 drop-shadow-sm">
+    <h2 className="text-[22px] font-bold text-primary mb-2 drop-shadow-sm">
       {children}
     </h2>
   );
@@ -23,11 +23,10 @@ function SharingInviteForm({ onInvite, loading }: { onInvite: (email: string) =>
         if (email) onInvite(email);
       }}
     >
-      <input
-        type="email"
-        className="flex-1 rounded-full px-4 py-2 border border-[rgba(191,174,153,0.4)] bg-white/60 outline-none text-base"
-        placeholder="Invite by email"
-        value={email}
+<input
+          type="email"
+          className="flex-1 rounded-full px-4 py-2 border border-border bg-card outline-none text-base"
+          placeholder="Invite by email"        value={email}
         onChange={e => setEmail(e.target.value)}
         required
       />
@@ -44,9 +43,9 @@ function SharingInviteForm({ onInvite, loading }: { onInvite: (email: string) =>
 
 function InviteItem({ email, status, onCopy }: { email: string; status: string; onCopy: () => void }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/70 border border-[rgba(191,174,153,0.3)] mb-2 shadow-sm">
+    <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-card border border-border mb-2 shadow-sm">
       <div className="flex items-center gap-3">
-        <Mail className="h-5 w-5 text-[rgb(141,103,72)]" />
+        <Mail className="h-5 w-5 text-primary" />
         <span className="font-medium text-[rgb(141,103,72)]">{email}</span>
         <span className={clsx(
           "ml-2 text-xs font-semibold px-2 py-1 rounded",
@@ -66,7 +65,7 @@ function InviteItem({ email, status, onCopy }: { email: string; status: string; 
         onClick={onCopy}
         aria-label="Copy invite link"
       >
-        <Copy className="h-5 w-5 text-[rgb(141,103,72)]" />
+        <Copy className="h-5 w-5 text-primary" />
       </Button>
     </div>
   );
@@ -77,7 +76,7 @@ function SharedWithItem({ name, email }: { name: string; email: string }) {
     <div className="flex items-center px-4 py-3 rounded-xl bg-white/70 border border-[rgba(191,174,153,0.3)] mb-2 shadow-sm">
       <Users className="h-5 w-5 text-[rgb(141,103,72)] mr-3" />
       <span className="font-medium text-[rgb(141,103,72)]">{name}</span>
-      <span className="ml-2 text-sm text-[rgb(191,174,153)]">{email}</span>
+      <span className="ml-2 text-sm text-secondary">{email}</span>
     </div>
   );
 }
@@ -106,11 +105,11 @@ export default function SharingPage() {
 
   return (
     <VaultGuard>
-      <div className="w-full min-h-screen bg-[rgb(245,239,230)] flex flex-col">
+      <div className="w-full min-h-screen bg-background flex flex-col">
         <div className="w-full max-w-2xl mx-auto px-4 md:px-8 py-8">
           <div className="flex items-center gap-3 mb-6">
             <UserPlus className="h-8 w-8 text-[rgb(141,103,72)]" />
-            <h1 className="text-3xl font-bold text-[rgb(141,103,72)] drop-shadow-md">Sharing Center</h1>
+            <h1 className="text-3xl font-bold text-primary drop-shadow-md">Sharing Center</h1>
           </div>
           {/* Invite Form */}
           <div className="mb-8">
