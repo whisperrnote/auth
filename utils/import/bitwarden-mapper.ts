@@ -79,13 +79,24 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
         customFields = JSON.stringify(fieldsObject);
       }
 
+      // Validate required fields for credential
+      const username = item.login.username ? item.login.username.trim() : '';
+      const password = item.login.password ? item.login.password.trim() : '';
+      const name = item.name ? item.name.trim() : '';
+      if (!username || !password || !name) {
+        // Skip if any required field is missing or empty
+        skippedItems++;
+        console.warn(`Skipped item "${item.name}" due to missing required field(s):${!name ? ' name' : ''}${!username ? ' username' : ''}${!password ? ' password' : ''}`);
+        return;
+      }
+
       // Create credential entry
       const credential: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'> = {
         userId,
-        name: item.name,
+        name,
         url,
-        username: item.login.username || '',
-        password: item.login.password || '',
+        username,
+        password,
         notes: item.notes,
         folderId,
         tags: null, // Bitwarden doesn't have tags in this structure
