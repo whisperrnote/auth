@@ -25,26 +25,44 @@ export function Navbar() {
           />
           <span className="font-semibold text-lg">Whisperrauth</span>
         </Link>
-<div className="flex items-center gap-2">
-            {/* Password Generator Dropdown */}
-            <DropdownMenu
-              trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
-              width="400px"
-              align="right"
-              className="sm:w-[400px] w-[calc(6ch+3.5rem)] max-w-xs"
-            >
-              <div className="p-2 inline-block w-auto min-w-0 sm:block sm:w-full">
-                <PasswordGenerator />
-              </div>
-            </DropdownMenu>
-            <button
-              className="p-2 rounded-full hover:bg-accent"
-              onClick={() => {
-                const nextTheme =
-                  theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
-                setTheme(nextTheme);
-              }}
-            >
+        <div className="flex items-center gap-2">
+          {/* Password Generator Dropdown */}
+          <DropdownMenu
+            trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
+            width="400px"
+            align="right"
+            className="sm:w-[400px] w-[calc(6ch+3.5rem)] max-w-xs"
+          >
+            <div className="p-2 inline-block w-auto min-w-0 sm:block sm:w-full">
+              <PasswordGenerator />
+            </div>
+          </DropdownMenu>
+          <button
+            className="p-2 rounded-full hover:bg-accent"
+            onClick={() => {
+              const nextTheme =
+                theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
+              setTheme(nextTheme);
+            }}
+          >
+            {theme === "light" && <Sun className="h-5 w-5" />}
+            {theme === "dark" && <Moon className="h-5 w-5" />}
+            {theme === "system" && <Monitor className="h-5 w-5" />}
+          </button>
+          {!user ? (
+            <Link href="/login">
+              <Button size="sm" variant="outline">
+                Sign in
+              </Button>
+            </Link>
+          ) : (
+            <div className="relative">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="flex items-center gap-2"
+                onClick={() => setShowMenu((v) => !v)}
+              >
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">{user.name || user.email}</span>
               </Button>
