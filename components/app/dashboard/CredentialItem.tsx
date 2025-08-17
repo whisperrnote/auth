@@ -4,35 +4,62 @@ import { Button } from "@/components/ui/Button";
 import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
+const MENU_EVENT = "credential-menu-open";
+
 function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void; showPassword: boolean }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuStyle, setMenuStyle] = useState<{ top: number; left: number } | null>(null);
+  const idRef = useRef<string>(`menu-${Math.random().toString(36).slice(2,9)}`);
+
+  useEffect(() => {
+    function onMenuEvent(e: Event) {
+      const detail = (e as CustomEvent).detail as { id: string } | undefined;
+      if (!detail) return;
+      if (detail.id !== idRef.current) setOpen(false);
+    }
+    window.addEventListener(MENU_EVENT, onMenuEvent as EventListener);
+    return () => window.removeEventListener(MENU_EVENT, onMenuEvent as EventListener);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     function handleDocClick(e: MouseEvent) {
-      if (!menuRef.current || !btnRef.current) return;
       const target = e.target as Node;
-      if (menuRef.current.contains(target) || btnRef.current.contains(target)) return;
+      if (menuRef.current?.contains(target) || btnRef.current?.contains(target)) return setOpen(true);
       setOpen(false);
     }
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", handleDocClick);
-    return () => document.removeEventListener("mousedown", handleDocClick);
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleDocClick);
+      document.removeEventListener("keydown", handleEsc);
+    };
   }, [open]);
 
   useEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const top = rect.bottom + window.scrollY + 6;
-    const left = Math.max(8, rect.right + window.scrollX - 176); // avoid offscreen
+    const left = Math.max(8, rect.left + window.scrollX); // align to button left
     setMenuStyle({ top, left });
+    // announce to other menus that this one opened
+    window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(o => !o);
+    if (!open) window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
+  };
 
   return (
     <div className="relative">
-      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="Copy">
+      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={toggle} title="Copy">
         <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
       </Button>
       {open && typeof document !== "undefined" && createPortal(
@@ -57,30 +84,54 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuStyle, setMenuStyle] = useState<{ top: number; left: number } | null>(null);
+  const idRef = useRef<string>(`menu-${Math.random().toString(36).slice(2,9)}`);
+
+  useEffect(() => {
+    function onMenuEvent(e: Event) {
+      const detail = (e as CustomEvent).detail as { id: string } | undefined;
+      if (!detail) return;
+      if (detail.id !== idRef.current) setOpen(false);
+    }
+    window.addEventListener(MENU_EVENT, onMenuEvent as EventListener);
+    return () => window.removeEventListener(MENU_EVENT, onMenuEvent as EventListener);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     function handleDocClick(e: MouseEvent) {
-      if (!menuRef.current || !btnRef.current) return;
       const target = e.target as Node;
-      if (menuRef.current.contains(target) || btnRef.current.contains(target)) return;
+      if (menuRef.current?.contains(target) || btnRef.current?.contains(target)) return setOpen(true);
       setOpen(false);
     }
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", handleDocClick);
-    return () => document.removeEventListener("mousedown", handleDocClick);
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleDocClick);
+      document.removeEventListener("keydown", handleEsc);
+    };
   }, [open]);
 
   useEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const top = rect.bottom + window.scrollY + 6;
-    const left = Math.max(8, rect.right + window.scrollX - 144); // menu width ~144px (w-36)
+    const left = Math.max(8, rect.left + window.scrollX); // align to button left
     setMenuStyle({ top, left });
+    window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(o => !o);
+    if (!open) window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
+  };
 
   return (
     <div className="relative">
-      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="More">
+      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={toggle} title="More">
         <svg className="h-6 w-6 text-[rgb(141,103,72)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="5" r="1.5" />
           <circle cx="12" cy="12" r="1.5" />
