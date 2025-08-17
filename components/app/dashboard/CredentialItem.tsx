@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/Button";
 import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
-function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void; showPassword: boolean }) {
-  const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -21,13 +19,23 @@ function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { cr
     return () => document.removeEventListener("mousedown", handleDocClick);
   }, [open]);
 
+  const [menuStyle, setMenuStyle] = useState<{top:number,left:number}|null>(null);
+
+  useEffect(() => {
+    if (!open || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const top = rect.bottom + window.scrollY + 6;
+    const left = rect.right + window.scrollX - 176; // menu width ~176px (w-44)
+    setMenuStyle({ top, left });
+  }, [open]);
+
   return (
     <div className="relative">
       <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="Copy">
         <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
       </Button>
       {open && createPortal(
-        <div ref={menuRef as any} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1" style={{ top: 0, left: 0 }}>
+        <div ref={menuRef as any} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1 w-44" style={{ top: menuStyle?.top ?? 0, left: menuStyle?.left ?? 0 }}>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
             Copy username
           </button>
@@ -43,27 +51,6 @@ function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { cr
   );
 }
   const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <Button variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="Copy">
-        <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
-      </Button>
-      {open && (
-        <div className="absolute right-0 mt-2 w-44 bg-background border rounded-md shadow-md py-1 z-[9999] will-change-transform">
-          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
-            Copy username
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.password); setOpen(false); }}>
-            Copy password
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onToggleShow(); setOpen(false); }}>
-            {showPassword ? "Hide password" : "Show password"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
