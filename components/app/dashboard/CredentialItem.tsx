@@ -43,7 +43,7 @@ export default function CredentialItem({
     <div
       className={clsx(
         "rounded-2xl overflow-hidden mb-3 backdrop-blur-md border border-[rgba(191,174,153,0.3)] shadow-sm cursor-pointer",
-        "bg-white/55 transition-shadow hover:shadow-lg"
+        "bg-white/55 transition-shadow hover:shadow-lg dark:bg-[rgba(141,103,72,0.14)] dark:border-none dark:shadow-none"
       )}
       style={{ boxShadow: "0 4px 12px 0 rgba(141,103,72,0.10)" }}
       onClick={onClick}
@@ -82,7 +82,7 @@ export default function CredentialItem({
              className="rounded-full h-8 w-8"
              onClick={e => { e.stopPropagation(); handleCopy(credential.username); }}
              title="Copy Username"
-           >            <Copy className="h-4 w-4 text-[rgb(141,103,72)]" />
+           >            <Copy className="h-5 w-5 text-[rgb(141,103,72)]" />
           </Button>
 
           {/* Copy Password */}
@@ -92,7 +92,7 @@ export default function CredentialItem({
              className="rounded-full h-8 w-8"
              onClick={e => { e.stopPropagation(); handleCopy(credential.password); }}
              title="Copy Password"
-           >            <Copy className="h-4 w-4 text-blue-600" />
+           >            <Copy className="h-5 w-5 text-blue-600" />
           </Button>
 
           {/* Show/Hide Password (Desktop) */}
@@ -104,9 +104,9 @@ export default function CredentialItem({
                onClick={e => { e.stopPropagation(); setShowPassword(!showPassword); }}
                title={showPassword ? "Hide Password" : "Show Password"}
              >              {showPassword ? (
-                <EyeOff className="h-4 w-4 text-[rgb(141,103,72)]" />
+                <EyeOff className="h-5 w-5 text-[rgb(141,103,72)]" />
               ) : (
-                <Eye className="h-4 w-4 text-[rgb(141,103,72)]" />
+                <Eye className="h-5 w-5 text-[rgb(141,103,72)]" />
               )}
             </Button>
           )}
@@ -118,7 +118,7 @@ export default function CredentialItem({
              className="rounded-full h-8 w-8"
              onClick={e => { e.stopPropagation(); onEdit(); }}
              title="Edit"
-           >            <Edit className="h-4 w-4 text-orange-600" />
+           >            <Edit className="h-5 w-5 text-orange-600" />
           </Button>
 
           {/* Delete */}
@@ -128,7 +128,7 @@ export default function CredentialItem({
              className="rounded-full h-8 w-8"
              onClick={e => { e.stopPropagation(); onDelete(); }}
              title="Delete"
-           >            <Trash2 className="h-4 w-4 text-red-600" />
+           >            <Trash2 className="h-5 w-5 text-red-600" />
           </Button>
         </div>
 
