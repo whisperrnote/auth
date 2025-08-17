@@ -3,6 +3,52 @@ import { Button } from "@/components/ui/Button";
 import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
+function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <Button variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="Copy">
+        <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
+      </Button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-40 bg-background border rounded-md shadow-md py-1 z-50">
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
+            Copy username
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.password); setOpen(false); }}>
+            Copy password
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <Button variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="More">
+        <svg className="h-6 w-6 text-[rgb(141,103,72)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="5" r="1.5" />
+          <circle cx="12" cy="12" r="1.5" />
+          <circle cx="12" cy="19" r="1.5" />
+        </svg>
+      </Button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-36 bg-background border rounded-md shadow-md py-1 z-50">
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}>
+            Edit
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-accent" onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}>
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CredentialItem({
   credential,
   onCopy,
@@ -123,50 +169,10 @@ export default function CredentialItem({
           {/* Mobile grouped controls */}
           <div className="flex sm:hidden items-center gap-2">
             {/* Copy dropdown */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full h-10 w-10"
-                onClick={e => e.stopPropagation()}
-                title="Copy"
-              >
-                <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
-              </Button>
-              <div className="absolute right-0 mt-2 w-40 bg-background border rounded-md shadow-md py-1 hidden" data-role="copy-menu">
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); handleCopy(credential.username); }}>
-                  Copy username
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); handleCopy(credential.password); }}>
-                  Copy password
-                </button>
-              </div>
-            </div>
+            <MobileCopyMenu credential={credential} onCopy={handleCopy} />
 
             {/* More dropdown for edit/delete */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full h-10 w-10"
-                onClick={e => e.stopPropagation()}
-                title="More"
-              >
-                <svg className="h-6 w-6 text-[rgb(141,103,72)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="5" r="1.5" />
-                  <circle cx="12" cy="12" r="1.5" />
-                  <circle cx="12" cy="19" r="1.5" />
-                </svg>
-              </Button>
-              <div className="absolute right-0 mt-2 w-36 bg-background border rounded-md shadow-md py-1 hidden" data-role="more-menu">
-                <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onEdit(); }}>
-                  Edit
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-accent" onClick={e => { e.stopPropagation(); onDelete(); }}>
-                  Delete
-                </button>
-              </div>
-            </div>
+            <MobileMoreMenu onEdit={onEdit} onDelete={onDelete} />
           </div>
         </div>
 
