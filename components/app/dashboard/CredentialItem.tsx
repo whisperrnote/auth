@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
-import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Copy, Edit, Trash2 } from "lucide-react";
 import clsx from "clsx";
 
 const MENU_EVENT = "credential-menu-open";
@@ -43,30 +43,47 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
 
   useEffect(() => {
     if (!open || !btnRef.current) return;
-    const rect = btnRef.current.getBoundingClientRect();
-    // Default position: below and left-aligned to button
-    let top = rect.bottom + window.scrollY + 6;
-    let left = rect.left + window.scrollX;
-    // Wait for menu to render, then measure and clamp
-    requestAnimationFrame(() => {
-      if (!menuRef.current) return;
+    
+    const updatePosition = () => {
+      if (!btnRef.current || !menuRef.current) return;
+      
+      const rect = btnRef.current.getBoundingClientRect();
       const menuRect = menuRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const margin = 8;
-      // Clamp right edge
-      if (left + menuRect.width + margin > viewportWidth) {
-        left = viewportWidth - menuRect.width - margin;
+      
+      // Start with button position
+      let top = rect.bottom + window.scrollY + 6;
+      let left = rect.left + window.scrollX;
+      
+      // Adjust if menu would go off right edge
+      if (left + menuRect.width > viewportWidth - margin) {
+        left = rect.right + window.scrollX - menuRect.width;
       }
-      // Clamp left edge
-      if (left < margin) left = margin;
-      // If menu would overflow bottom, show above button
-      if (top + menuRect.height + margin > viewportHeight + window.scrollY) {
-        top = rect.top + window.scrollY - menuRect.height - margin;
+      
+      // Adjust if menu would go off left edge
+      if (left < margin) {
+        left = margin;
       }
+      
+      // Adjust if menu would go off bottom edge
+      if (rect.bottom + menuRect.height > viewportHeight - margin) {
+        top = rect.top + window.scrollY - menuRect.height - 6;
+      }
+      
       setMenuStyle({ top, left });
+    };
+    
+    // Initial position
+    setMenuStyle({ 
+      top: btnRef.current.getBoundingClientRect().bottom + window.scrollY + 6, 
+      left: btnRef.current.getBoundingClientRect().left + window.scrollX 
     });
-    // announce to other menus that this one opened
+    
+    // Update position after render
+    requestAnimationFrame(updatePosition);
+    
     window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
 
@@ -132,24 +149,41 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
 
   useEffect(() => {
     if (!open || !btnRef.current) return;
-    const rect = btnRef.current.getBoundingClientRect();
-    let top = rect.bottom + window.scrollY + 6;
-    let left = rect.left + window.scrollX;
-    requestAnimationFrame(() => {
-      if (!menuRef.current) return;
+    
+    const updatePosition = () => {
+      if (!btnRef.current || !menuRef.current) return;
+      
+      const rect = btnRef.current.getBoundingClientRect();
       const menuRect = menuRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const margin = 8;
-      if (left + menuRect.width + margin > viewportWidth) {
-        left = viewportWidth - menuRect.width - margin;
+      
+      let top = rect.bottom + window.scrollY + 6;
+      let left = rect.left + window.scrollX;
+      
+      if (left + menuRect.width > viewportWidth - margin) {
+        left = rect.right + window.scrollX - menuRect.width;
       }
-      if (left < margin) left = margin;
-      if (top + menuRect.height + margin > viewportHeight + window.scrollY) {
-        top = rect.top + window.scrollY - menuRect.height - margin;
+      
+      if (left < margin) {
+        left = margin;
       }
+      
+      if (rect.bottom + menuRect.height > viewportHeight - margin) {
+        top = rect.top + window.scrollY - menuRect.height - 6;
+      }
+      
       setMenuStyle({ top, left });
+    };
+    
+    setMenuStyle({ 
+      top: btnRef.current.getBoundingClientRect().bottom + window.scrollY + 6, 
+      left: btnRef.current.getBoundingClientRect().left + window.scrollX 
     });
+    
+    requestAnimationFrame(updatePosition);
+    
     window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
 
@@ -245,11 +279,11 @@ export default function CredentialItem({
         <div className="flex-1 ml-4 min-w-0">
           <div className="font-semibold text-[rgb(141,103,72)] truncate">{credential.name}</div>
           <div className="text-[13px] text-[rgb(191,174,153)] truncate">{credential.username}</div>
-          {isDesktop && (
-            <div className="text-[11px] text-[rgb(191,174,153)] font-mono mt-1">
-              {showPassword ? credential.password : "••••••••••••"}
-            </div>
-          )}
+           {isDesktop && (
+             <div className="text-[11px] text-[rgb(191,174,153)] font-mono mt-1">
+               ••••••••••••
+             </div>
+           )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -271,23 +305,13 @@ export default function CredentialItem({
               title="Copy Password"
             ><Copy className="h-6 w-6 text-blue-600" /></Button>
 
-            {isDesktop && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="rounded-full h-9 w-9"
-                onClick={e => { e.stopPropagation(); setShowPassword(!showPassword); }}
-                title={showPassword ? "Hide Password" : "Show Password"}
-              >{showPassword ? <EyeOff className="h-6 w-6 text-[rgb(141,103,72)]" /> : <Eye className="h-6 w-6 text-[rgb(141,103,72)]" />}</Button>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full h-9 w-9"
-              onClick={e => { e.stopPropagation(); onEdit(); }}
-              title="Edit"
-            ><Edit className="h-6 w-6 text-orange-600" /></Button>
+             <Button
+               variant="ghost"
+               size="sm"
+               className="rounded-full h-9 w-9"
+               onClick={e => { e.stopPropagation(); onEdit(); }}
+               title="Edit"
+             ><Edit className="h-6 w-6 text-orange-600" /></Button>
 
             <Button
               variant="ghost"
