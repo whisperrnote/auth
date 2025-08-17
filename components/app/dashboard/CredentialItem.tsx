@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
-function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: string) => void }) {
+function MobileCopyMenu({ credential, onCopy, onToggleShow }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -11,12 +11,15 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
         <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
       </Button>
       {open && (
-        <div className="absolute right-0 mt-2 w-40 bg-background border rounded-md shadow-md py-1 z-50">
+        <div className="absolute right-0 mt-2 w-44 bg-background border rounded-md shadow-md py-1 z-50">
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
             Copy username
           </button>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.password); setOpen(false); }}>
             Copy password
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onToggleShow(); setOpen(false); }}>
+            Show password
           </button>
         </div>
       )}
@@ -169,7 +172,7 @@ export default function CredentialItem({
           {/* Mobile grouped controls */}
           <div className="flex sm:hidden items-center gap-2">
             {/* Copy dropdown */}
-            <MobileCopyMenu credential={credential} onCopy={handleCopy} />
+            <MobileCopyMenu credential={credential} onCopy={handleCopy} onToggleShow={() => setShowPassword(s => !s)} />
 
             {/* More dropdown for edit/delete */}
             <MobileMoreMenu onEdit={onEdit} onDelete={onDelete} />
