@@ -54,25 +54,49 @@ function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { cr
 
 function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuStyle, setMenuStyle] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleDocClick(e: MouseEvent) {
+      if (!menuRef.current || !btnRef.current) return;
+      const target = e.target as Node;
+      if (menuRef.current.contains(target) || btnRef.current.contains(target)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handleDocClick);
+    return () => document.removeEventListener("mousedown", handleDocClick);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const top = rect.bottom + window.scrollY + 6;
+    const left = Math.max(8, rect.right + window.scrollX - 144); // menu width ~144px (w-36)
+    setMenuStyle({ top, left });
+  }, [open]);
+
   return (
     <div className="relative">
-      <Button variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="More">
+      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="More">
         <svg className="h-6 w-6 text-[rgb(141,103,72)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="5" r="1.5" />
           <circle cx="12" cy="12" r="1.5" />
           <circle cx="12" cy="19" r="1.5" />
         </svg>
       </Button>
-      {open && (
-        <div className="absolute right-0 mt-2 w-36 bg-background border rounded-md shadow-md py-1 z-[9999] will-change-transform">
+      {open && typeof document !== "undefined" && createPortal(
+        <div ref={menuRef as any} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1 w-36" style={{ top: menuStyle?.top ?? 0, left: menuStyle?.left ?? 0 }}>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}>
             Edit
           </button>
           <button className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-accent" onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}>
             Delete
           </button>
-        </div>
-      )}
+        </div>, document.body)
+      }
     </div>
   );
 }
