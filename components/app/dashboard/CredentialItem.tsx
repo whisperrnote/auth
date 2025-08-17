@@ -44,9 +44,28 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
   useEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    const top = rect.bottom + window.scrollY + 6;
-    const left = Math.max(8, rect.left + window.scrollX); // align to button left
-    setMenuStyle({ top, left });
+    // Default position: below and left-aligned to button
+    let top = rect.bottom + window.scrollY + 6;
+    let left = rect.left + window.scrollX;
+    // Wait for menu to render, then measure and clamp
+    requestAnimationFrame(() => {
+      if (!menuRef.current) return;
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const margin = 8;
+      // Clamp right edge
+      if (left + menuRect.width + margin > viewportWidth) {
+        left = viewportWidth - menuRect.width - margin;
+      }
+      // Clamp left edge
+      if (left < margin) left = margin;
+      // If menu would overflow bottom, show above button
+      if (top + menuRect.height + margin > viewportHeight + window.scrollY) {
+        top = rect.top + window.scrollY - menuRect.height - margin;
+      }
+      setMenuStyle({ top, left });
+    });
     // announce to other menus that this one opened
     window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
@@ -114,9 +133,23 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
   useEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    const top = rect.bottom + window.scrollY + 6;
-    const left = Math.max(8, rect.left + window.scrollX); // align to button left
-    setMenuStyle({ top, left });
+    let top = rect.bottom + window.scrollY + 6;
+    let left = rect.left + window.scrollX;
+    requestAnimationFrame(() => {
+      if (!menuRef.current) return;
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const margin = 8;
+      if (left + menuRect.width + margin > viewportWidth) {
+        left = viewportWidth - menuRect.width - margin;
+      }
+      if (left < margin) left = margin;
+      if (top + menuRect.height + margin > viewportHeight + window.scrollY) {
+        top = rect.top + window.scrollY - menuRect.height - margin;
+      }
+      setMenuStyle({ top, left });
+    });
     window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
 
