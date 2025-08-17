@@ -6,7 +6,7 @@ import clsx from "clsx";
 
 const MENU_EVENT = "credential-menu-open";
 
-function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void; showPassword: boolean }) {
+function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: string) => void; }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -69,9 +69,6 @@ function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { cr
           </button>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.password); setOpen(false); }}>
             Copy password
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onToggleShow(); setOpen(false); }}>
-            {showPassword ? "Hide password" : "Show password"}
           </button>
         </div>, document.body)
       }
@@ -168,7 +165,6 @@ export default function CredentialItem({
   onClick?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleCopy = (value: string) => {
     onCopy(value);
@@ -272,7 +268,7 @@ export default function CredentialItem({
           {/* Mobile grouped controls */}
           <div className="flex sm:hidden items-center gap-2">
             {/* Copy dropdown */}
-            <MobileCopyMenu credential={credential} onCopy={handleCopy} onToggleShow={() => setShowPassword(s => !s)} showPassword={showPassword} />
+            <MobileCopyMenu credential={credential} onCopy={handleCopy} />
 
             {/* More dropdown for edit/delete */}
             <MobileMoreMenu onEdit={onEdit} onDelete={onDelete} />
