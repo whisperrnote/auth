@@ -25,24 +25,6 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
 
   useEffect(() => {
     if (!open) return;
-    function handleDocClick(e: MouseEvent) {
-      const target = e.target as Node;
-      if (menuRef.current?.contains(target) || btnRef.current?.contains(target)) return setOpen(true);
-      setOpen(false);
-    }
-    function handleEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", handleDocClick);
-    document.addEventListener("keydown", handleEsc);
-    return () => {
-      document.removeEventListener("mousedown", handleDocClick);
-      document.removeEventListener("keydown", handleEsc);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !btnRef.current) return;
     
     const updatePosition = () => {
       if (!btnRef.current || !menuRef.current) return;
@@ -53,38 +35,59 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
       const viewportHeight = window.innerHeight;
       const margin = 8;
       
-      // Start with button position
-      let top = rect.bottom + window.scrollY + 6;
-      let left = rect.left + window.scrollX;
+      let top = rect.bottom + 6;
+      let left = rect.left;
       
-      // Adjust if menu would go off right edge
       if (left + menuRect.width > viewportWidth - margin) {
-        left = rect.right + window.scrollX - menuRect.width;
+        left = rect.right - menuRect.width;
       }
       
-      // Adjust if menu would go off left edge
       if (left < margin) {
         left = margin;
       }
       
-      // Adjust if menu would go off bottom edge
       if (rect.bottom + menuRect.height > viewportHeight - margin) {
-        top = rect.top + window.scrollY - menuRect.height - 6;
+        top = rect.top - menuRect.height - 6;
       }
       
       setMenuStyle({ top, left });
     };
     
-    // Initial position
-    setMenuStyle({ 
-      top: btnRef.current.getBoundingClientRect().bottom + window.scrollY + 6, 
-      left: btnRef.current.getBoundingClientRect().left + window.scrollX 
-    });
+    function handleDocClick(e: MouseEvent) {
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target) || btnRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    function handleScroll() {
+      updatePosition();
+    }
     
-    // Update position after render
-    requestAnimationFrame(updatePosition);
+    // Initial position
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuStyle({ 
+        top: rect.bottom + 6, 
+        left: rect.left 
+      });
+      requestAnimationFrame(updatePosition);
+    }
+    
+    document.addEventListener("mousedown", handleDocClick);
+    document.addEventListener("keydown", handleEsc);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
     
     window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
+    
+    return () => {
+      document.removeEventListener("mousedown", handleDocClick);
+      document.removeEventListener("keydown", handleEsc);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, [open]);
 
   const toggle = (e: React.MouseEvent) => {
@@ -131,19 +134,68 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
 
   useEffect(() => {
     if (!open) return;
+    
+    const updatePosition = () => {
+      if (!btnRef.current || !menuRef.current) return;
+      
+      const rect = btnRef.current.getBoundingClientRect();
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const margin = 8;
+      
+      let top = rect.bottom + 6;
+      let left = rect.left;
+      
+      if (left + menuRect.width > viewportWidth - margin) {
+        left = rect.right - menuRect.width;
+      }
+      
+      if (left < margin) {
+        left = margin;
+      }
+      
+      if (rect.bottom + menuRect.height > viewportHeight - margin) {
+        top = rect.top - menuRect.height - 6;
+      }
+      
+      setMenuStyle({ top, left });
+    };
+    
     function handleDocClick(e: MouseEvent) {
       const target = e.target as Node;
-      if (menuRef.current?.contains(target) || btnRef.current?.contains(target)) return setOpen(true);
+      if (menuRef.current?.contains(target) || btnRef.current?.contains(target)) return;
       setOpen(false);
     }
     function handleEsc(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
+    function handleScroll() {
+      updatePosition();
+    }
+    
+    // Initial position
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuStyle({ 
+        top: rect.bottom + 6, 
+        left: rect.left 
+      });
+      requestAnimationFrame(updatePosition);
+    }
+    
     document.addEventListener("mousedown", handleDocClick);
     document.addEventListener("keydown", handleEsc);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    
+    window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
+    
     return () => {
       document.removeEventListener("mousedown", handleDocClick);
       document.removeEventListener("keydown", handleEsc);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [open]);
 
