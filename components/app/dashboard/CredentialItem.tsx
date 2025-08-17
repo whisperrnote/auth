@@ -27,30 +27,9 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
     if (!open) return;
     
     const updatePosition = () => {
-      if (!btnRef.current || !menuRef.current) return;
-      
+      if (!btnRef.current) return;
       const rect = btnRef.current.getBoundingClientRect();
-      const menuRect = menuRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const margin = 8;
-      
-      let top = rect.bottom + 6;
-      let left = rect.left;
-      
-      if (left + menuRect.width > viewportWidth - margin) {
-        left = rect.right - menuRect.width;
-      }
-      
-      if (left < margin) {
-        left = margin;
-      }
-      
-      if (rect.bottom + menuRect.height > viewportHeight - margin) {
-        top = rect.top - menuRect.height - 6;
-      }
-      
-      setMenuStyle({ top, left });
+      setMenuStyle({ top: rect.bottom + 4, left: rect.left });
     };
     
     function handleDocClick(e: MouseEvent) {
@@ -65,15 +44,7 @@ function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: s
       updatePosition();
     }
     
-    // Initial position
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setMenuStyle({ 
-        top: rect.bottom + 6, 
-        left: rect.left 
-      });
-      requestAnimationFrame(updatePosition);
-    }
+    updatePosition();
     
     document.addEventListener("mousedown", handleDocClick);
     document.addEventListener("keydown", handleEsc);
@@ -136,30 +107,9 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
     if (!open) return;
     
     const updatePosition = () => {
-      if (!btnRef.current || !menuRef.current) return;
-      
+      if (!btnRef.current) return;
       const rect = btnRef.current.getBoundingClientRect();
-      const menuRect = menuRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const margin = 8;
-      
-      let top = rect.bottom + 6;
-      let left = rect.left;
-      
-      if (left + menuRect.width > viewportWidth - margin) {
-        left = rect.right - menuRect.width;
-      }
-      
-      if (left < margin) {
-        left = margin;
-      }
-      
-      if (rect.bottom + menuRect.height > viewportHeight - margin) {
-        top = rect.top - menuRect.height - 6;
-      }
-      
-      setMenuStyle({ top, left });
+      setMenuStyle({ top: rect.bottom + 4, left: rect.left });
     };
     
     function handleDocClick(e: MouseEvent) {
@@ -174,15 +124,7 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
       updatePosition();
     }
     
-    // Initial position
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setMenuStyle({ 
-        top: rect.bottom + 6, 
-        left: rect.left 
-      });
-      requestAnimationFrame(updatePosition);
-    }
+    updatePosition();
     
     document.addEventListener("mousedown", handleDocClick);
     document.addEventListener("keydown", handleEsc);
@@ -197,46 +139,6 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !btnRef.current) return;
-    
-    const updatePosition = () => {
-      if (!btnRef.current || !menuRef.current) return;
-      
-      const rect = btnRef.current.getBoundingClientRect();
-      const menuRect = menuRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const margin = 8;
-      
-      let top = rect.bottom + window.scrollY + 6;
-      let left = rect.left + window.scrollX;
-      
-      if (left + menuRect.width > viewportWidth - margin) {
-        left = rect.right + window.scrollX - menuRect.width;
-      }
-      
-      if (left < margin) {
-        left = margin;
-      }
-      
-      if (rect.bottom + menuRect.height > viewportHeight - margin) {
-        top = rect.top + window.scrollY - menuRect.height - 6;
-      }
-      
-      setMenuStyle({ top, left });
-    };
-    
-    setMenuStyle({ 
-      top: btnRef.current.getBoundingClientRect().bottom + window.scrollY + 6, 
-      left: btnRef.current.getBoundingClientRect().left + window.scrollX 
-    });
-    
-    requestAnimationFrame(updatePosition);
-    
-    window.dispatchEvent(new CustomEvent(MENU_EVENT, { detail: { id: idRef.current } }));
   }, [open]);
 
   const toggle = (e: React.MouseEvent) => {
@@ -331,11 +233,11 @@ export default function CredentialItem({
         <div className="flex-1 ml-4 min-w-0">
           <div className="font-semibold text-[rgb(141,103,72)] truncate">{credential.name}</div>
           <div className="text-[13px] text-[rgb(191,174,153)] truncate">{credential.username}</div>
-           {isDesktop && (
-             <div className="text-[11px] text-[rgb(191,174,153)] font-mono mt-1">
-               ••••••••••••
-             </div>
-           )}
+          {isDesktop && (
+            <div className="text-[11px] text-[rgb(191,174,153)] font-mono mt-1">
+              ••••••••••••
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -357,13 +259,13 @@ export default function CredentialItem({
               title="Copy Password"
             ><Copy className="h-6 w-6 text-blue-600" /></Button>
 
-             <Button
-               variant="ghost"
-               size="sm"
-               className="rounded-full h-9 w-9"
-               onClick={e => { e.stopPropagation(); onEdit(); }}
-               title="Edit"
-             ><Edit className="h-6 w-6 text-orange-600" /></Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-9 w-9"
+              onClick={e => { e.stopPropagation(); onEdit(); }}
+              title="Edit"
+            ><Edit className="h-6 w-6 text-orange-600" /></Button>
 
             <Button
               variant="ghost"
