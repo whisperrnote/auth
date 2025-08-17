@@ -1,9 +1,47 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
 function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void; showPassword: boolean }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleDocClick(e: MouseEvent) {
+      if (!menuRef.current || !btnRef.current) return;
+      const target = e.target as Node;
+      if (menuRef.current.contains(target) || btnRef.current.contains(target)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handleDocClick);
+    return () => document.removeEventListener("mousedown", handleDocClick);
+  }, [open]);
+
+  return (
+    <div className="relative">
+      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={e => { e.stopPropagation(); setOpen(o => !o); }} title="Copy">
+        <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
+      </Button>
+      {open && createPortal(
+        <div ref={menuRef as any} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1" style={{ top: 0, left: 0 }}>
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
+            Copy username
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.password); setOpen(false); }}>
+            Copy password
+          </button>
+          <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onToggleShow(); setOpen(false); }}>
+            {showPassword ? "Hide password" : "Show password"}
+          </button>
+        </div>, document.body)
+      }
+    </div>
+  );
+}
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -11,7 +49,7 @@ function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { cr
         <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
       </Button>
       {open && (
-        <div className="absolute right-0 mt-2 w-44 bg-background border rounded-md shadow-md py-1 z-50">
+        <div className="absolute right-0 mt-2 w-44 bg-background border rounded-md shadow-md py-1 z-[9999] will-change-transform">
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
             Copy username
           </button>
@@ -39,7 +77,7 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
         </svg>
       </Button>
       {open && (
-        <div className="absolute right-0 mt-2 w-36 bg-background border rounded-md shadow-md py-1 z-50">
+        <div className="absolute right-0 mt-2 w-36 bg-background border rounded-md shadow-md py-1 z-[9999] will-change-transform">
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}>
             Edit
           </button>
@@ -91,7 +129,7 @@ export default function CredentialItem({
   return (
     <div
       className={clsx(
-        "rounded-2xl overflow-hidden mb-3 backdrop-blur-md border border-[rgba(191,174,153,0.3)] shadow-sm cursor-pointer",
+        "rounded-2xl overflow-visible mb-3 backdrop-blur-md border border-[rgba(191,174,153,0.3)] shadow-sm cursor-pointer",
         "bg-white/55 transition-shadow hover:shadow-lg dark:bg-[rgba(141,103,72,0.14)] dark:border-none dark:shadow-none"
       )}
       style={{ boxShadow: "0 4px 12px 0 rgba(141,103,72,0.10)" }}
