@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Copy, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
 
-function MobileCopyMenu({ credential, onCopy, onToggleShow }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void }) {
+function MobileCopyMenu({ credential, onCopy, onToggleShow, showPassword }: { credential: any; onCopy: (v: string) => void; onToggleShow: () => void; showPassword: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -19,7 +19,7 @@ function MobileCopyMenu({ credential, onCopy, onToggleShow }: { credential: any;
             Copy password
           </button>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onToggleShow(); setOpen(false); }}>
-            Show password
+            {showPassword ? "Hide password" : "Show password"}
           </button>
         </div>
       )}
@@ -172,7 +172,7 @@ export default function CredentialItem({
           {/* Mobile grouped controls */}
           <div className="flex sm:hidden items-center gap-2">
             {/* Copy dropdown */}
-            <MobileCopyMenu credential={credential} onCopy={handleCopy} onToggleShow={() => setShowPassword(s => !s)} />
+            <MobileCopyMenu credential={credential} onCopy={handleCopy} onToggleShow={() => setShowPassword(s => !s)} showPassword={showPassword} />
 
             {/* More dropdown for edit/delete */}
             <MobileMoreMenu onEdit={onEdit} onDelete={onDelete} />
