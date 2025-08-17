@@ -66,7 +66,8 @@ export default function PasswordGenerator() {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold text-base">Password Generator</span>
-          <label className="flex items-center gap-1 text-xs cursor-pointer select-none">
+          {/* mobile-only showHistory folded down */}
+          <label className="hidden sm:flex items-center gap-1 text-xs cursor-pointer select-none">
             <input
               type="checkbox"
               checked={showHistory}
@@ -74,7 +75,18 @@ export default function PasswordGenerator() {
               className="accent-primary"
             />
             <span className="sm:inline hidden">Show history</span>
-            <span className="inline sm:hidden">History</span>
+          </label>
+        </div>
+        {/* mobile: folded showHistory below title */}
+        <div className="sm:hidden">
+          <label className="flex items-center gap-2 text-xs cursor-pointer mt-1">
+            <input
+              type="checkbox"
+              checked={showHistory}
+              onChange={e => setShowHistory(e.target.checked)}
+              className="accent-primary"
+            />
+            <span>Show history</span>
           </label>
         </div>
         <div>
@@ -89,8 +101,13 @@ export default function PasswordGenerator() {
                 aria-label="Generated password"
                 style={{ wordBreak: 'break-word' }}
               />
+            </div>
+            <div className="flex items-center gap-2">
               <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-8 w-8 flex-shrink-0">
                 <Copy className="h-4 w-4" />
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleGenerate} title="Rotate password" className="p-1 h-8 w-8">
+                <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -117,23 +134,25 @@ export default function PasswordGenerator() {
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs">Length</span>
-          <Button type="button" size="sm" variant="ghost" onClick={() => handleLengthChange(length - 1)} disabled={length <= 8} className="px-2">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Input
-            type="number"
-            min={8}
-            max={64}
-            value={length}
-            onChange={e => handleLengthChange(Number(e.target.value))}
-            className="w-16 text-center font-mono text-base px-1 py-1 h-8"
-            style={{ minWidth: 0 }}
-          />
-          <Button type="button" size="sm" variant="ghost" onClick={() => handleLengthChange(length + 1)} disabled={length >= 64} className="px-2">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs">Length</span>
+            <Button type="button" size="sm" variant="ghost" onClick={() => handleLengthChange(length - 1)} disabled={length <= 8} className="px-2">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Input
+              type="number"
+              min={8}
+              max={64}
+              value={length}
+              onChange={e => handleLengthChange(Number(e.target.value))}
+              className="w-16 text-center font-mono text-base px-1 py-1 h-8"
+              style={{ minWidth: 0 }}
+            />
+            <Button type="button" size="sm" variant="ghost" onClick={() => handleLengthChange(length + 1)} disabled={length >= 64} className="px-2">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
           <input
             id="password-length"
             type="range"
@@ -141,12 +160,12 @@ export default function PasswordGenerator() {
             max={64}
             value={length}
             onChange={e => handleLengthChange(Number(e.target.value))}
-            className="flex-1 accent-primary mx-2"
+            className="w-full accent-primary"
           />
+          <Button type="button" onClick={handleGenerate} className="w-full mt-1">
+            Generate
+          </Button>
         </div>
-        <Button type="button" onClick={handleGenerate} className="w-full mt-1">
-          Generate Password
-        </Button>
         {showHistory && (
           <div className="mt-2 max-h-40 overflow-y-auto border-t pt-2">
             <div className="flex items-center gap-1 mb-1 text-xs text-muted-foreground font-semibold">
