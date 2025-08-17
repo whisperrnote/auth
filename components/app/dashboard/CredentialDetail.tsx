@@ -19,64 +19,84 @@ export default function CredentialDetail({
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!isMobile || !rootRef.current) return;
+    if (!rootRef.current) return;
 
-    let startX = 0;
-    let currentX = 0;
-    let startY = 0;
-    let isTouching = false;
-    let startTime = 0;
-
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType === 'mouse') return;
-      isTouching = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      currentX = startX;
-      startTime = Date.now();
-      (e.target as Element).setPointerCapture?.(e.pointerId);
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isTouching) return;
-      currentX = e.clientX;
-      const deltaX = currentX - startX;
-      const deltaY = e.clientY - startY;
-      // Ignore mostly-vertical moves
-      if (Math.abs(deltaY) > Math.abs(deltaX)) return;
-      // update transform
-      rootRef.current!.style.transition = 'none';
-      rootRef.current!.style.transform = `translateX(${Math.max(0, deltaX)}px)`;
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      if (!isTouching) return;
-      isTouching = false;
-      const endX = e.clientX;
-      const deltaX = endX - startX;
-      const elapsed = Date.now() - startTime;
-      const velocity = deltaX / (elapsed || 1);
-      rootRef.current!.style.transition = 'transform 200ms ease-out';
-         if (deltaX > 80 || velocity > 0.5) {
-         // animate off and close
-         rootRef.current!.style.transform = `translateX(100%)`;
-         setTimeout(() => closeWithAnimation(), 190);
-       } else {
-
-        // snap back
-        rootRef.current!.style.transform = '';
+    // Desktop: outside-click to close
+    const onDocumentPointerDown = (e: PointerEvent) => {
+      if (isMobile) return;
+      const node = rootRef.current!;
+      if (!node) return;
+      if (e.target instanceof Node && !node.contains(e.target)) {
+        // clicked outside
+        closeWithAnimation();
       }
     };
 
-    const node = rootRef.current;
-    node.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointerdown', onDocumentPointerDown);
+
+    // Mobile: swipe to close (pointer gesture)
+    if (isMobile) {
+      let startX = 0;
+      let currentX = 0;
+      let startY = 0;
+      let isTouching = false;
+      let startTime = 0;
+
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType === 'mouse') return;
+        isTouching = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        currentX = startX;
+        startTime = Date.now();
+        (e.target as Element).setPointerCapture?.(e.pointerId);
+      };
+
+      const onPointerMove = (e: PointerEvent) => {
+        if (!isTouching || !rootRef.current) return;
+        currentX = e.clientX;
+        const deltaX = currentX - startX;
+        const deltaY = e.clientY - startY;
+        // Ignore mostly-vertical moves
+        if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+        // update transform
+        rootRef.current.style.transition = 'none';
+        rootRef.current.style.transform = `translateX(${Math.max(0, deltaX)}px)`;
+      };
+
+      const onPointerUp = (e: PointerEvent) => {
+        if (!isTouching || !rootRef.current) return;
+        isTouching = false;
+        const endX = e.clientX;
+        const deltaX = endX - startX;
+        const elapsed = Date.now() - startTime;
+        const velocity = deltaX / (elapsed || 1);
+        rootRef.current.style.transition = 'transform 200ms ease-out';
+        if (deltaX > 80 || velocity > 0.5) {
+          // animate off and close
+          rootRef.current.style.transform = `translateX(100%)`;
+          setTimeout(() => closeWithAnimation(), 190);
+        } else {
+          // snap back
+          rootRef.current.style.transform = '';
+        }
+      };
+
+      const node = rootRef.current;
+      node.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+
+      return () => {
+        document.removeEventListener('pointerdown', onDocumentPointerDown);
+        node.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+      };
+    }
 
     return () => {
-      node.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('pointerdown', onDocumentPointerDown);
     };
   }, [isMobile]);
   useEffect(() => {
