@@ -74,62 +74,100 @@ export default function CredentialItem({
           )}
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* Copy Username */}
-           <Button
-             variant="ghost"
-             size="sm"
-             className="rounded-full h-8 w-8"
-             onClick={e => { e.stopPropagation(); handleCopy(credential.username); }}
-             title="Copy Username"
-           >            <Copy className="h-5 w-5 text-[rgb(141,103,72)]" />
-          </Button>
+        <div className="flex items-center gap-2">
+          {/* Desktop controls: larger icons kept */}
+          <div className="hidden sm:flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-9 w-9"
+              onClick={e => { e.stopPropagation(); handleCopy(credential.username); }}
+              title="Copy Username"
+            ><Copy className="h-6 w-6 text-[rgb(141,103,72)]" /></Button>
 
-          {/* Copy Password */}
-           <Button
-             variant="ghost"
-             size="sm"
-             className="rounded-full h-8 w-8"
-             onClick={e => { e.stopPropagation(); handleCopy(credential.password); }}
-             title="Copy Password"
-           >            <Copy className="h-5 w-5 text-blue-600" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-9 w-9"
+              onClick={e => { e.stopPropagation(); handleCopy(credential.password); }}
+              title="Copy Password"
+            ><Copy className="h-6 w-6 text-blue-600" /></Button>
 
-          {/* Show/Hide Password (Desktop) */}
-           {isDesktop && (
-             <Button
-               variant="ghost"
-               size="sm"
-               className="rounded-full h-8 w-8"
-               onClick={e => { e.stopPropagation(); setShowPassword(!showPassword); }}
-               title={showPassword ? "Hide Password" : "Show Password"}
-             >              {showPassword ? (
-                <EyeOff className="h-5 w-5 text-[rgb(141,103,72)]" />
-              ) : (
-                <Eye className="h-5 w-5 text-[rgb(141,103,72)]" />
-              )}
-            </Button>
-          )}
+            {isDesktop && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full h-9 w-9"
+                onClick={e => { e.stopPropagation(); setShowPassword(!showPassword); }}
+                title={showPassword ? "Hide Password" : "Show Password"}
+              >{showPassword ? <EyeOff className="h-6 w-6 text-[rgb(141,103,72)]" /> : <Eye className="h-6 w-6 text-[rgb(141,103,72)]" />}</Button>
+            )}
 
-          {/* Edit */}
-           <Button
-             variant="ghost"
-             size="sm"
-             className="rounded-full h-8 w-8"
-             onClick={e => { e.stopPropagation(); onEdit(); }}
-             title="Edit"
-           >            <Edit className="h-5 w-5 text-orange-600" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-9 w-9"
+              onClick={e => { e.stopPropagation(); onEdit(); }}
+              title="Edit"
+            ><Edit className="h-6 w-6 text-orange-600" /></Button>
 
-          {/* Delete */}
-           <Button
-             variant="ghost"
-             size="sm"
-             className="rounded-full h-8 w-8"
-             onClick={e => { e.stopPropagation(); onDelete(); }}
-             title="Delete"
-           >            <Trash2 className="h-5 w-5 text-red-600" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-9 w-9"
+              onClick={e => { e.stopPropagation(); onDelete(); }}
+              title="Delete"
+            ><Trash2 className="h-6 w-6 text-red-600" /></Button>
+          </div>
+
+          {/* Mobile grouped controls */}
+          <div className="flex sm:hidden items-center gap-2">
+            {/* Copy dropdown */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full h-10 w-10"
+                onClick={e => e.stopPropagation()}
+                title="Copy"
+              >
+                <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
+              </Button>
+              <div className="absolute right-0 mt-2 w-40 bg-background border rounded-md shadow-md py-1 hidden" data-role="copy-menu">
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); handleCopy(credential.username); }}>
+                  Copy username
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); handleCopy(credential.password); }}>
+                  Copy password
+                </button>
+              </div>
+            </div>
+
+            {/* More dropdown for edit/delete */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full h-10 w-10"
+                onClick={e => e.stopPropagation()}
+                title="More"
+              >
+                <svg className="h-6 w-6 text-[rgb(141,103,72)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="5" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                  <circle cx="12" cy="19" r="1.5" />
+                </svg>
+              </Button>
+              <div className="absolute right-0 mt-2 w-36 bg-background border rounded-md shadow-md py-1 hidden" data-role="more-menu">
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onEdit(); }}>
+                  Edit
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-accent" onClick={e => { e.stopPropagation(); onDelete(); }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {copied && (
