@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Copy, Eye, EyeOff, ArrowLeft, X, Globe, Calendar, Tag } from "lucide-react";
 
@@ -14,8 +14,73 @@ export default function CredentialDetail({
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  // Gesture state
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Animation effect - show component after mount
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMobile || !rootRef.current) return;
+
+    let startX = 0;
+    let currentX = 0;
+    let startY = 0;
+    let isTouching = false;
+    let startTime = 0;
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      isTouching = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      currentX = startX;
+      startTime = Date.now();
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isTouching) return;
+      currentX = e.clientX;
+      const deltaX = currentX - startX;
+      const deltaY = e.clientY - startY;
+      // Ignore mostly-vertical moves
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+      // update transform
+      rootRef.current!.style.transition = 'none';
+      rootRef.current!.style.transform = `translateX(${Math.max(0, deltaX)}px)`;
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (!isTouching) return;
+      isTouching = false;
+      const endX = e.clientX;
+      const deltaX = endX - startX;
+      const elapsed = Date.now() - startTime;
+      const velocity = deltaX / (elapsed || 1);
+      rootRef.current!.style.transition = 'transform 200ms ease-out';
+      if (deltaX > 80 || velocity > 0.5) {
+        // animate off and close
+        rootRef.current!.style.transform = `translateX(100%)`;
+        setTimeout(() => handleClose(), 190);
+      } else {
+        // snap back
+        rootRef.current!.style.transform = '';
+      }
+    };
+
+    const node = rootRef.current;
+    node.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+
+    return () => {
+      node.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [isMobile]);
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 10);
     return () => clearTimeout(timer);
@@ -75,7 +140,7 @@ export default function CredentialDetail({
   const faviconUrl = getFaviconUrl(credential.url);
 
   return (
-    <div 
+    <div ref={rootRef}
       className={`
         ${isMobile 
           ? 'fixed inset-0 z-50 bg-background' 
