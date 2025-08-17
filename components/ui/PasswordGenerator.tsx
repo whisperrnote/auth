@@ -79,22 +79,20 @@ export default function PasswordGenerator() {
         </div>
         <div>
           {/* Mobile: vertical layout */}
-          <div className="sm:hidden flex flex-col gap-2 items-stretch w-auto">
-            <textarea
-              className="font-mono text-base w-[6ch] bg-muted/50 cursor-default select-all rounded px-2 py-1 min-h-[2.5rem] resize-none text-center"
-              value={password.slice(0, 6)}
-              readOnly
-              rows={2}
-              aria-label="Generated password"
-              style={{ wordBreak: 'break-all' }}
-            />
-            <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-7 w-7">
-              <Copy className="h-4 w-4" />
-              {copied && <span className="ml-1 text-xs">Copied!</span>}
-            </Button>
-            <Button type="button" onClick={handleGenerate} className="w-full mt-1">
-              Generate Password
-            </Button>
+          <div className="sm:hidden flex flex-col gap-2 items-stretch w-full">
+            <div className="flex items-center gap-2">
+              <textarea
+                className="font-mono text-base flex-1 bg-muted/50 cursor-default select-all rounded px-2 py-1 min-h-[2.5rem] resize-none text-left"
+                value={password}
+                readOnly
+                rows={2}
+                aria-label="Generated password"
+                style={{ wordBreak: 'break-word' }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-8 w-8 flex-shrink-0">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           {/* Desktop: horizontal layout as before */}
           <div className="hidden sm:flex flex-row gap-2 w-full items-center">
