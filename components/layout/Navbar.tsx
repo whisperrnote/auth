@@ -26,17 +26,6 @@ export function Navbar() {
           <span className="font-semibold text-lg hidden sm:inline">Whisperrauth</span>
         </Link>
         <div className="flex items-center gap-2">
-          {/* Password Generator Dropdown */}
-          <DropdownMenu
-            trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
-            width="400px"
-            align="right"
-            className="sm:w-[400px] w-[calc(6ch+3.5rem)] max-w-xs"
-          >
-            <div className="p-2 inline-block w-auto min-w-0 sm:block sm:w-full">
-              <PasswordGenerator />
-            </div>
-          </DropdownMenu>
           <button
             className="p-2 rounded-full hover:bg-accent"
             onClick={() => {
@@ -49,6 +38,15 @@ export function Navbar() {
             {theme === "dark" && <Moon className="h-5 w-5" />}
             {theme === "system" && <Monitor className="h-5 w-5" />}
           </button>
+          <DropdownMenu
+            trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
+            width="400px"
+            align="right"
+          >
+            <div className="p-2">
+              <PasswordGenerator />
+            </div>
+          </DropdownMenu>
           {!user ? (
             <Link href="/login">
               <Button size="sm" variant="outline">
