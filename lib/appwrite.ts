@@ -4,12 +4,14 @@ import { AuthenticatorType } from "appwrite";
 import { updateMasterpassCheckValue, masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 
 // --- Appwrite Client Setup ---
-const appwriteClient = new Client()
+export const appwriteClient = new Client()
   .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
 
-const appwriteAccount = new Account(appwriteClient);
-const appwriteDatabases = new Databases(appwriteClient);
+export const appwriteAccount = new Account(appwriteClient);
+export const appwriteDatabases = new Databases(appwriteClient);
+
+export { ID, Query };
 
 // --- Database & Collection IDs (from database.md & .env) ---
 export const APPWRITE_DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "passwordManagerDb";
@@ -219,14 +221,64 @@ export class AppwriteService {
     return doc as SecurityLogs;
   }
 
-  // List with automatic decryption
-  static async listCredentials(userId: string, queries: string[] = []): Promise<Credentials[]> {
+  // List with automatic decryption and pagination
+  static async listCredentials(
+    userId: string,
+    limit: number = 25,
+    offset: number = 0,
+    queries: string[] = []
+  ): Promise<Models.DocumentList<Credentials>> {
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_CREDENTIALS_ID,
-      [Query.equal('userId', userId), ...queries]
+      [Query.equal('userId', userId), Query.orderAsc('name'), Query.limit(limit), Query.offset(offset), ...queries]
     );
 
+    const decryptedDocuments = await Promise.all(
+      response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+    );
+
+    return {
+      total: response.total,
+      documents: decryptedDocuments,
+    };
+  }
+
+  /**
+   * Fetches ALL credentials for a user, handling pagination automatically.
+   * Use this for operations that require the full dataset, like search or export.
+   */
+  static async listAllCredentials(userId: string, queries: string[] = []): Promise<Credentials[]> {
+    let documents: Credentials[] = [];
+    let offset = 0;
+    const limit = 100; // Max limit per request
+    let response;
+
+    do {
+      response = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_CREDENTIALS_ID,
+        [Query.equal('userId', userId), Query.limit(limit), Query.offset(offset), ...queries]
+      );
+
+      const decryptedDocuments = await Promise.all(
+        response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+      );
+
+      documents = documents.concat(decryptedDocuments);
+      offset += limit;
+
+    } while (response.documents.length > 0 && documents.length < response.total);
+
+    return documents;
+  }
+
+  static async listRecentCredentials(userId: string, limit: number = 5): Promise<Credentials[]> {
+    const response = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_CREDENTIALS_ID,
+      [Query.equal('userId', userId), Query.orderDesc('$updatedAt'), Query.limit(limit)]
+    );
     return await Promise.all(
       response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
     );
@@ -459,19 +511,14 @@ export class AppwriteService {
 
   // Helper method to determine if a field should be decrypted
   private static shouldDecryptField(value: any): boolean {
-    // Only decrypt if value looks like encrypted data (base64 string with reasonable length)
-    return (
-      value !== null &&
-      value !== undefined &&
-      typeof value === 'string' &&
-      value.length > 20 && // Encrypted data should be longer than 20 chars
-      /^[A-Za-z0-9+/]+=*$/.test(value) // Base64 pattern
-    );
+    // Decrypt if it's a string starting with the encryption prefix.
+    return typeof value === 'string' && value.startsWith('enc_');
   }
 
   // --- Search Operations ---
   static async searchCredentials(userId: string, searchTerm: string): Promise<Credentials[]> {
-    const allCredentials = await this.listCredentials(userId);
+    // Search must operate on all credentials, so we use listAllCredentials
+    const allCredentials = await this.listAllCredentials(userId);
     const term = searchTerm.toLowerCase();
 
     return allCredentials.filter(cred =>
@@ -491,10 +538,11 @@ export class AppwriteService {
     totpSecrets: TotpSecrets[];
     folders: Folders[];
   }> {
+    // Export should include all data, so we use listAllCredentials
     const [credentials, totpSecrets, folders] = await Promise.all([
-      this.listCredentials(userId),
-      this.listTOTPSecrets(userId),
-      this.listFolders(userId)
+      this.listAllCredentials(userId),
+      this.listTOTPSecrets(userId), // Assuming these lists are not too large
+      this.listFolders(userId)      // Assuming these lists are not too large
     ]);
 
     return { credentials, totpSecrets, folders };
@@ -509,6 +557,20 @@ export class AppwriteService {
  */
 export async function generateRecoveryCodes(): Promise<{ recoveryCodes: string[] }> {
   return await appwriteAccount.createMfaRecoveryCodes();
+}
+
+/**
+ * Update a TOTP secret by document ID (encrypted).
+ */
+export async function updateTotpSecret(id: string, data: Partial<TotpSecrets>) {
+  return await AppwriteService.updateTOTPSecret(id, data);
+}
+
+/**
+ * List the most recently updated credentials for a user.
+ */
+export async function listRecentCredentials(userId: string, limit: number = 5) {
+  return await AppwriteService.listRecentCredentials(userId, limit);
 }
 
 /**
@@ -543,13 +605,10 @@ export async function addTotpFactor(): Promise<{ qrUrl: string; secret: string }
 /**
  * Remove TOTP authenticator factor
  */
-// export async function removeTotpFactor(): Promise<void> {
-//   return await appwriteAccount.deleteMfaAuthenticator("totp");
-// }
-
 export async function removeTotpFactor(): Promise<void> {
   await appwriteAccount.deleteMfaAuthenticator(AuthenticatorType.Totp);
 }
+
 /**
  * Verify TOTP factor by creating and completing a challenge
  * This step confirms the authenticator app is working
@@ -589,19 +648,6 @@ export async function completeMfaChallenge(challengeId: string, code: string): P
 export async function checkMfaRequired(): Promise<any> {
   return await appwriteAccount.get();
 }
-
-/**
- * Add Email as an MFA factor (must be verified first).
- * This will send a verification email if not already verified.
- * Returns: { email: string }
- */
-// export async function addEmailFactor(email: string, password: string): Promise<{ email: string }> {
-//   // 1. Update email if needed (Appwrite requires a password for this)
-//   await appwriteAccount.updateEmail(email, password);
-//   // 2. Send verification email (user must follow link to verify)
-//   await appwriteAccount.createVerification(window.location.origin + "/verify-email");
-//   return { email };
-// }
 
 /**
  * Add Email as an MFA factor (must be verified first).
@@ -702,24 +748,7 @@ export async function completeMagicUrl(userId: string, secret: string) {
   return await appwriteAccount.createSession(userId, secret);
 }
 
-// --- Export everything ---
-export {
-  appwriteClient,
-  appwriteAccount,
-  appwriteDatabases,
-  ID,
-  Query,
-  // MFA functions
-  // generateRecoveryCodes,
-  // listMfaFactors,
-  // updateMfaStatus,
-  // addTotpFactor,
-  // removeTotpFactor,
-  // verifyTotpFactor,
-  // createMfaChallenge,
-  // completeMfaChallenge,
-  // checkMfaRequired,
-};
+// --- Standalone Service Functions ---
 
 /**
  * List all TOTP secrets for a user (decrypted).
@@ -751,15 +780,28 @@ export async function deleteTotpSecret(id: string) {
 
 /**
  * Update user profile (name/email).
+ * A password must be provided if the user wants to change their email.
  */
-export async function updateUserProfile(userId: string, data: { name?: string; email?: string }) {
+export async function updateUserProfile(
+  userId: string,
+  data: { name?: string; email?: string },
+  password?: string
+) {
   // Update Appwrite account name/email if changed
-  if (data.name) await appwriteAccount.updateName(data.name);
-  if (data.email) await appwriteAccount.updateEmail(data.email, ""); // Password required if changing email
-  // Update user doc in DB if needed
-  const userDoc = await AppwriteService.getUserDoc(userId);
-  if (userDoc && userDoc.$id) {
-    await AppwriteService.updateUserDoc(userDoc.$id, data);
+  if (data.name) {
+    await appwriteAccount.updateName(data.name);
+  }
+  if (data.email) {
+    // Appwrite requires a password to change the email address.
+    await appwriteAccount.updateEmail(data.email, password || '');
+  }
+
+  // Update user doc in DB if email was changed
+  if (data.email) {
+    const userDoc = await AppwriteService.getUserDoc(userId);
+    if (userDoc?.$id) {
+      await AppwriteService.updateUserDoc(userDoc.$id, { email: data.email });
+    }
   }
 }
 
@@ -772,30 +814,31 @@ export async function exportAllUserData(userId: string) {
 
 /**
  * Delete user account and all associated data.
+ * This is a hard delete and is irreversible.
  */
 export async function deleteUserAccount(userId: string) {
-  // Delete all user data (credentials, totp, folders, logs, user doc)
-  const userDoc = await AppwriteService.getUserDoc(userId);
-  if (userDoc && userDoc.$id) {
-    await AppwriteService.deleteUserDoc(userDoc.$id);
-  }
-  // Delete credentials, totp, folders, logs
-  const [creds, totps, folders, logs] = await Promise.all([
-    AppwriteService.listCredentials(userId),
+  // Delete all user data from the database first
+  const [creds, totps, folders, logs, userDoc] = await Promise.all([
+    AppwriteService.listAllCredentials(userId), // Use listAllCredentials to ensure all are deleted
     AppwriteService.listTOTPSecrets(userId),
     AppwriteService.listFolders(userId),
     AppwriteService.listSecurityLogs(userId),
+    AppwriteService.getUserDoc(userId),
   ]);
+
   await Promise.all([
     ...creds.map((c) => AppwriteService.deleteCredential(c.$id)),
     ...totps.map((t) => AppwriteService.deleteTOTPSecret(t.$id)),
     ...folders.map((f) => AppwriteService.deleteFolder(f.$id)),
     ...logs.map((l) => AppwriteService.deleteSecurityLog(l.$id)),
+    userDoc?.$id ? AppwriteService.deleteUserDoc(userDoc.$id) : Promise.resolve(),
   ]);
-  // Delete Appwrite account session (log out)
+
+  // Log the user out
   await appwriteAccount.deleteSession("current");
-  // Optionally, delete Appwrite account (irreversible)
-  // await appwriteAccount.delete(); // Only if you want to fully remove the user from Appwrite
+
+  // Finally, delete the Appwrite account itself
+  await appwriteAccount.delete();
 }
 
 /**
@@ -891,10 +934,10 @@ export async function searchCredentials(userId: string, searchTerm: string): Pro
 }
 
 /**
- * List all credentials for a user (decrypted).
+ * List all credentials for a user (decrypted and paginated).
  */
-export async function listCredentials(userId: string) {
-  return await AppwriteService.listCredentials(userId);
+export async function listCredentials(userId: string, limit: number = 25, offset: number = 0) {
+  return await AppwriteService.listCredentials(userId, limit, offset);
 }
 
 /**

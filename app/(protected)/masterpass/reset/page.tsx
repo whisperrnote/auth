@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { resetMasterpassAndWipe } from "@/lib/appwrite";
-
+import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
 
 export default function MasterpassResetPage() {
   const router = useRouter();
   const { user } = useAppwrite();
   const [step, setStep] = useState<"reset" | "done">("reset");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Redirect to login if not logged in
@@ -25,14 +24,13 @@ export default function MasterpassResetPage() {
 
   const handleReset = async () => {
     setLoading(true);
-    setError(null);
     try {
       if (user) {
         await resetMasterpassAndWipe(user.$id);
         setStep("done");
       }
     } catch (e: any) {
-      setError("Failed to reset master password");
+      toast.error("Failed to reset master password");
     }
     setLoading(false);
   };
@@ -95,9 +93,6 @@ export default function MasterpassResetPage() {
                 Set New Master Password
               </Button>
             </div>
-          )}
-          {error && (
-            <div className="text-red-600 text-sm mt-4 text-center">{error}</div>
           )}
         </CardContent>
       </Card>

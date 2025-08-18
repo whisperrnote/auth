@@ -1,6 +1,7 @@
 import type { Credentials, TotpSecrets, Folders } from '@/types/appwrite.d';
 import type { BitwardenExport, BitwardenItem, BitwardenFolder } from './bitwarden-types';
 import { BITWARDEN_ITEM_TYPES } from './bitwarden-types';
+import { extractTotpFromBitwardenLogin } from './totp-parser';
 
 export interface ImportMapping {
   folders: Map<string, string>; // Bitwarden folder ID -> Our folder ID
@@ -110,15 +111,16 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
       credentialsCount++;
 
       // Extract TOTP if present
-      if (item.login.totp) {
+      const totpData = extractTotpFromBitwardenLogin(item.login, item.name);
+      if (totpData) {
         const totpSecret: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'> = {
           userId,
-          issuer: extractIssuerFromName(item.name),
-          accountName: item.login.username || item.name,
-          secretKey: item.login.totp,
-          algorithm: 'SHA1', // Default for most services
-          digits: 6, // Default
-          period: 30, // Default
+          issuer: totpData.issuer,
+          accountName: totpData.accountName,
+          secretKey: totpData.secretKey,
+          algorithm: totpData.algorithm as any,
+          digits: totpData.digits as any,
+          period: totpData.period as any,
           folderId,
           url, // Include URL for future autofilling
           createdAt: baseCreatedAt,

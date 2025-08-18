@@ -5,13 +5,13 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { createPasswordRecovery, updatePasswordRecovery } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
+import toast from "react-hot-toast";
 
 export default function ResetPasswordPage() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordAgain, setPasswordAgain] = useState("");
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const userId = params.get("userId") || "";
@@ -22,31 +22,29 @@ export default function ResetPasswordPage() {
 
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
     setLoading(true);
     try {
       // Use current origin as redirect URL
       await createPasswordRecovery(email, window.location.origin + "/reset-password");
-      setMessage("Password reset email sent! Check your inbox.");
+      toast.success("Password reset email sent! Check your inbox.");
     } catch (e: any) {
-      setMessage(e.message || "Error sending reset email.");
+      toast.error(e.message || "Error sending reset email.");
     }
     setLoading(false);
   };
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
     if (password !== passwordAgain) {
-      setMessage("Passwords do not match.");
+      toast.error("Passwords do not match.");
       return;
     }
     setLoading(true);
     try {
       await updatePasswordRecovery(userId, secret, password);
-      setMessage("Password reset successful! You can now log in.");
+      toast.success("Password reset successful! You can now log in.");
     } catch (e: any) {
-      setMessage(e.message || "Error resetting password.");
+      toast.error(e.message || "Error resetting password.");
     }
     setLoading(false);
   };
@@ -99,7 +97,6 @@ export default function ResetPasswordPage() {
                 </Button>
               </form>
             )}
-            {message && <div className="text-sm text-center text-muted-foreground">{message}</div>}
           </CardContent>
         </Card>
       </div>

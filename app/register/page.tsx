@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
 import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
 import { checkMfaRequired } from "@/lib/appwrite";
 import { hasMasterpass } from "@/lib/appwrite";
@@ -53,7 +54,6 @@ export default function RegisterPage() {
     loginWithEmailPassword,
   } = useAppwrite();
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   // OTP/Magic state
   const [otpSent, setOtpSent] = useState(false);
@@ -112,10 +112,9 @@ export default function RegisterPage() {
   // Handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     if (mode === "password") {
       if (formData.password !== formData.confirmPassword) {
-        setError("Passwords don't match");
+        toast.error("Passwords don't match");
         return;
       }
       try {
@@ -133,15 +132,15 @@ export default function RegisterPage() {
           if (mfaError.type === "user_more_factors_required") {
             router.replace("/twofa/access");
           } else {
-            setError(mfaError.message || "Registration verification failed");
+            toast.error(mfaError.message || "Registration verification failed");
           }
         }
       } catch (err: any) {
         // If error is "user already exists", show a friendly message
         if (err?.code === 409) {
-          setError("An account with this email already exists.");
+          toast.error("An account with this email already exists.");
         } else {
-          setError(err?.message || "Registration failed");
+          toast.error(err?.message || "Registration failed");
         }
       }
     } else if (mode === "otp") {
@@ -154,18 +153,17 @@ export default function RegisterPage() {
           if (mfaError.type === "user_more_factors_required") {
             router.replace("/twofa/access");
           } else {
-            setError(mfaError.message || "Registration verification failed");
+            toast.error(mfaError.message || "Registration verification failed");
           }
         }
       } catch (err: any) {
-        setError(err?.message || "Invalid OTP.");
+        toast.error(err?.message || "Invalid OTP.");
       }
     }
     // Magic handled separately
   };
 
   const handleSendOTP = async () => {
-    setError(null);
     try {
       const resp = await sendEmailOtp(formData.email, true);
       setOtpSent(true);
@@ -174,18 +172,18 @@ export default function RegisterPage() {
       localStorage.setItem("register_otp_last_" + formData.email, Date.now().toString());
       setOtpCooldown(OTP_COOLDOWN);
     } catch (e: any) {
-      setError(e.message || "Error sending OTP.");
+      toast.error(e.message || "Error sending OTP.");
     }
   };
 
   const handleSendMagic = async () => {
-    setError(null);
     try {
       await sendMagicUrl(formData.email, window.location.origin + "/register");
       setMagicSent(true);
+      toast.success("Magic link sent!");
       setTimeout(() => setMagicSent(false), 4000);
     } catch (e: any) {
-      setError(e.message || "Error sending magic link.");
+      toast.error(e.message || "Error sending magic link.");
     }
   };
 
@@ -382,7 +380,6 @@ export default function RegisterPage() {
                   <Check className="h-4 w-4" /> Sent! Check your email for the magic link.
                 </div>
               )}
-              {error && <div className="text-red-600 text-sm">{error}</div>}
               {/* Only show submit for password/otp */}
               {(mode === "password" || (mode === "otp" && otpSent)) && (
                 <Button type="submit" className="w-full" disabled={loading}>
