@@ -13,21 +13,27 @@ import CredentialDialog from "@/components/app/dashboard/CredentialDialog";
 import PasswordGenerator from "@/components/ui/PasswordGenerator";
 import clsx from "clsx";
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children }: { children: React.ReactNode }            ) : null
+ {
   return (
-    <h2 className="text-[22px] font-bold text-[rgb(141,103,72)] dark:text-primary mb-2 drop-shadow-sm">
+    <h2 className="text-[22px] font-bold text-[rgb(141,103,72            ) : null
+] dark:text-primary mb-2 drop-shadow-sm">
       {children}
     </h2>
-  );
+              ) : null
+;
 }
 
-function FilterChip({ label, icon: Icon }: { label: string; icon: any }) {
+function FilterChip({ label, icon: Icon }: { label: string; icon: any }            ) : null
+ {
   return (
-    <div className="flex items-center px-4 py-2 bg-[rgb(141,103,72)] rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700">
+    <div className="flex items-center px-4 py-2 bg-[rgb(141,103,72            ) : null
+] rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700">
       <Icon className="h-5 w-5 text-white dark:text-primary" />
       <span className="ml-2 font-semibold text-[15px] text-white dark:text-primary">{label}</span>
     </div>
-  );
+              ) : null
+;
 }
 
 import VaultGuard from "@/components/layout/VaultGuard";
@@ -35,203 +41,327 @@ import Dialog from '@/components/ui/Dialog';
 
 import CredentialDetail from "@/components/app/dashboard/CredentialDetail";
 
-export default function DashboardPage() {
-  const { user } = useAppwrite();
-  const [credentials, setCredentials] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
-  const [editCredential, setEditCredential] = useState<any | null>(null);
-  const [selectedCredential, setSelectedCredential] = useState<any | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+export default function DashboardPage(            ) : null
+ {
+  const { user } = useAppwrite(            ) : null
+;
+  const [credentials, setCredentials] = useState<any[]>([]            ) : null
+;
+  const [filtered, setFiltered] = useState<any[]>([]            ) : null
+;
+  const [loading, setLoading] = useState(true            ) : null
+;
+  const [searchTerm, setSearchTerm] = useState(""            ) : null
+;
+  const [showDialog, setShowDialog] = useState(false            ) : null
+;
+  const [editCredential, setEditCredential] = useState<any | null>(null            ) : null
+;
+  const [selectedCredential, setSelectedCredential] = useState<any | null>(null            ) : null
+;
+  const [showDetail, setShowDetail] = useState(false            ) : null
+;
+  const [isMobile, setIsMobile] = useState(false            ) : null
+;
   const isDesktop = typeof window !== "undefined" ? window.innerWidth > 900 : true;
 
   // Pagination state
-  const [offset, setOffset] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
+  const [offset, setOffset] = useState(0            ) : null
+;
+  const [total, setTotal] = useState(0            ) : null
+;
+  const [hasMore, setHasMore] = useState(true            ) : null
+;
+  const [isSearching, setIsSearching] = useState(false            ) : null
+;
   const PAGE_LIMIT = 20;
 
   // Folder state
-  const [folders, setFolders] = useState<any[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [folders, setFolders] = useState<any[]>([]            ) : null
+;
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null            ) : null
+;
 
   // Recent credentials state
-  const [recentCredentials, setRecentCredentials] = useState<any[]>([]);
+  const [recentCredentials, setRecentCredentials] = useState<any[]>([]            ) : null
+;
 
   // Delete confirmation state
-  const [credentialToDelete, setCredentialToDelete] = useState<any | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [credentialToDelete, setCredentialToDelete] = useState<any | null>(null            ) : null
+;
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false            ) : null
+;
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 900);
+  useEffect((            ) : null
+ => {
+    const handleResize = (            ) : null
+ => {
+      setIsMobile(window.innerWidth <= 900            ) : null
+;
     };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    handleResize(            ) : null
+;
+    window.addEventListener("resize", handleResize            ) : null
+;
+    return (            ) : null
+ => window.removeEventListener("resize", handleResize            ) : null
+;
+  }, []            ) : null
+;
 
-  const fetchCredentials = useCallback(async (isInitial = false) => {
-    if (!user?.$id || loading) return;
-    setLoading(true);
+  const fetchCredentials = useCallback(async (isInitial = false            ) : null
+ => {
+    if (!user?.$id || loading            ) : null
+ return;
+    setLoading(true            ) : null
+;
     try {
       const currentOffset = isInitial ? 0 : offset;
-      const { documents, total: totalDocs } = await listCredentials(user.$id, PAGE_LIMIT, currentOffset);
+      const { documents, total: totalDocs } = await listCredentials(user.$id, PAGE_LIMIT, currentOffset            ) : null
+;
 
-      setCredentials(prev => isInitial ? documents : [...prev, ...documents]);
-      if (isInitial || !searchTerm) {
-        setFiltered(prev => isInitial ? documents : [...prev, ...documents]);
+      setCredentials(prev => isInitial ? documents : [...prev, ...documents]            ) : null
+;
+      if (isInitial || !searchTerm            ) : null
+ {
+        setFiltered(prev => isInitial ? documents : [...prev, ...documents]            ) : null
+;
       }
 
-      setTotal(totalDocs);
+      setTotal(totalDocs            ) : null
+;
       const newOffset = currentOffset + documents.length;
-      setOffset(newOffset);
-      setHasMore(newOffset < totalDocs);
-    } catch (error) {
-      toast.error("Failed to load credentials. Please try again.");
-      console.error('Failed to load credentials:', error);
+      setOffset(newOffset            ) : null
+;
+      setHasMore(newOffset < totalDocs            ) : null
+;
+    } catch (error            ) : null
+ {
+      toast.error("Failed to load credentials. Please try again."            ) : null
+;
+      console.error('Failed to load credentials:', error            ) : null
+;
     } finally {
-      setLoading(false);
+      setLoading(false            ) : null
+;
     }
-  }, [user, offset, loading, searchTerm]);
+  }, [user, offset, loading, searchTerm]            ) : null
+;
 
   // Initial fetch
-  useEffect(() => {
-    if (user?.$id) {
-      fetchCredentials(true);
-      listFolders(user.$id).then(setFolders).catch((err: unknown) => {
-        console.error("Failed to fetch folders:", err);
-        toast.error("Could not load your folders.");
-      });
-      listRecentCredentials(user.$id).then(setRecentCredentials).catch(err => {
-        console.error("Failed to fetch recent credentials:", err);
+  useEffect((            ) : null
+ => {
+    if (user?.$id            ) : null
+ {
+      fetchCredentials(true            ) : null
+;
+      listFolders(user.$id            ) : null
+.then(setFolders            ) : null
+.catch((err: unknown            ) : null
+ => {
+        console.error("Failed to fetch folders:", err            ) : null
+;
+        toast.error("Could not load your folders."            ) : null
+;
+      }            ) : null
+;
+      listRecentCredentials(user.$id            ) : null
+.then(setRecentCredentials            ) : null
+.catch(err => {
+        console.error("Failed to fetch recent credentials:", err            ) : null
+;
         // No toast here, as it's not critical
-      });
+      }            ) : null
+;
     }
-    }, [user]);
-
+    }, [user]            ) : null
+;
   // Ensure catch handlers have typed errors to satisfy TS
-  function handleLogError(err: unknown) { console.error(err); }
+  function handleLogError(err: unknown            ) : null
+ { console.error(err            ) : null
+; }
 
   // End of component logic — render below
 
 
   // Combined filtering logic
-  useEffect(() => {
+  useEffect((            ) : null
+ => {
     let newFiltered = credentials;
 
     // Filter by selected folder
-    if (selectedFolder) {
-      newFiltered = newFiltered.filter(c => c.folderId === selectedFolder);
+    if (selectedFolder            ) : null
+ {
+      newFiltered = newFiltered.filter(c => c.folderId === selectedFolder            ) : null
+;
     }
 
-    // Filter by search term (if not empty)
-    if (searchTerm && !isSearching) { // isSearching check prevents re-filtering during async search
-      const term = searchTerm.toLowerCase();
+    // Filter by search term (if not empty            ) : null
+
+    if (searchTerm && !isSearching            ) : null
+ { // isSearching check prevents re-filtering during async search
+      const term = searchTerm.toLowerCase(            ) : null
+;
       newFiltered = newFiltered.filter(c =>
-        c.name?.toLowerCase().includes(term) ||
-        c.username?.toLowerCase().includes(term) ||
-        (c.url && c.url.toLowerCase().includes(term))
-      );
+        c.name?.toLowerCase(            ) : null
+.includes(term            ) : null
+ ||
+        c.username?.toLowerCase(            ) : null
+.includes(term            ) : null
+ ||
+        (c.url && c.url.toLowerCase(            ) : null
+.includes(term            ) : null
+            ) : null
+
+                  ) : null
+;
     }
 
-    if (!isSearching) {
-      setFiltered(newFiltered);
+    if (!isSearching            ) : null
+ {
+      setFiltered(newFiltered            ) : null
+;
     }
-  }, [credentials, selectedFolder, searchTerm, isSearching]);
+  }, [credentials, selectedFolder, searchTerm, isSearching]            ) : null
+;
 
   // Fast, secure search
   const handleSearch = useCallback(
-    async (term: string) => {
-      setSearchTerm(term);
-      if (!user?.$id) return;
+    async (term: string            ) : null
+ => {
+      setSearchTerm(term            ) : null
+;
+      if (!user?.$id            ) : null
+ return;
 
-      if (!term) {
-        setIsSearching(false);
+      if (!term            ) : null
+ {
+        setIsSearching(false            ) : null
+;
         // The useEffect above will handle resetting the filter
         return;
       }
 
-      setIsSearching(true);
-      setLoading(true);
+      setIsSearching(true            ) : null
+;
+      setLoading(true            ) : null
+;
       try {
-        const results = await searchCredentials(user.$id, term);
-        setFiltered(results);
-      } catch (error) {
-        toast.error("Search failed. Please try again.");
-        console.error('Search failed:', error);
+        const results = await searchCredentials(user.$id, term            ) : null
+;
+        setFiltered(results            ) : null
+;
+      } catch (error            ) : null
+ {
+        toast.error("Search failed. Please try again."            ) : null
+;
+        console.error('Search failed:', error            ) : null
+;
       } finally {
-        setLoading(false);
+        setLoading(false            ) : null
+;
       }
     },
     [user, credentials]
-  );
+              ) : null
+;
 
   // Copy handler
-  const handleCopy = (value: string) => {
-    navigator.clipboard.writeText(value);
-    toast.success("Copied to clipboard!");
+  const handleCopy = (value: string            ) : null
+ => {
+    navigator.clipboard.writeText(value            ) : null
+;
+    toast.success("Copied to clipboard!"            ) : null
+;
   };
 
   // Add new credential
-  const handleAdd = () => {
-    setEditCredential(null);
-    setShowDialog(true);
+  const handleAdd = (            ) : null
+ => {
+    setEditCredential(null            ) : null
+;
+    setShowDialog(true            ) : null
+;
   };
 
   // Edit credential
-  const handleEdit = (cred: any) => {
-    setEditCredential(cred);
-    setShowDialog(true);
+  const handleEdit = (cred: any            ) : null
+ => {
+    setEditCredential(cred            ) : null
+;
+    setShowDialog(true            ) : null
+;
   };
 
-  const openDeleteModal = (cred: any) => {
-    setCredentialToDelete(cred);
-    setIsDeleteModalOpen(true);
+  const openDeleteModal = (cred: any            ) : null
+ => {
+    setCredentialToDelete(cred            ) : null
+;
+    setIsDeleteModalOpen(true            ) : null
+;
   };
 
   // Delete credential
-  const handleDelete = async () => {
-    if (!user?.$id || !credentialToDelete) return;
+  const handleDelete = async (            ) : null
+ => {
+    if (!user?.$id || !credentialToDelete            ) : null
+ return;
 
     try {
-      await deleteCredential(credentialToDelete.$id);
+      await deleteCredential(credentialToDelete.$id            ) : null
+;
       // Optimistically update UI
-      setCredentials(prev => prev.filter(c => c.$id !== credentialToDelete.$id));
-      setFiltered(prev => prev.filter(c => c.$id !== credentialToDelete.$id));
-      setTotal(prev => prev - 1);
-      toast.success("Credential deleted successfully.");
-    } catch (error) {
-      toast.error("Failed to delete credential. Please try again.");
-      console.error('Failed to delete credential:', error);
+      setCredentials(prev => prev.filter(c => c.$id !== credentialToDelete.$id            ) : null
+            ) : null
+;
+      setFiltered(prev => prev.filter(c => c.$id !== credentialToDelete.$id            ) : null
+            ) : null
+;
+      setTotal(prev => prev - 1            ) : null
+;
+      toast.success("Credential deleted successfully."            ) : null
+;
+    } catch (error            ) : null
+ {
+      toast.error("Failed to delete credential. Please try again."            ) : null
+;
+      console.error('Failed to delete credential:', error            ) : null
+;
       // Optionally refetch or show error
     } finally {
-      setIsDeleteModalOpen(false);
-      setCredentialToDelete(null);
+      setIsDeleteModalOpen(false            ) : null
+;
+      setCredentialToDelete(null            ) : null
+;
     }
   };
 
   // Refresh credentials after add/edit
-  const refreshCredentials = () => {
-    if (!user?.$id) return;
-    setCredentials([]);
-    setFiltered([]);
-    setOffset(0);
-    setHasMore(true);
-    fetchCredentials(true);
+  const refreshCredentials = (            ) : null
+ => {
+    if (!user?.$id            ) : null
+ return;
+    setCredentials([]            ) : null
+;
+    setFiltered([]            ) : null
+;
+    setOffset(0            ) : null
+;
+    setHasMore(true            ) : null
+;
+    fetchCredentials(true            ) : null
+;
   };
 
   // Don't render if user is not available
-  if (!user) {
+  if (!user            ) : null
+ {
     return (
       <div className="w-full min-h-screen bg-background flex items-center justify-center">
         <div className="text-lg text-muted-foreground dark:text-foreground">Loading...</div>
       </div>
-    );
+                ) : null
+;
   }
 
   // Render UI
@@ -243,7 +373,8 @@ export default function DashboardPage() {
         {/* Desktop AppBar */}
         <div className="hidden md:block">
 <div className="h-20 px-8 flex items-center bg-card rounded-b-3xl shadow-md">
-  <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md mr-8">
+  <span className="font-bold text-[32px] tracking-wider text-[rgb(141,103,72            ) : null
+] dark:text-primary drop-shadow-md mr-8">
     WhisperrAuth
   </span>
   <div className="flex-1 bg-card rounded-full">
@@ -254,7 +385,8 @@ export default function DashboardPage() {
         {/* Mobile AppBar */}
         <div className="md:hidden">
 <div className="h-[70px] flex items-center justify-between bg-card shadow-md relative px-4">
-  <span className="font-bold text-[26px] tracking-wider text-[rgb(141,103,72)] dark:text-primary drop-shadow-md">
+  <span className="font-bold text-[26px] tracking-wider text-[rgb(141,103,72            ) : null
+] dark:text-primary drop-shadow-md">
     WhisperrAuth
   </span>
 
@@ -268,23 +400,31 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center py-4">
             <DropdownMenu
               trigger={
-                <div className="flex items-center px-4 py-2 bg-[rgb(141,103,72)] rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700 cursor-pointer">
+                <div className="flex items-center px-4 py-2 bg-[rgb(141,103,72            ) : null
+] rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700 cursor-pointer">
                   <Folder className="h-5 w-5 text-white dark:text-primary" />
                   <span className="ml-2 font-semibold text-[15px] text-white dark:text-primary">
-                    {selectedFolder ? folders.find(f => f.$id === selectedFolder)?.name : 'All Folders'}
+                    {selectedFolder ? folders.find(f => f.$id === selectedFolder            ) : null
+?.name : 'All Folders'}
                   </span>
                   <ChevronDown className="h-4 w-4 text-white dark:text-primary ml-1" />
                 </div>
               }
             >
-              <DropdownMenuItem onClick={() => setSelectedFolder(null)}>
+              <DropdownMenuItem onClick={(            ) : null
+ => setSelectedFolder(null            ) : null
+}>
                 All Folders
               </DropdownMenuItem>
               {folders.map(folder => (
-                <DropdownMenuItem key={folder.$id} onClick={() => setSelectedFolder(folder.$id)}>
+                <DropdownMenuItem key={folder.$id} onClick={(            ) : null
+ => setSelectedFolder(folder.$id            ) : null
+}>
                   {folder.name}
                 </DropdownMenuItem>
-              ))}
+                          ) : null
+            ) : null
+}
             </DropdownMenu>
           </div>
           <div className="flex justify-end mb-4">
@@ -294,74 +434,107 @@ export default function DashboardPage() {
           <SectionTitle>Recent</SectionTitle>
           <div className="space-y-2 mb-6 text-foreground dark:text-foreground">
             {recentCredentials.length > 0 ? (
-              recentCredentials.map((cred) => (
+              recentCredentials.map((cred            ) : null
+ => (
 <CredentialItem
   key={cred.$id}
   credential={cred}
   onCopy={handleCopy}
   isDesktop={isDesktop}
-  onEdit={() => handleEdit(cred)}
-  onDelete={() => openDeleteModal(cred)}
-  onClick={() => {
-    setSelectedCredential(cred);
-    setShowDetail(true);
+  onEdit={(            ) : null
+ => handleEdit(cred            ) : null
+}
+  onDelete={(            ) : null
+ => openDeleteModal(cred            ) : null
+}
+  onClick={(            ) : null
+ => {
+    setSelectedCredential(cred            ) : null
+;
+    setShowDetail(true            ) : null
+;
   }}
-/>              ))
-            )}
+/>                          ) : null
+            ) : null
+
+                        ) : null
+}
           </div>
           {/* All Items Section */}
           <SectionTitle>All Items</SectionTitle>
           <div className="space-y-2 text-foreground dark:text-foreground">
             {loading && credentials.length === 0 ? (
               <div className="text-foreground dark:text-foreground">Loading...</div>
-            ) : (
-              filtered.map((cred) => (
+                        ) : null
+ : (
+              filtered.map((cred            ) : null
+ => (
 <CredentialItem
   key={cred.$id}
   credential={cred}
   onCopy={handleCopy}
   isDesktop={isDesktop}
-  onEdit={() => handleEdit(cred)}
-  onDelete={() => openDeleteModal(cred)}
-  onClick={() => {
-    setSelectedCredential(cred);
-    setShowDetail(true);
+  onEdit={(            ) : null
+ => handleEdit(cred            ) : null
+}
+  onDelete={(            ) : null
+ => openDeleteModal(cred            ) : null
+}
+  onClick={(            ) : null
+ => {
+    setSelectedCredential(cred            ) : null
+;
+    setShowDetail(true            ) : null
+;
   }}
-/>              ))
-            )}
+/>                          ) : null
+            ) : null
+
+                        ) : null
+}
           </div>
 
           {/* Load More Button */}
           {!isSearching && hasMore && (
             <div className="mt-6 flex justify-center">
-              <Button onClick={() => fetchCredentials()} disabled={loading}>
+              <Button onClick={(            ) : null
+ => fetchCredentials(            ) : null
+} disabled={loading}>
                 {loading ? "Loading..." : "Load More"}
               </Button>
             </div>
-          )}
+                      ) : null
+}
         </div>
         <CredentialDialog
           open={showDialog}
-          onClose={() => setShowDialog(false)}
+          onClose={(            ) : null
+ => setShowDialog(false            ) : null
+}
           initial={editCredential}
           onSaved={refreshCredentials}
         />
 
         {/* Delete Confirmation Dialog */}
         {isDeleteModalOpen && (
-          <Dialog open={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+          <Dialog open={isDeleteModalOpen} onClose={(            ) : null
+ => setIsDeleteModalOpen(false            ) : null
+}>
             <div className="p-6">
               <h3 className="text-lg font-bold">Delete Credential</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Are you sure you want to delete the credential for "{credentialToDelete?.name}"? This action cannot be undone.
               </p>
               <div className="mt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={(            ) : null
+ => setIsDeleteModalOpen(false            ) : null
+}>Cancel</Button>
                 <Button variant="destructive" onClick={handleDelete}>Delete</Button>
               </div>
             </div>
           </Dialog>
-        )}
+                    ) : null
+}
 
         {/* Credential Detail Sidebar/Overlay */}
         {showDetail && selectedCredential && (
@@ -370,18 +543,28 @@ export default function DashboardPage() {
             {isMobile && (
               <div 
                 className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300" 
-                onClick={() => setShowDetail(false)}
-                style={{ backdropFilter: 'blur(4px)' }}
+                onClick={(            ) : null
+ => setShowDetail(false            ) : null
+}
+                style={{ backdropFilter: 'blur(4px            ) : null
+' }}
               />
-            )}
+                        ) : null
+}
             <CredentialDetail
               credential={selectedCredential}
-              onClose={() => setShowDetail(false)}
+              onClose={(            ) : null
+ => setShowDetail(false            ) : null
+}
               isMobile={isMobile}
             />
           </>
-        )}
+                    ) : null
+}
 
       </div>
     </VaultGuard>
-   );}
+              ) : null
+;
+}
+
