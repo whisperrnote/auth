@@ -100,9 +100,7 @@ export default function NewCredentialPage() {
           userId: user.$id,
           name: formData.name,
           parentFolderId: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        } as any);
         toast.success("Folder created!");
         router.push("/dashboard");
       } else if (formData.type === "totp") {
@@ -120,9 +118,7 @@ export default function NewCredentialPage() {
           algorithm: "SHA1",
           digits: 6,
           period: 30,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        } as any);
         toast.success("TOTP code added!");
         router.push("/totp");
       }

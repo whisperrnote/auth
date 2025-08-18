@@ -199,7 +199,7 @@ export default function SettingsPage() {
         toast.success("Folder updated!");
       } else {
         // Create new folder
-        const newFolder = await createFolder({ name: folderName, userId: user.$id });
+        const newFolder = await createFolder({ name: folderName, userId: user.$id } as any);
         setFolders([...folders, newFolder]);
         toast.success("Folder created!");
       }

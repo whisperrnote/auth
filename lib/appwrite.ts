@@ -88,6 +88,18 @@ export const COLLECTION_SCHEMAS = {
 
 // --- Secure CRUD Operations ---
 export class AppwriteService {
+  // Map a single Appwrite document to domain type
+  private static mapDoc<T>(doc: any): T {
+    return doc as unknown as T;
+  }
+
+  // Map Appwrite DocumentList response to domain DocumentList shape
+  private static mapDocumentList<T>(response: any): { total: number; documents: T[] } {
+    return {
+      total: response.total ?? (Array.isArray(response) ? response.length : 0),
+      documents: (response.documents ?? response.items ?? response ?? []) as unknown as T[],
+    };
+  }
   // Create with automatic encryption
   static async createCredential(data: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>): Promise<Credentials> {
     const encryptedData = await this.encryptDocumentFields(data, 'credentials');
@@ -118,7 +130,7 @@ export class AppwriteService {
       ID.unique(),
       data as unknown as Record<string, any>
     );
-    return (doc as unknown) as Folders;
+    return this.mapDoc<Folders>(doc);
   }
 
   static async createSecurityLog(data: Omit<SecurityLogs, '$id'>): Promise<SecurityLogs> {
@@ -769,7 +781,7 @@ export async function listFolders(userId: string, queries: string[] = []) {
       [Query.equal('userId', userId), ...queries]
     );
     // Cast via unknown to avoid strict TS overlap errors from Appwrite DefaultDocument
-    return (response.documents as unknown) as Folders[];
+    return (response.documents ?? response.items ?? response) as unknown as Folders[];
   }
 
 export async function updateFolder(id: string, data: Partial<any>) {
