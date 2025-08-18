@@ -21,7 +21,7 @@ import CredentialDialog from "@/components/app/dashboard/CredentialDialog";
 import PasswordGenerator from "@/components/ui/PasswordGenerator";
 import clsx from "clsx";
 import VaultGuard from "@/components/layout/VaultGuard";
-import Dialog from "@/components/ui/Dialog";
+import { Dialog } from "@/components/ui/Dialog";
 import CredentialDetail from "@/components/app/dashboard/CredentialDetail";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
