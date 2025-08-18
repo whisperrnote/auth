@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { createCredential, createFolder, createTotpSecret } from "@/lib/appwrite";
+import { createCredential, createFolder, createTotpSecret, listFolders } from "@/lib/appwrite";
 import { generateRandomPassword } from "@/utils/password";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
+import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
+import { useEffect } from "react";
 
 
 export default function NewCredentialPage() {
@@ -18,6 +20,7 @@ export default function NewCredentialPage() {
   const { user } = useAppwrite();
   const [showPassword, setShowPassword] = useState(false);
   const [customFields, setCustomFields] = useState<Array<{id: string, label: string, value: string}>>([]);
+  const [folders, setFolders] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     type: "credential", // "credential" | "folder" | "totp" (future)
     name: "",
@@ -29,7 +32,14 @@ export default function NewCredentialPage() {
     tags: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.$id) {
+      listFolders(user.$id).then(setFolders).catch(() => {
+        toast.error("Could not load folders.");
+      });
+    }
+  }, [user]);
 
   const handleGeneratePassword = () => {
     setFormData({ ...formData, password: generateRandomPassword(16) });
@@ -51,7 +61,6 @@ export default function NewCredentialPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     
     try {
@@ -63,9 +72,6 @@ export default function NewCredentialPage() {
       if (!masterPassCrypto.isVaultUnlocked()) {
         throw new Error("Vault is locked. Please unlock your vault first.");
       }
-
-      console.log('Form submission started:', formData.type);
-      console.log('Vault unlocked:', masterPassCrypto.isVaultUnlocked());
 
       if (formData.type === "credential") {
         // Clean and prepare credential data with proper null handling
@@ -86,7 +92,8 @@ export default function NewCredentialPage() {
         }
         if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields);
 
-        const result = await createCredential(credentialData);
+        await createCredential(credentialData);
+        toast.success("Credential created!");
         router.push("/dashboard");
       } else if (formData.type === "folder") {
         await createFolder({
@@ -96,6 +103,7 @@ export default function NewCredentialPage() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        toast.success("Folder created!");
         router.push("/dashboard");
       } else if (formData.type === "totp") {
         // Check vault for TOTP as well
@@ -115,12 +123,11 @@ export default function NewCredentialPage() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        toast.success("TOTP code added!");
         router.push("/totp");
       }
     } catch (e: any) {
-      console.error('Failed to save credential:', e);
-      console.error('Error stack:', e.stack);
-      setError(e.message || "Failed to save credential. Please check if your vault is unlocked.");
+      toast.error(e.message || "Failed to save. Please check if your vault is unlocked.");
     }
     setLoading(false);
   };
@@ -242,11 +249,16 @@ export default function NewCredentialPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Folder</label>
-                    <Input
-                      placeholder="Work, Personal, etc."
+                    <select
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.folder}
                       onChange={(e) => setFormData({ ...formData, folder: e.target.value })}
-                    />
+                    >
+                      <option value="">No Folder</option>
+                      {folders.map(folder => (
+                        <option key={folder.$id} value={folder.$id}>{folder.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Tags</label>
@@ -313,8 +325,6 @@ export default function NewCredentialPage() {
                 />
               </div>
             )}
-
-            {error && <div className="text-red-600 text-sm">{error}</div>}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => router.back()}>

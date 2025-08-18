@@ -49,13 +49,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Compose both providers at the root
+// Compose all providers at the root
 import { AppwriteProvider } from "./appwrite-provider";
+import { Toaster } from "react-hot-toast";
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <AppwriteProvider>
         {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "#333",
+              color: "#fff",
+            },
+          }}
+        />
       </AppwriteProvider>
     </ThemeProvider>
   );

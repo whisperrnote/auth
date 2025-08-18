@@ -9,14 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
 import { hasMasterpass, setMasterpassFlag, logoutAppwrite } from "@/lib/appwrite";
-
+import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
 
 export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,19 +44,18 @@ export default function MasterPassPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
       if (isFirstTime) {
         // First time setup - validate confirmation
         if (masterPassword !== confirmPassword) {
-          setError("Passwords don't match");
+          toast.error("Passwords don't match");
           setLoading(false);
           return;
         }
         if (masterPassword.length < 8) {
-          setError("Master password must be at least 8 characters");
+          toast.error("Master password must be at least 8 characters");
           setLoading(false);
           return;
         }
@@ -73,7 +71,7 @@ export default function MasterPassPage() {
           await refresh();
           router.replace('/dashboard');
         } else {
-          setError("Failed to set master password");
+          toast.error("Failed to set master password");
         }
       } else {
         // Existing user - attempt to unlock vault normally
@@ -83,14 +81,14 @@ export default function MasterPassPage() {
           await refresh();
           router.replace('/dashboard');
         } else {
-          setError("Incorrect master password. Please try again.");
+          toast.error("Incorrect master password. Please try again.");
         }
       }
     } catch (err: any) {
       if (err.message?.includes('Vault is locked') || err.message?.includes('master password is incorrect')) {
-        setError("Incorrect master password. Please try again.");
+        toast.error("Incorrect master password. Please try again.");
       } else {
-        setError("Failed to unlock vault");
+        toast.error("Failed to unlock vault");
       }
     }
     
@@ -266,8 +264,6 @@ export default function MasterPassPage() {
                 </div>
               </div>
             )}
-
-            {error && <div className="text-red-600 text-sm">{error}</div>}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (

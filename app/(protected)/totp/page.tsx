@@ -6,36 +6,38 @@ import { Shield, Plus, Copy, Edit, Trash2, Timer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { listTotpSecrets, deleteTotpSecret } from "@/lib/appwrite";
+import { listTotpSecrets, deleteTotpSecret, listFolders } from "@/lib/appwrite";
 import NewTotpDialog from "@/components/app/totp/new";
 import { authenticator } from "otplib";
 import Dialog from "@/components/ui/Dialog";
+import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
 
 export default function TOTPPage() {
   const [search, setSearch] = useState("");
   const { user } = useAppwrite();
   const [totpCodes, setTotpCodes] = useState<any[]>([]);
+  const [folders, setFolders] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [error, setError] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [editingTotp, setEditingTotp] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user?.$id) return;
     setLoading(true);
-    console.log('Loading TOTP secrets for user:', user.$id);
-    listTotpSecrets(user.$id)
-      .then((secrets) => {
-        console.log('TOTP secrets loaded:', secrets.length);
-        setTotpCodes(secrets);
-      })
-      .catch((error) => {
-        console.error('Failed to load TOTP secrets:', error);
-        setTotpCodes([]);
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      listTotpSecrets(user.$id),
+      listFolders(user.$id),
+    ]).then(([secrets, userFolders]) => {
+      setTotpCodes(secrets);
+      const folderMap = new Map<string, string>();
+      userFolders.forEach(f => folderMap.set(f.$id, f.name));
+      setFolders(folderMap);
+    }).catch((error) => {
+      toast.error("Failed to load data.");
+    }).finally(() => setLoading(false));
   }, [user, showNew]);
 
   useEffect(() => {
@@ -47,16 +49,13 @@ export default function TOTPPage() {
 
   const handleDelete = async (id: string) => {
     if (!user?.$id) return;
-    setLoading(true);
-    setError(null);
     try {
       await deleteTotpSecret(id);
       setTotpCodes((codes) => codes.filter((c) => c.$id !== id));
+      toast.success("TOTP code deleted.");
     } catch (e: any) {
-      console.error('Failed to delete TOTP:', e);
-      setError(e.message || "Failed to delete TOTP code.");
+      toast.error(e.message || "Failed to delete TOTP code.");
     }
-    setLoading(false);
   };
 
 
@@ -77,10 +76,16 @@ export default function TOTPPage() {
     navigator.clipboard.writeText(text);
   };
 
+  const openEditDialog = (totp: any) => {
+    setEditingTotp(totp);
+    setShowNew(true);
+  };
+
   const TOTPCard = ({ totp }: { totp: any }) => {
     const code = generateTOTP(totp.secretKey, totp.period || 30);
     const timeRemaining = getTimeRemaining(totp.period || 30);
     const progress = (timeRemaining / (totp.period || 30)) * 100;
+    const folderName = totp.folderId ? folders.get(totp.folderId) : null;
 
     return (
       <Card className="p-4 overflow-hidden relative">
@@ -88,19 +93,20 @@ export default function TOTPPage() {
           <div className="min-w-0">
             <h3 className="font-semibold truncate max-w-full" title={totp.issuer}>{totp.issuer}</h3>
             <p className="text-sm text-muted-foreground truncate max-w-full" title={totp.accountName}>{totp.accountName}</p>
-            {totp.folderId && (
+            {folderName && (
               <span className="text-xs bg-secondary px-2 py-1 rounded mt-1 inline-block">
-                {totp.folderId}
+                {folderName}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {/* <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => openEditDialog(totp)}>
               <Edit className="h-4 w-4" />
-            </Button> */}
-<Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: totp.$id })}>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDeleteDialog({ open: true, id: totp.$id })}>
                <Trash2 className="h-4 w-4" />
-             </Button>          </div>
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -163,10 +169,6 @@ export default function TOTPPage() {
         </Button>
       </div>
 
-      {error && (
-        <div className="text-red-600 text-sm mb-2">{error}</div>
-      )}
-
        {/* Search Bar */}
       <div className="mb-4">
         <input
@@ -208,7 +210,14 @@ export default function TOTPPage() {
             ))}
         </div>
       )}
-      <NewTotpDialog open={showNew} onClose={() => setShowNew(false)} />
+      <NewTotpDialog
+        open={showNew}
+        onClose={() => {
+          setShowNew(false);
+          setEditingTotp(null);
+        }}
+        initialData={editingTotp}
+      />
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, id: null })}>
         <div className="p-6">

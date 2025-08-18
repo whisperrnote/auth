@@ -9,6 +9,7 @@ import { listMfaFactors, createMfaChallenge, completeMfaChallenge } from "@/lib/
 import { useAppwrite } from "@/app/appwrite-provider";
 import { hasMasterpass, redirectIfAuthenticated } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
+import toast from "react-hot-toast";
 
 export default function TwofaAccessPage() {
   const router = useRouter();
@@ -17,7 +18,6 @@ export default function TwofaAccessPage() {
   const [selectedFactor, setSelectedFactor] = useState<"totp" | "email" | "phone" | "recoverycode" | null>(null);
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
 
@@ -39,14 +39,12 @@ export default function TwofaAccessPage() {
       else if (mfaFactors.email) setSelectedFactor("email");
       else if (mfaFactors.phone) setSelectedFactor("phone");
     } catch (error) {
-      console.error("Failed to load MFA factors:", error);
-      setError("Failed to load authentication factors");
+      toast.error("Failed to load authentication factors");
     }
   };
 
   const handleCreateChallenge = async (factor: "totp" | "email" | "phone" | "recoverycode") => {
     setLoading(true);
-    setError(null);
     try {
       // Use the correct AuthenticationFactor mapping for createMfaChallenge
       let factorEnum: any = factor;
@@ -59,7 +57,7 @@ export default function TwofaAccessPage() {
       setChallengeId(challenge.$id);
       setSelectedFactor(factor);
     } catch (e: any) {
-      setError(e.message || "Failed to create challenge");
+      toast.error(e.message || "Failed to create challenge");
     }
     setLoading(false);
   };
@@ -68,13 +66,12 @@ export default function TwofaAccessPage() {
     if (!challengeId || !code) return;
     
     setLoading(true);
-    setError(null);
     try {
       await completeMfaChallenge(challengeId, code);
       // Success! User is now fully authenticated, go to masterpass
       router.replace("/masterpass");
     } catch (e: any) {
-      setError(e.message || "Invalid code");
+      toast.error(e.message || "Invalid code");
     }
     setLoading(false);
   };
@@ -198,9 +195,6 @@ export default function TwofaAccessPage() {
               </div>
             )}
             
-            {error && (
-              <div className="text-red-600 text-sm mt-4 text-center">{error}</div>
-            )}
           </CardContent>
         </Card>
       </div>

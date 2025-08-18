@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
 import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query, ID } from "@/lib/appwrite";
 import { checkMfaRequired } from "@/lib/appwrite";
 import { hasMasterpass } from "@/lib/appwrite";
@@ -44,7 +45,6 @@ export default function LoginPage() {
     isVaultUnlocked,
   } = useAppwrite();
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
   // OTP/Magic state
   const [otpSent, setOtpSent] = useState(false);
@@ -91,7 +91,6 @@ export default function LoginPage() {
   // Handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     if (mode === "password") {
       try {
         await loginWithEmailPassword(formData.email, formData.password);
@@ -107,11 +106,11 @@ export default function LoginPage() {
             router.replace("/twofa/access");
           } else {
             // Other error, show it
-            setError(mfaError.message || "Login verification failed");
+            toast.error(mfaError.message || "Login verification failed");
           }
         }
       } catch (err: any) {
-        setError(err?.message || "Login failed");
+        toast.error(err?.message || "Login failed");
       }
     } else if (mode === "otp") {
       try {
@@ -124,18 +123,17 @@ export default function LoginPage() {
           if (mfaError.type === "user_more_factors_required") {
             router.replace("/twofa/access");
           } else {
-            setError(mfaError.message || "Login verification failed");
+            toast.error(mfaError.message || "Login verification failed");
           }
         }
       } catch (err: any) {
-        setError(err?.message || "Invalid OTP.");
+        toast.error(err?.message || "Invalid OTP.");
       }
     }
     // Magic handled separately
   };
 
   const handleSendOTP = async () => {
-    setError(null);
     try {
       const resp = await sendEmailOtp(formData.email, true);
       setOtpSent(true);
@@ -144,18 +142,18 @@ export default function LoginPage() {
       localStorage.setItem("otp_last_" + formData.email, Date.now().toString());
       setOtpCooldown(OTP_COOLDOWN);
     } catch (e: any) {
-      setError(e.message || "Error sending OTP.");
+      toast.error(e.message || "Error sending OTP.");
     }
   };
 
   const handleSendMagic = async () => {
-    setError(null);
     try {
       await sendMagicUrl(formData.email, window.location.origin + "/login");
       setMagicSent(true);
+      toast.success("Magic link sent!");
       setTimeout(() => setMagicSent(false), 4000);
     } catch (e: any) {
-      setError(e.message || "Error sending magic link.");
+      toast.error(e.message || "Error sending magic link.");
     }
   };
 
@@ -318,7 +316,6 @@ export default function LoginPage() {
                   <Check className="h-4 w-4" /> Sent! Check your email for the magic link.
                 </div>
               )}
-              {error && <div className="text-red-600 text-sm">{error}</div>}
               {/* Only show submit for password/otp */}
               {(mode === "password" || (mode === "otp" && otpSent)) && (
                 <Button type="submit" className="w-full" disabled={loading}>

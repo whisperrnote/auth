@@ -7,10 +7,12 @@ import { useState } from "react";
 import Dialog from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { createTotpSecret } from "@/lib/appwrite";
+import { createTotpSecret, updateTotpSecret } from "@/lib/appwrite";
 import { useAppwrite } from "@/app/appwrite-provider";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
 
-export default function NewTotpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function NewTotpDialog({ open, onClose, initialData }: { open: boolean; onClose: () => void; initialData?: any }) {
   const { user } = useAppwrite();
   const [form, setForm] = useState({
     issuer: "",
@@ -23,23 +25,54 @@ export default function NewTotpDialog({ open, onClose }: { open: boolean; onClos
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        issuer: initialData.issuer || "",
+        accountName: initialData.accountName || "",
+        secretKey: initialData.secretKey || "",
+        folderId: initialData.folderId || "",
+        algorithm: initialData.algorithm || "SHA1",
+        digits: initialData.digits || 6,
+        period: initialData.period || 30,
+      });
+    } else {
+      setForm({
+        issuer: "",
+        accountName: "",
+        secretKey: "",
+        folderId: "",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+      });
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       if (!user) throw new Error("Not authenticated");
-      await createTotpSecret({
-        userId: user.$id,
-        ...form,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      if (initialData) {
+        await updateTotpSecret(initialData.$id, {
+          ...form,
+          updatedAt: new Date().toISOString(),
+        });
+        toast.success("TOTP code updated!");
+      } else {
+        await createTotpSecret({
+          userId: user.$id,
+          ...form,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        toast.success("TOTP code added!");
+      }
       onClose();
     } catch (e: any) {
-      setError(e.message || "Failed to add TOTP code.");
+      toast.error(e.message || `Failed to ${initialData ? 'update' : 'add'} TOTP code.`);
     }
     setLoading(false);
   };
@@ -47,7 +80,7 @@ export default function NewTotpDialog({ open, onClose }: { open: boolean; onClos
   return (
     <Dialog open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <h2 className="text-xl font-bold mb-2">Add TOTP Code</h2>
+        <h2 className="text-xl font-bold mb-2">{initialData ? 'Edit' : 'Add'} TOTP Code</h2>
         <div className="space-y-2">
           <label className="text-sm font-medium">Issuer</label>
           <Input
@@ -109,10 +142,9 @@ export default function NewTotpDialog({ open, onClose }: { open: boolean; onClos
             </div>
           </>
         )}
-        {error && <div className="text-red-600 text-sm">{error}</div>}
         <div className="flex gap-2">
           <Button type="submit" className="flex-1" disabled={loading}>
-            {loading ? "Adding..." : "Add"}
+            {loading ? (initialData ? "Saving..." : "Adding...") : (initialData ? "Save" : "Add")}
           </Button>
           <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
             Cancel

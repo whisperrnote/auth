@@ -18,14 +18,17 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { useTheme } from "@/app/providers"; // This should be useAppwrite
+import { Dialog } from "@/components/ui/Dialog";
+import { Folder, Edit, Trash } from "lucide-react";
+import { useTheme } from "@/app/providers";
 import clsx from "clsx";
 import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
 import { useAppwrite } from "@/app/appwrite-provider";
 import TwofaSetup from "@/components/overlays/twofaSetup";
-import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
+import { appwriteAccount, appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, createFolder, updateFolder, deleteFolder, listFolders } from "@/lib/appwrite";
 import { Query } from "appwrite";
 import { updateUserProfile, exportAllUserData, deleteUserAccount } from "@/lib/appwrite";
+import toast from "react-hot-toast";
 
 import VaultGuard from "@/components/layout/VaultGuard";
 
@@ -51,11 +54,21 @@ export default function SettingsPage() {
     email: user?.email || "",
   }); // email is shown but not editable
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [dangerLoading, setDangerLoading] = useState(false);
   const [vaultTimeout, setVaultTimeoutState] = useState(getVaultTimeout());
   const [showTwofa, setShowTwofa] = useState(false);
   const [twofaEnabled, setTwofaEnabled] = useState(user?.twofa ?? false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Folder Management State
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<any | null>(null);
+  const [folderName, setFolderName] = useState("");
+  const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<any | null>(null);
 
   // Fetch latest 2fa status on mount and when dialog closes
   useEffect(() => {
@@ -79,21 +92,19 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     setSaving(true);
-    setMessage("");
     try {
       if (!user) throw new Error("Not authenticated");
       // Only allow updating the name, not the email
       await updateUserProfile(user.$id, { name: profile.name });
-      setMessage("Profile updated!");
-      setTimeout(() => setMessage(""), 1500);
+      toast.success("Profile updated!");
     } catch (e: any) {
-      setMessage(e.message || "Failed to update profile.");
+      toast.error(e.message || "Failed to update profile.");
     }
     setSaving(false);
   };
 
   const handleExportData = async () => {
-    setMessage("Exporting data...");
+    const toastId = toast.loading("Exporting data...");
     try {
       if (!user) throw new Error("Not authenticated");
       const data = await exportAllUserData(user.$id);
@@ -105,40 +116,112 @@ export default function SettingsPage() {
       a.download = "whisperrauth-export.json";
       a.click();
       URL.revokeObjectURL(url);
-      setMessage("Data exported!");
-      setTimeout(() => setMessage(""), 2000);
+      toast.success("Data exported!", { id: toastId });
     } catch (e: any) {
-      setMessage(e.message || "Failed to export data.");
+      toast.error(e.message || "Failed to export data.", { id: toastId });
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (
-      confirm(
-        "Are you sure you want to delete your account? This action cannot be undone."
-      )
-    ) {
-      setDangerLoading(true);
-      try {
-        if (!user) throw new Error("Not authenticated");
-        await deleteUserAccount(user.$id);
-        setMessage("Account deleted.");
-        setTimeout(() => {
-          setDangerLoading(false);
-          logout();
-        }, 1500);
-      } catch (e: any) {
+    setDangerLoading(true);
+    try {
+      if (!user) throw new Error("Not authenticated");
+      await deleteUserAccount(user.$id);
+      toast.success("Account deleted.");
+      setTimeout(() => {
         setDangerLoading(false);
-        setMessage(e.message || "Failed to delete account.");
-      }
+        logout();
+      }, 1500);
+    } catch (e: any) {
+      setDangerLoading(false);
+      toast.error(e.message || "Failed to delete account.");
+    } finally {
+      setIsDeleteAccountModalOpen(false);
     }
   };
 
   const handleVaultTimeoutChange = (minutes: number) => {
     setVaultTimeout(minutes);
     setVaultTimeoutState(minutes);
-    setMessage("Vault timeout updated!");
-    setTimeout(() => setMessage(""), 1500);
+    toast.success("Vault timeout updated!");
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    if (passwords.new !== passwords.confirm) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    if (passwords.new.length < 8) {
+      setPasswordError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await appwriteAccount.updatePassword(passwords.new, passwords.current);
+      toast.success("Password updated successfully!");
+      setIsChangePasswordModalOpen(false);
+      setPasswords({ current: "", new: "", confirm: "" });
+    } catch (e: any) {
+      setPasswordError(e.message || "Failed to update password.");
+    }
+    setSaving(false);
+  };
+
+  const handleSaveFolder = async () => {
+    if (!folderName || !user) return;
+    setSaving(true);
+    try {
+      if (editingFolder) {
+        // Update existing folder
+        const updatedFolder = await updateFolder(editingFolder.$id, { name: folderName });
+        setFolders(folders.map(f => f.$id === editingFolder.$id ? updatedFolder : f));
+        toast.success("Folder updated!");
+      } else {
+        // Create new folder
+        const newFolder = await createFolder({ name: folderName, userId: user.$id });
+        setFolders([...folders, newFolder]);
+        toast.success("Folder created!");
+      }
+      setIsFolderModalOpen(false);
+      setEditingFolder(null);
+      setFolderName("");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save folder.");
+    }
+    setSaving(false);
+  };
+
+  const openFolderModal = (folder: any | null = null) => {
+    if (folder) {
+      setEditingFolder(folder);
+      setFolderName(folder.name);
+    } else {
+      setEditingFolder(null);
+      setFolderName("");
+    }
+    setIsFolderModalOpen(true);
+  };
+
+  const openDeleteFolderModal = (folder: any) => {
+    setFolderToDelete(folder);
+    setIsDeleteFolderModalOpen(true);
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!folderToDelete || !user) return;
+    setDangerLoading(true);
+    try {
+      await deleteFolder(folderToDelete.$id);
+      setFolders(folders.filter(f => f.$id !== folderToDelete.$id));
+      toast.success("Folder deleted!");
+      setIsDeleteFolderModalOpen(false);
+      setFolderToDelete(null);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete folder.");
+    }
+    setDangerLoading(false);
   };
 
   return (
@@ -199,11 +282,6 @@ export default function SettingsPage() {
                   "Save Changes"
                 )}
               </Button>
-              {message && (
-                <div className="text-green-700 text-xs animate-fade-in-out">
-                  {message}
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -216,7 +294,7 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start gap-2">
+              <Button variant="outline" className="w-full justify-start gap-2" onClick={() => setIsChangePasswordModalOpen(true)}>
                 <Key className="h-4 w-4" />
                 Change Password
               </Button>
@@ -227,14 +305,6 @@ export default function SettingsPage() {
               >
                 <Shield className="h-4 w-4" />
                 {twofaEnabled ? "✅ Two-Factor Authentication Enabled" : "Setup Two-Factor Authentication"}
-              </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Smartphone className="h-4 w-4" />
-                Manage Active Sessions
-              </Button>
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                View Security Log
               </Button>
               
               {/* Vault Timeout Setting */}
@@ -314,42 +384,8 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Notifications */}
-          <Card className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Security Alerts</div>
-                  <div className="text-sm text-muted-foreground">
-                    Get notified about suspicious activity
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" aria-pressed="true">
-                  Enabled
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Login Notifications</div>
-                  <div className="text-sm text-muted-foreground">
-                    Notify me when someone logs into my account
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" aria-pressed="true">
-                  Enabled
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Data Management */}
-          <Card className="animate-fade-in-up" style={{ animationDelay: "240ms" }}>
+          <Card className="animate-fade-in-up" style={{ animationDelay: "180ms" }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Download className="h-5 w-5" />
@@ -365,15 +401,45 @@ export default function SettingsPage() {
                 <Download className="h-4 w-4" />
                 Export All Data
               </Button>
-<Button
-  variant="outline"
-  className="w-full justify-start gap-2"
-  onClick={() => window.location.href = '/import'}
->
-  <Upload className="h-4 w-4" />
-  Import Data
-</Button>
-</CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={() => window.location.href = '/import'}
+              >
+                <Upload className="h-4 w-4" />
+                Import Data
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Folder Management */}
+          <Card className="animate-fade-in-up" style={{ animationDelay: "240ms" }}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Folder className="h-5 w-5" />
+                  Folder Management
+                </span>
+                <Button size="sm" onClick={() => openFolderModal()}>+ Add Folder</Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {folders.length > 0 ? folders.map(folder => (
+                <div key={folder.$id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent/50">
+                  <span>{folder.name}</span>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => openFolderModal(folder)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => openDeleteFolderModal(folder)}>
+                      <Trash className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              )) : (
+                <p className="text-sm text-muted-foreground">No folders created yet.</p>
+              )}
+            </CardContent>
           </Card>
 
           {/* Danger Zone */}
@@ -400,7 +466,7 @@ export default function SettingsPage() {
                 </div>
                 <Button
                   variant="destructive"
-                  onClick={handleDeleteAccount}
+                  onClick={() => setIsDeleteAccountModalOpen(true)}
                   disabled={dangerLoading}
                   className="transition-all"
                 >
@@ -445,6 +511,92 @@ export default function SettingsPage() {
             setTimeout(fetchTwofaStatus, 500);
           }}
         />
+      )}
+      {isDeleteAccountModalOpen && (
+        <Dialog open={isDeleteAccountModalOpen} onClose={() => setIsDeleteAccountModalOpen(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-bold">Delete Account</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to permanently delete your account and all of your data? This action cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDeleteAccountModalOpen(false)} disabled={dangerLoading}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteAccount} disabled={dangerLoading}>
+                {dangerLoading ? "Deleting..." : "Delete Account"}
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+      {isChangePasswordModalOpen && (
+        <Dialog open={isChangePasswordModalOpen} onClose={() => setIsChangePasswordModalOpen(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-bold">Change Password</h3>
+            <div className="space-y-4 mt-4">
+              <Input
+                type="password"
+                placeholder="Current Password"
+                value={passwords.current}
+                onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+              />
+              <Input
+                type="password"
+                placeholder="New Password"
+                value={passwords.new}
+                onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+              />
+              <Input
+                type="password"
+                placeholder="Confirm New Password"
+                value={passwords.confirm}
+                onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+              />
+              {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsChangePasswordModalOpen(false)} disabled={saving}>Cancel</Button>
+              <Button onClick={handleChangePassword} disabled={saving}>
+                {saving ? "Saving..." : "Save Password"}
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+      {isFolderModalOpen && (
+        <Dialog open={isFolderModalOpen} onClose={() => setIsFolderModalOpen(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-bold">{editingFolder ? "Rename Folder" : "Create Folder"}</h3>
+            <div className="space-y-4 mt-4">
+              <Input
+                placeholder="Folder Name"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsFolderModalOpen(false)} disabled={saving}>Cancel</Button>
+              <Button onClick={handleSaveFolder} disabled={saving || !folderName}>
+                {saving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+      {isDeleteFolderModalOpen && (
+        <Dialog open={isDeleteFolderModalOpen} onClose={() => setIsDeleteFolderModalOpen(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-bold">Delete Folder</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to delete the folder "{folderToDelete?.name}"? This will not delete the credentials inside it.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsDeleteFolderModalOpen(false)} disabled={dangerLoading}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteFolder} disabled={dangerLoading}>
+                {dangerLoading ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </Dialog>
       )}
     </div>
     </VaultGuard>
