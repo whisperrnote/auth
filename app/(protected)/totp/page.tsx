@@ -9,7 +9,7 @@ import { useAppwrite } from "@/app/appwrite-provider";
 import { listTotpSecrets, deleteTotpSecret, listFolders } from "@/lib/appwrite";
 import NewTotpDialog from "@/components/app/totp/new";
 import { authenticator } from "otplib";
-import Dialog from "@/components/ui/Dialog";
+import { Dialog } from "@/components/ui/Dialog";
 import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 // Add advanced checkbox state
 
-import Dialog from "@/components/ui/Dialog";
+import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createTotpSecret, updateTotpSecret } from "@/lib/appwrite";
