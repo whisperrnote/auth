@@ -757,6 +757,20 @@ export async function listTotpSecrets(userId: string) {
   return await AppwriteService.listTOTPSecrets(userId);
 }
 
+export async function listFolders(userId: string, queries: string[] = []) {
+  return await AppwriteService.listFolders(userId, queries);
+}
+
+export async function updateFolder(id: string, data: Partial<any>) {
+  return await AppwriteService.updateFolder(id, data);
+}
+
+export async function deleteFolder(id: string) {
+  return await AppwriteService.deleteFolder(id);
+}
+  return await AppwriteService.listTOTPSecrets(userId);
+}
+
 /**
  * Create a new folder.
  */
