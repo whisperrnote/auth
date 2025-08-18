@@ -768,8 +768,6 @@ export async function updateFolder(id: string, data: Partial<any>) {
 export async function deleteFolder(id: string) {
   return await AppwriteService.deleteFolder(id);
 }
-  return await AppwriteService.listTOTPSecrets(userId);
-}
 
 /**
  * Create a new folder.
