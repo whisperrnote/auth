@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-export default function Dialog({
+export function Dialog({
   open,
   onClose,
   children,
