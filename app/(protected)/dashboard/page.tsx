@@ -31,6 +31,7 @@ function FilterChip({ label, icon: Icon }: { label: string; icon: any }) {
 }
 
 import VaultGuard from "@/components/layout/VaultGuard";
+import Dialog from '@/components/ui/Dialog';
 
 import CredentialDetail from "@/components/app/dashboard/CredentialDetail";
 
@@ -102,7 +103,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user?.$id) {
       fetchCredentials(true);
-      listFolders(user.$id).then(setFolders).catch(err => {
+      listFolders(user.$id).then(setFolders).catch((err: unknown) => {
         console.error("Failed to fetch folders:", err);
         toast.error("Could not load your folders.");
       });
@@ -111,7 +112,13 @@ export default function DashboardPage() {
         // No toast here, as it's not critical
       });
     }
-  }, [user]);
+    }, [user]);
+
+  // Ensure catch handlers have typed errors to satisfy TS
+  function handleLogError(err: unknown) { console.error(err); }
+
+  // End of component logic — render below
+
 
   // Combined filtering logic
   useEffect(() => {
@@ -227,9 +234,10 @@ export default function DashboardPage() {
     );
   }
 
-   return (
+  // Render UI
+  return (
     <VaultGuard>
-  {/* Ensures dark mode is inherited for all children */}
+      {/* Ensures dark mode is inherited for all children */}
       {/* Main Dashboard Content */}
       <div className="w-full min-h-screen bg-background flex flex-col">
         {/* Desktop AppBar */}

@@ -42,3 +42,7 @@ next-env.d.ts
 
 docx/
 flow.md
+# Added by Autocommiter: ensure *.env*
+*.env*
+# Added by Autocommiter: ensure .docx/
+.docx/
