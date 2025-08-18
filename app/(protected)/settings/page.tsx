@@ -69,6 +69,25 @@ export default function SettingsPage() {
   const [folderName, setFolderName] = useState("");
   const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<any | null>(null);
+  // Folders list
+  const [folders, setFolders] = useState<any[]>([]);
+
+  // Load folders on mount
+  useEffect(() => {
+    const loadFolders = async () => {
+      try {
+        if (!user) return;
+        const res = await listFolders(user.$id);
+        // listFolders may return documents or items; try both
+        const items = res?.documents || res?.items || res || [];
+        setFolders(items);
+      } catch (err) {
+        console.error('Failed to load folders', err);
+        setFolders([]);
+      }
+    };
+    loadFolders();
+  }, [user?.$id]);
 
   // Fetch latest 2fa status on mount and when dialog closes
   useEffect(() => {

@@ -116,9 +116,9 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       ID.unique(),
-      data
+      data as unknown as Record<string, any>
     );
-    return doc as Folders;
+    return (doc as unknown) as Folders;
   }
 
   static async createSecurityLog(data: Omit<SecurityLogs, '$id'>): Promise<SecurityLogs> {
@@ -758,8 +758,14 @@ export async function listTotpSecrets(userId: string) {
 }
 
 export async function listFolders(userId: string, queries: string[] = []) {
-  return await AppwriteService.listFolders(userId, queries);
-}
+    const response = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_FOLDERS_ID,
+      [Query.equal('userId', userId), ...queries]
+    );
+    // Cast via unknown to avoid strict TS overlap errors from Appwrite DefaultDocument
+    return (response.documents as unknown) as Folders[];
+  }
 
 export async function updateFolder(id: string, data: Partial<any>) {
   return await AppwriteService.updateFolder(id, data);
