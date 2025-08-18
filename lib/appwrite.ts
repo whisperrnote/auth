@@ -511,15 +511,12 @@ export class AppwriteService {
 
   // Helper method to determine if a field should be decrypted
   private static shouldDecryptField(value: any): boolean {
-    // Decrypt if it's a string that looks like base64 encrypted data
-    // Encrypted data should be:
-    // 1. A string
-    // 2. Longer than 50 characters (encrypted data is much longer than plaintext)
-    // 3. Base64 format (only contains A-Z, a-z, 0-9, +, /, =)
+    // Only decrypt non-null, non-empty string values
     return (
-      typeof value === 'string' && 
-      value.length > 50 && 
-      /^[A-Za-z0-9+/]+=*$/.test(value)
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'string' &&
+      value.trim().length > 0
     );
   }
 
