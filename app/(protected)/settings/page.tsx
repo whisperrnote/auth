@@ -79,7 +79,7 @@ export default function SettingsPage() {
         if (!user) return;
         const res = await listFolders(user.$id);
         // listFolders returns an array of folders; ensure we handle both array and object shapes
-        const items = Array.isArray(res) ? res : (res?.documents || res?.items || []);
+        const items = Array.isArray(res) ? res : (res && (res as any).documents ? (res as any).documents : (res && (res as any).items ? (res as any).items : []));
         setFolders(items);
       } catch (err) {
         console.error('Failed to load folders', err);
