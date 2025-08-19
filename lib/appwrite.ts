@@ -992,10 +992,18 @@ export async function resetMasterpassAndWipe(userId: string): Promise<void> {
 }
 
 /**
- * Search credentials for a user (secure, decrypted).
+ * Search credentials for a user with enhanced database-level filtering
  */
 export async function searchCredentials(userId: string, searchTerm: string): Promise<Credentials[]> {
-  return await AppwriteService.searchCredentials(userId, searchTerm);
+  try {
+    // Try database-level search first for better performance
+    const result = await AppwriteService.searchCredentialsByName(userId, searchTerm, 100, 0);
+    return result.documents;
+  } catch (error) {
+    // Fallback to client-side search if database search fails
+    console.warn('Database search failed, falling back to client-side search:', error);
+    return await AppwriteService.searchCredentials(userId, searchTerm);
+  }
 }
 
 /**
