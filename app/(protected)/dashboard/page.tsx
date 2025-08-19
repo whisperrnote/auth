@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Folder, BookMarked, Layers, ChevronDown } from "lucide-react";
+import { Folder, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAppwrite } from "@/app/appwrite-provider";
 import {
-  createCredential,
-  updateCredential,
   deleteCredential,
   listCredentials,
   searchCredentials,
@@ -15,11 +13,11 @@ import {
 } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 import CredentialItem from "@/components/app/dashboard/CredentialItem";
+import CredentialSkeleton from "@/components/app/dashboard/CredentialSkeleton";
+import PaginationControls from "@/components/app/dashboard/PaginationControls";
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/DropdownMenu";
 import SearchBar from "@/components/app/dashboard/SearchBar";
 import CredentialDialog from "@/components/app/dashboard/CredentialDialog";
-import PasswordGenerator from "@/components/ui/PasswordGenerator";
-import clsx from "clsx";
 import VaultGuard from "@/components/layout/VaultGuard";
 import { Dialog } from "@/components/ui/Dialog";
 import CredentialDetail from "@/components/app/dashboard/CredentialDetail";
@@ -32,19 +30,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FilterChip({ label, icon: Icon }: { label: string; icon: React.ComponentType<{ className?: string }> }) {
-  return (
-    <div className="flex items-center px-4 py-2 bg-[rgb(141,103,72)] rounded-full shadow-sm mr-3 mb-2 dark:bg-neutral-800 dark:border dark:border-neutral-700">
-      <Icon className="h-5 w-5 text-white dark:text-primary" />
-      <span className="ml-2 font-semibold text-[15px] text-white dark:text-primary">{label}</span>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const { user } = useAppwrite();
   const [credentials, setCredentials] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
@@ -54,12 +42,11 @@ export default function DashboardPage() {
   const [isMobile, setIsMobile] = useState(false);
   const isDesktop = typeof window !== "undefined" ? window.innerWidth > 900 : true;
 
-  // Pagination state
-  const [offset, setOffset] = useState(0);
+  // Enhanced pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isSearching, setIsSearching] = useState(false);
-  const PAGE_LIMIT = 20;
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Folder state
   const [folders, setFolders] = useState<any[]>([]);
@@ -82,117 +69,111 @@ export default function DashboardPage() {
   }, []);
 
   const fetchCredentials = useCallback(
-    async (isInitial = false) => {
+    async (page: number = 1, resetData: boolean = true) => {
       if (!user?.$id) return;
-      setLoading(true);
+      
+      const isFirstPage = page === 1;
+      if (isFirstPage) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      
       try {
-        const currentOffset = isInitial ? 0 : offset;
-        const { documents, total: totalDocs } = await listCredentials(user.$id, PAGE_LIMIT, currentOffset);
-
-        setCredentials((prev) => (isInitial ? documents : [...prev, ...documents]));
-        if (isInitial || !searchTerm) {
-          setFiltered((prev) => (isInitial ? documents : [...prev, ...documents]));
+        const offset = (page - 1) * pageSize;
+        let result;
+        
+        if (searchTerm.trim()) {
+          const searchResults = await searchCredentials(user.$id, searchTerm.trim());
+          const start = offset;
+          const end = start + pageSize;
+          result = {
+            documents: searchResults.slice(start, end),
+            total: searchResults.length
+          };
+        } else {
+          result = await listCredentials(user.$id, pageSize, offset);
         }
 
-        setTotal(totalDocs);
-        const newOffset = currentOffset + documents.length;
-        setOffset(newOffset);
-        setHasMore(newOffset < totalDocs);
+        let filteredDocuments = result.documents;
+        if (selectedFolder) {
+          filteredDocuments = filteredDocuments.filter((c) => c.folderId === selectedFolder);
+        }
+
+        if (resetData || isFirstPage) {
+          setCredentials(filteredDocuments);
+        } else {
+          setCredentials(prev => [...prev, ...filteredDocuments]);
+        }
+        
+        setTotal(result.total);
       } catch (error) {
         toast.error("Failed to load credentials. Please try again.");
         console.error("Failed to load credentials:", error);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
-    [user, offset, searchTerm]
+    [user, pageSize, searchTerm, selectedFolder]
   );
 
-  // Initial fetch
   useEffect(() => {
     if (user?.$id) {
-      fetchCredentials(true);
+      setCurrentPage(1);
+      fetchCredentials(1, true);
+      
       listFolders(user.$id)
         .then(setFolders)
         .catch((err: unknown) => {
           console.error("Failed to fetch folders:", err);
           toast.error("Could not load your folders.");
         });
+      
       listRecentCredentials(user.$id)
         .then(setRecentCredentials)
         .catch((err: unknown) => {
           console.error("Failed to fetch recent credentials:", err);
-          // No toast here, as it's not critical
         });
     }
-  }, [user, fetchCredentials]);
+  }, [user, searchTerm, selectedFolder, fetchCredentials]);
 
-  // Combined filtering logic
-  useEffect(() => {
-    let newFiltered = credentials;
-
-    // Filter by selected folder
-    if (selectedFolder) {
-      newFiltered = newFiltered.filter((c) => c.folderId === selectedFolder);
-    }
-
-    // Filter by search term (if not empty)
-    if (searchTerm && !isSearching) {
-      const term = searchTerm.toLowerCase();
-      newFiltered = newFiltered.filter(
-        (c) =>
-          c.name?.toLowerCase().includes(term) ||
-          c.username?.toLowerCase().includes(term) ||
-          (c.url && c.url.toLowerCase().includes(term))
-      );
-    }
-
-    if (!isSearching) {
-      setFiltered(newFiltered);
-    }
-  }, [credentials, selectedFolder, searchTerm, isSearching]);
-
-  // Fast, secure search
   const handleSearch = useCallback(
     async (term: string) => {
       setSearchTerm(term);
-      if (!user?.$id) return;
-
-      if (!term) {
-        setIsSearching(false);
-        // The useEffect above will handle resetting the filter
-        return;
-      }
-
-      setIsSearching(true);
-      setLoading(true);
-      try {
-        const results = await searchCredentials(user.$id, term);
-        setFiltered(results);
-      } catch (error) {
-        toast.error("Search failed. Please try again.");
-        console.error("Search failed:", error);
-      } finally {
-        setLoading(false);
-        setIsSearching(false);
-      }
+      setCurrentPage(1);
     },
-    [user]
+    []
   );
 
-  // Copy handler
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchCredentials(page, true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchCredentials(1, true);
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchCredentials(nextPage, false);
+  };
+
   const handleCopy = (value: string) => {
     navigator.clipboard.writeText(value);
     toast.success("Copied to clipboard!");
   };
 
-  // Add new credential
   const handleAdd = () => {
     setEditCredential(null);
     setShowDialog(true);
   };
 
-  // Edit credential
   const handleEdit = (cred: any) => {
     setEditCredential(cred);
     setShowDialog(true);
@@ -203,15 +184,12 @@ export default function DashboardPage() {
     setIsDeleteModalOpen(true);
   };
 
-  // Delete credential
   const handleDelete = async () => {
     if (!user?.$id || !credentialToDelete) return;
 
     try {
       await deleteCredential(credentialToDelete.$id);
-      // Optimistically update UI
       setCredentials((prev) => prev.filter((c) => c.$id !== credentialToDelete.$id));
-      setFiltered((prev) => prev.filter((c) => c.$id !== credentialToDelete.$id));
       setTotal((prev) => prev - 1);
       toast.success("Credential deleted successfully.");
     } catch (error) {
@@ -223,17 +201,16 @@ export default function DashboardPage() {
     }
   };
 
-  // Refresh credentials after add/edit
   const refreshCredentials = () => {
     if (!user?.$id) return;
-    setCredentials([]);
-    setFiltered([]);
-    setOffset(0);
-    setHasMore(true);
-    fetchCredentials(true);
+    setCurrentPage(1);
+    fetchCredentials(1, true);
+    
+    listRecentCredentials(user.$id)
+      .then(setRecentCredentials)
+      .catch(console.error);
   };
 
-  // Don't render if user is not available
   if (!user) {
     return (
       <div className="w-full min-h-screen bg-background flex items-center justify-center">
@@ -242,10 +219,12 @@ export default function DashboardPage() {
     );
   }
 
-  // Render UI
+  const totalPages = Math.ceil(total / pageSize);
+  const hasMore = currentPage < totalPages;
+
   return (
     <VaultGuard>
-      <div className="w-full min-h-screen bg-background flex flex-col">
+      <div className="w-full min-h-screen bg-background flex flex-col pb-20 lg:pb-6">
         {/* Desktop AppBar */}
         <div className="hidden md:block">
           <div className="h-20 px-8 flex items-center bg-card rounded-b-3xl shadow-md">
@@ -257,6 +236,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+        
         {/* Mobile AppBar */}
         <div className="md:hidden">
           <div className="h-[70px] flex items-center justify-between bg-card shadow-md relative px-4">
@@ -268,6 +248,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+        
         {/* Main Content */}
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 md:px-8 py-6 bg-card rounded-lg shadow">
           {/* Filter chips */}
@@ -298,35 +279,69 @@ export default function DashboardPage() {
               ))}
             </DropdownMenu>
           </div>
+          
           <div className="flex justify-end mb-4">
             <Button onClick={handleAdd}>+ Add Password</Button>
           </div>
+          
           {/* Recent Section */}
-          <SectionTitle>Recent</SectionTitle>
-          <div className="space-y-2 mb-6 text-foreground dark:text-foreground">
-            {recentCredentials.length > 0 &&
-              recentCredentials.map((cred) => (
-                <CredentialItem
-                  key={cred.$id}
-                  credential={cred}
-                  onCopy={handleCopy}
-                  isDesktop={isDesktop}
-                  onEdit={() => handleEdit(cred)}
-                  onDelete={() => openDeleteModal(cred)}
-                  onClick={() => {
-                    setSelectedCredential(cred);
-                    setShowDetail(true);
-                  }}
-                />
-              ))}
-          </div>
+          {recentCredentials.length > 0 && !searchTerm && (
+            <>
+              <SectionTitle>Recent</SectionTitle>
+              <div className="space-y-2 mb-6 text-foreground dark:text-foreground">
+                {recentCredentials.map((cred) => (
+                  <CredentialItem
+                    key={cred.$id}
+                    credential={cred}
+                    onCopy={handleCopy}
+                    isDesktop={isDesktop}
+                    onEdit={() => handleEdit(cred)}
+                    onDelete={() => openDeleteModal(cred)}
+                    onClick={() => {
+                      setSelectedCredential(cred);
+                      setShowDetail(true);
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+          
           {/* All Items Section */}
-          <SectionTitle>All Items</SectionTitle>
+          <div className="flex items-center justify-between mb-4">
+            <SectionTitle>
+              {searchTerm ? `Search Results for "${searchTerm}"` : "All Items"}
+            </SectionTitle>
+          </div>
+          
+          {/* Top Pagination Controls */}
+          {!loading && total > 0 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              loading={loadingMore}
+            />
+          )}
+          
+          {/* Credentials List */}
           <div className="space-y-2 text-foreground dark:text-foreground">
-            {loading && credentials.length === 0 ? (
-              <div className="text-foreground dark:text-foreground">Loading...</div>
+            {loading ? (
+              Array.from({ length: pageSize }).map((_, i) => (
+                <CredentialSkeleton key={i} />
+              ))
+            ) : credentials.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                {searchTerm 
+                  ? `No credentials found matching "${searchTerm}"`
+                  : "No credentials found. Add your first password to get started!"
+                }
+              </div>
             ) : (
-              filtered.map((cred) => (
+              credentials.map((cred) => (
                 <CredentialItem
                   key={cred.$id}
                   credential={cred}
@@ -341,17 +356,46 @@ export default function DashboardPage() {
                 />
               ))
             )}
+            
+            {loadingMore && (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <CredentialSkeleton key={`loading-${i}`} />
+                ))}
+              </div>
+            )}
           </div>
 
+          {/* Bottom Pagination Controls */}
+          {!loading && total > 0 && (
+            <div className="mt-6">
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={total}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                loading={loadingMore}
+                showPageSize={false}
+              />
+            </div>
+          )}
+
           {/* Load More Button */}
-          {!isSearching && hasMore && (
+          {!loading && hasMore && !searchTerm && (
             <div className="mt-6 flex justify-center">
-              <Button onClick={() => fetchCredentials()} disabled={loading}>
-                {loading ? "Loading..." : "Load More"}
+              <Button 
+                onClick={handleLoadMore} 
+                disabled={loadingMore}
+                variant="outline"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
               </Button>
             </div>
           )}
         </div>
+        
         <CredentialDialog
           open={showDialog}
           onClose={() => setShowDialog(false)}
@@ -382,7 +426,6 @@ export default function DashboardPage() {
         {/* Credential Detail Sidebar/Overlay */}
         {showDetail && selectedCredential && (
           <>
-            {/* Backdrop blur overlay for mobile */}
             {isMobile && (
               <div
                 className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300"

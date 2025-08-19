@@ -206,7 +206,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_FOLDERS_ID,
       id
     );
-    return doc as Folders;
+    return doc as unknown as Folders;
   }
 
   static async getUserDoc(userId: string): Promise<User | null> {
@@ -218,7 +218,7 @@ export class AppwriteService {
       );
       const doc = response.documents[0];
       if (!doc) return null;
-      return doc as User;
+      return doc as unknown as User;
     } catch (error) {
       return null;
     }
@@ -230,7 +230,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       id
     );
-    return doc as SecurityLogs;
+    return doc as unknown as SecurityLogs;
   }
 
   // List with automatic decryption and pagination
@@ -239,11 +239,41 @@ export class AppwriteService {
     limit: number = 25,
     offset: number = 0,
     queries: string[] = []
-  ): Promise<Models.DocumentList<Credentials>> {
+  ): Promise<{ total: number; documents: Credentials[] }> {
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_CREDENTIALS_ID,
       [Query.equal('userId', userId), Query.orderAsc('name'), Query.limit(limit), Query.offset(offset), ...queries]
+    );
+
+    const decryptedDocuments = await Promise.all(
+      response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+    );
+
+    return {
+      total: response.total,
+      documents: decryptedDocuments,
+    };
+  }
+
+  // Enhanced search with database-level filtering for better performance
+  static async searchCredentialsByName(
+    userId: string,
+    searchTerm: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{ total: number; documents: Credentials[] }> {
+    // Use database search on non-encrypted name field for better performance
+    const response = await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_CREDENTIALS_ID,
+      [
+        Query.equal('userId', userId),
+        Query.search('name', searchTerm),
+        Query.orderAsc('name'),
+        Query.limit(limit),
+        Query.offset(offset)
+      ]
     );
 
     const decryptedDocuments = await Promise.all(
