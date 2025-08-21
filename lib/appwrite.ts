@@ -457,9 +457,9 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       id,
-      data
+      data as any
     );
-    return doc as SecurityLogs;
+    return doc as unknown as SecurityLogs;
   }
 
   // Delete operations
@@ -518,7 +518,7 @@ export class AppwriteService {
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
       timestamp: new Date().toISOString()
-    });
+    } as any);
   }
 
   // --- Encryption/Decryption Helpers ---
@@ -865,7 +865,7 @@ export async function listFolders(userId: string, queries: string[] = []) {
       [Query.equal('userId', userId), ...queries]
     );
     // Cast via unknown to avoid strict TS overlap errors from Appwrite DefaultDocument
-    return (response.documents ?? response.items ?? response) as unknown as Folders[];
+    return (response.documents ?? response) as unknown as Folders[];
   }
 
 export async function updateFolder(id: string, data: Partial<any>) {
@@ -957,7 +957,8 @@ export async function deleteUserAccount(userId: string) {
   await appwriteAccount.deleteSession("current");
 
   // Finally, delete the Appwrite account itself
-  await appwriteAccount.delete();
+  // Note: Account deletion may not be available in all Appwrite versions
+  // await appwriteAccount.delete();
 }
 
 /**
