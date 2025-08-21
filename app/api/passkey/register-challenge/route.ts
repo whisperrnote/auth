@@ -12,11 +12,15 @@ const rpName = 'WhisperAuth';
 // Relying Party ID - should be the domain of your application
 const rpID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const sessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
         const sessionCookie = cookieStore.get(sessionCookieName) || cookieStore.get(`${sessionCookieName}_legacy`);
+
+        console.log('Available cookies:', cookieStore.getAll().map(c => c.name));
+        console.log('Looking for session cookie:', sessionCookieName);
+        console.log('Found session cookie:', sessionCookie?.name, sessionCookie?.value?.substring(0, 20) + '...');
 
         if (!sessionCookie) {
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -57,10 +61,10 @@ export async function GET(request: Request) {
                 userVerification: 'preferred',
             },
             extensions: {
-                largeBlob: {
-                    support: 'preferred',
-                },
-            },
+                // largeBlob: {
+                //     support: 'preferred',
+                // },
+            } as any,
         });
 
         // Store the challenge temporarily in the user's document

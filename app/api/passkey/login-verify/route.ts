@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     try {
         const body: AuthenticationResponseJSON = await request.json();
 
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const sessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
         const sessionCookie = cookieStore.get(sessionCookieName) || cookieStore.get(`${sessionCookieName}_legacy`);
 

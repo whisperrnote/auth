@@ -12,7 +12,7 @@ const rpID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
 
 export async function GET(request: Request) {
     try {
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const sessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
         const sessionCookie = cookieStore.get(sessionCookieName) || cookieStore.get(`${sessionCookieName}_legacy`);
 
@@ -49,10 +49,10 @@ export async function GET(request: Request) {
             allowCredentials,
             userVerification: 'preferred',
             extensions: {
-                largeBlob: {
-                    read: true,
-                },
-            },
+                // largeBlob: {
+                //     read: true,
+                // },
+            } as any,
         });
 
         // Store the challenge temporarily
