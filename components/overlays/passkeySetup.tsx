@@ -32,6 +32,97 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
   const [loading, setLoading] = useState(false);
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
+
+  const verifyMasterPassword = async () => {
+    if (!masterPassword.trim()) {
+      toast.error('Please enter your master password.');
+      return false;
+    }
+
+    setVerifyingPassword(true);
+    try {
+      // Derive test key using same logic as masterPassCrypto.unlock
+      const encoder = new TextEncoder();
+      const userBytes = encoder.encode(userId);
+      const userSalt = await crypto.subtle.digest('SHA-256', userBytes);
+      const combinedSalt = new Uint8Array(userSalt);
+      
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(masterPassword),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits', 'deriveKey']
+      );
+      
+      const testKey = await crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: combinedSalt,
+          iterations: 200000,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      // Verify against check value stored in database
+      const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('@/lib/appwrite');
+      const response = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        [Query.equal('userId', userId)]
+      );
+      
+      const userDoc = response.documents[0];
+      if (!userDoc || !userDoc.check) {
+        toast.error('No master password verification data found.');
+        return false;
+      }
+
+      // Decrypt and verify the check value
+      try {
+        const combined = new Uint8Array(
+          atob(userDoc.check).split('').map(char => char.charCodeAt(0))
+        );
+        const iv = combined.slice(0, 16); // IV_SIZE from logic.ts
+        const encrypted = combined.slice(16);
+        const decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv },
+          testKey,
+          encrypted
+        );
+        const decoder = new TextDecoder();
+        const decryptedValue = JSON.parse(decoder.decode(decrypted));
+        
+        if (decryptedValue === userId) {
+          return true; // Password is correct
+        } else {
+          toast.error('Incorrect master password.');
+          return false;
+        }
+      } catch (decryptError) {
+        toast.error('Incorrect master password.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Password verification failed:', error);
+      toast.error('Failed to verify master password.');
+      return false;
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    const isValid = await verifyMasterPassword();
+    if (isValid) {
+      setStep(2);
+    }
+  };
 
   const handleEnable = async () => {
     if (!masterPassword.trim()) {
@@ -222,7 +313,7 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
                     placeholder="Master Password"
                     value={masterPassword}
                     onChange={(e) => setMasterPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && setStep(2)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
                     className="pr-10"
                   />
                   <button
@@ -239,10 +330,10 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
                   Cancel
                 </Button>
                 <Button 
-                  onClick={() => setStep(2)}
-                  disabled={!masterPassword.trim()}
+                  onClick={handleContinue}
+                  disabled={!masterPassword.trim() || verifyingPassword}
                 >
-                  Continue
+                  {verifyingPassword ? "Verifying..." : "Continue"}
                 </Button>
               </div>
             </>
