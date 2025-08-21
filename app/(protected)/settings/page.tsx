@@ -25,11 +25,11 @@ import clsx from "clsx";
 import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/logic";
 import { useAppwrite } from "@/app/appwrite-provider";
 import TwofaSetup from "@/components/overlays/twofaSetup";
+import { PasskeySetup } from "@/components/overlays/passkeySetup";
 import { appwriteAccount, appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, createFolder, updateFolder, deleteFolder, listFolders } from "@/lib/appwrite";
 import { Query } from "appwrite";
 import { updateUserProfile, exportAllUserData, deleteUserAccount, AppwriteService } from "@/lib/appwrite";
 import toast from "react-hot-toast";
-import { enablePasskey, disablePasskey } from "./passkey";
 
 import VaultGuard from "@/components/layout/VaultGuard";
 
@@ -64,7 +64,7 @@ export default function SettingsPage() {
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passkeyEnabled, setPasskeyEnabled] = useState(false);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passkeySetupOpen, setPasskeySetupOpen] = useState(false);
 
   // Folder Management State
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -121,18 +121,7 @@ export default function SettingsPage() {
 
   const handleTogglePasskey = async () => {
     if (!user?.$id) return;
-    setPasskeyLoading(true);
-    let success = false;
-    if (passkeyEnabled) {
-      success = await disablePasskey(user.$id);
-    } else {
-      success = await enablePasskey(user.$id);
-    }
-    if (success) {
-      // Re-fetch from server to get the latest state
-      AppwriteService.hasPasskey(user.$id).then(setPasskeyEnabled);
-    }
-    setPasskeyLoading(false);
+    setPasskeySetupOpen(true);
   };
 
   const handleSaveProfile = async () => {
@@ -356,12 +345,10 @@ export default function SettingsPage() {
                 variant={passkeyEnabled ? "default" : "outline"}
                 className="w-full justify-start gap-2"
                 onClick={handleTogglePasskey}
-                disabled={passkeyLoading}
+                disabled={false}
               >
                 <Key className="h-4 w-4" />
-                {passkeyLoading
-                  ? "Processing..."
-                  : passkeyEnabled
+                {passkeyEnabled
                   ? "✅ Passkey / Biometric Unlock Enabled"
                   : "Enable Passkey / Biometric Unlock"}
               </Button>
@@ -657,6 +644,17 @@ export default function SettingsPage() {
           </div>
         </Dialog>
       )}
+      <PasskeySetup
+        isOpen={passkeySetupOpen}
+        onClose={() => setPasskeySetupOpen(false)}
+        userId={user?.$id || ""}
+        isEnabled={passkeyEnabled}
+        onSuccess={() => {
+          if (user?.$id) {
+            AppwriteService.hasPasskey(user.$id).then(setPasskeyEnabled);
+          }
+        }}
+      />
     </div>
     </VaultGuard>
    );}
