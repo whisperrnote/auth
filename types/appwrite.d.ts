@@ -55,4 +55,6 @@ export type User = Models.Document & {
     email: string | null;
     twofa: boolean | null;
     check: string | null;
+    isPasskey: boolean | null;
+    passkeyBlob: string | null;
 }
