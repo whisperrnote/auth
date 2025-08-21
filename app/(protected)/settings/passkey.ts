@@ -58,7 +58,7 @@ export async function enablePasskey(userId: string) {
         const passkeyBlob = arrayBufferToBase64(combined.buffer);
 
         // 3. Get registration challenge from the server
-        const resChallenge = await fetch('/api/passkey/register-challenge', { method: 'GET' });
+        const resChallenge = await fetch('/api/passkey/register-challenge', { method: 'GET', credentials: 'include' });
         const options = await resChallenge.json();
         if (!resChallenge.ok) throw new Error(options.error);
 
@@ -70,7 +70,7 @@ export async function enablePasskey(userId: string) {
         const regResp = await startRegistration(options);
 
         // 5. Verify the registration response with the server
-        const resVerify = await fetch('/api/passkey/register-verify', {
+        const resVerify = await fetch('/api/passkey/register-verify', { credentials: 'include',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(regResp),
@@ -121,7 +121,7 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
         const toastId = toast.loading('Waiting for passkey interaction...');
 
         // 1. Get login challenge
-        const resChallenge = await fetch('/api/passkey/login-challenge');
+        const resChallenge = await fetch('/api/passkey/login-challenge', { credentials: 'include' });
         const options = await resChallenge.json();
         if (!resChallenge.ok) throw new Error(options.error);
 
@@ -129,7 +129,7 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
         const authResp = await startAuthentication(options);
 
         // 3. Verify authentication
-        const resVerify = await fetch('/api/passkey/login-verify', {
+        const resVerify = await fetch('/api/passkey/login-verify', { credentials: 'include',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(authResp),
