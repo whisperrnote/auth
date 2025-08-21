@@ -38,6 +38,7 @@ Add passkey/biometric unlock as an optional alternative to master password witho
 - Users without passkey (`isPasskey: false`) see no changes
 - Existing encryption/decryption paths completely preserved
 - No migration required for existing users
+- encryption or decryption logic itself does not change, master password continues to be able to encrypt/decrypt data as before, and passkey functions solely aa a drop in replacement capable of the same, and strictly doesnt change encryption or decryption logic while in configuration or subsequent operation
 
 ### 4. Passkey Management
 - Settings page option to enable/disable passkey
