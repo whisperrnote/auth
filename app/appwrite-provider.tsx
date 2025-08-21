@@ -146,8 +146,8 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     await appwriteAccount.createRecovery(email, getRedirectUrl());
   };
 
-  const resetPassword = async (userId: string, secret: string, password: string, passwordAgain: string) => {
-    await appwriteAccount.updateRecovery(userId, secret, password, passwordAgain);
+  const resetPassword = async (userId: string, secret: string, password: string) => {
+    await appwriteAccount.updateRecovery(userId, secret, password);
     await fetchUser();
   };
 

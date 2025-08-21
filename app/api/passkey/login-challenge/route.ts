@@ -10,7 +10,7 @@ const appwriteClient = new Client()
 
 const rpID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
         const cookieStore = await cookies();
         const sessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
