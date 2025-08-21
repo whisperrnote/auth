@@ -1,4 +1,4 @@
-import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import { startAuthentication } from '@simplewebauthn/browser';
 import { masterPassCrypto } from '@/app/(protected)/masterpass/logic';
 import { AppwriteService } from '@/lib/appwrite';
 import toast from 'react-hot-toast';
@@ -24,87 +24,63 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
     return bytes.buffer;
 }
 
-export async function enablePasskey(userId: string) {
-    if (!masterPassCrypto.isVaultUnlocked()) {
-        toast.error('You must unlock your vault with your master password first.');
-        return false;
-    }
-
+export async function unlockWithPasskey(userId: string): Promise<boolean> {
     try {
         const toastId = toast.loading('Waiting for passkey interaction...');
 
-        // 1. Generate Kwrap on the client
-        const kwrap = await crypto.subtle.generateKey(
-            { name: 'AES-GCM', length: 256 },
-            true,
-            ['encrypt', 'decrypt']
-        );
-
-        // 2. Encrypt master key with Kwrap to create the passkeyBlob
-        const rawMasterKey = await masterPassCrypto.exportKey();
-        if (!rawMasterKey) throw new Error('Could not export master key.');
-
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encryptedMasterKey = await crypto.subtle.encrypt(
-            { name: 'AES-GCM', iv },
-            kwrap,
-            rawMasterKey
-        );
-
-        const combined = new Uint8Array(iv.length + encryptedMasterKey.byteLength);
-        combined.set(iv);
-        combined.set(new Uint8Array(encryptedMasterKey), iv.length);
-        const passkeyBlob = arrayBufferToBase64(combined.buffer);
-
-        // 3. Get registration challenge from the server
-        const resChallenge = await fetch('/api/passkey/register-challenge', { method: 'GET', credentials: 'include' });
-        const options = await resChallenge.json();
-        if (!resChallenge.ok) {
-            if (resChallenge.status === 401) {
-                toast.error('You are not logged in. Please sign in and try again.');
-                return false;
-            }
-            throw new Error(options.error);
+        // 1. Get user document with passkey data
+        const userDoc = await AppwriteService.getUserDoc(userId);
+        if (!userDoc || !userDoc.passkeyBlob || !userDoc.credentialId || !userDoc.kwrap) {
+            throw new Error('No passkey data found for this user.');
         }
 
-        // 4. Start WebAuthn registration
-        const regResp = await startRegistration(options);
-
-        // 5. Verify the registration response with the server
-        const resVerify = await fetch('/api/passkey/register-verify', { credentials: 'include',
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(regResp),
-        });
-        const verification = await resVerify.json();
-        if (!resVerify.ok || !verification.verified) {
-            throw new Error(verification.error || 'Failed to verify passkey registration.');
-        }
-
-        // 6. Store the credential and encrypted blob with Kwrap
-        const { registrationInfo } = verification;
-        const rawKwrap = await crypto.subtle.exportKey('raw', kwrap);
-        const kwrapBase64 = arrayBufferToBase64(rawKwrap);
+        // 2. Generate authentication challenge (client-side)
+        const challenge = crypto.getRandomValues(new Uint8Array(32));
+        const challengeBase64 = arrayBufferToBase64(challenge.buffer);
         
-        const newCredential = {
-            credentialID: arrayBufferToBase64(registrationInfo.credentialID),
-            publicKey: arrayBufferToBase64(registrationInfo.credentialPublicKey),
-            counter: registrationInfo.counter,
-            transports: regResp.response.transports || [],
-            kwrap: kwrapBase64, // Store Kwrap with the credential
+        const authenticationOptions = {
+            challenge: challengeBase64,
+            allowCredentials: [{
+                id: userDoc.credentialId,
+                type: 'public-key' as const,
+                transports: [] as AuthenticatorTransport[],
+            }],
+            userVerification: 'preferred' as const,
+            timeout: 60000,
         };
 
-        await AppwriteService.setPasskey(userId, passkeyBlob, newCredential);
+        // 3. Start authentication
+        const authResp = await startAuthentication(authenticationOptions);
 
-        toast.success('Passkey enabled successfully!', { id: toastId });
+        // 4. Get Kwrap from stored credential data
+        const kwrapBytes = base64ToArrayBuffer(userDoc.kwrap);
+        const kwrap = await crypto.subtle.importKey(
+            'raw',
+            kwrapBytes,
+            { name: 'AES-GCM' },
+            true,
+            ['decrypt']
+        );
+
+        // 5. Decrypt master key from passkeyBlob
+        const passkeyBlob = base64ToArrayBuffer(userDoc.passkeyBlob);
+        const iv = passkeyBlob.slice(0, 12);
+        const encryptedKey = passkeyBlob.slice(12);
+        const rawMasterKey = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv },
+            kwrap,
+            encryptedKey
+        );
+
+        // 6. Import master key and unlock vault
+        await masterPassCrypto.importKey(rawMasterKey);
+        await masterPassCrypto.unlockWithImportedKey();
+
+        toast.success('Vault unlocked with passkey!', { id: toastId });
         return true;
-
     } catch (error: any) {
         console.error(error);
-        const message = error.name === 'InvalidStateError'
-            ? 'This passkey is already registered.'
-            : error.message;
-        toast.error(`Failed to enable passkey: ${message}`);
+        toast.error(`Passkey unlock failed: ${error.message}`);
         return false;
     }
 }
@@ -117,83 +93,6 @@ export async function disablePasskey(userId: string) {
     } catch (error: any) {
         console.error(error);
         toast.error(`Failed to disable passkey: ${error.message}`);
-        return false;
-    }
-}
-
-export async function unlockWithPasskey(userId: string): Promise<boolean> {
-    try {
-        const toastId = toast.loading('Waiting for passkey interaction...');
-
-        // 1. Get login challenge
-        const resChallenge = await fetch('/api/passkey/login-challenge', { credentials: 'include' });
-        const options = await resChallenge.json();
-        if (!resChallenge.ok) {
-            if (resChallenge.status === 401) {
-                toast.error('You are not logged in. Please sign in and try again.');
-                return false;
-            }
-            throw new Error(options.error);
-        }
-
-        // 2. Start authentication
-        const authResp = await startAuthentication(options);
-
-        // 3. Verify authentication
-        const resVerify = await fetch('/api/passkey/login-verify', { credentials: 'include',
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(authResp),
-        });
-        const verification = await resVerify.json();
-        if (!resVerify.ok || !verification.verified) {
-            throw new Error(verification.error || 'Passkey verification failed.');
-        }
-
-        // 4. Get user document and find the credential used
-        const userDoc = await AppwriteService.getUserDoc(userId);
-        if (!userDoc || !userDoc.passkeyBlob) {
-            throw new Error('No passkey data found for this user.');
-        }
-
-        // 5. Find the credential that was used for authentication
-        const credentialId = authResp.rawId; // rawId should already be base64 string from SimpleWebAuthn
-        const credential = userDoc.credentialId === credentialId ? {
-            kwrap: userDoc.kwrap
-        } : null;
-
-        if (!credential || !credential.kwrap) {
-            throw new Error('Could not find matching credential data.');
-        }
-
-        // 6. Import Kwrap and decrypt master key
-        const kwrapBytes = base64ToArrayBuffer(credential.kwrap);
-        const kwrap = await crypto.subtle.importKey(
-            'raw',
-            kwrapBytes,
-            { name: 'AES-GCM' },
-            true,
-            ['decrypt']
-        );
-
-        const passkeyBlob = base64ToArrayBuffer(userDoc.passkeyBlob);
-        const iv = passkeyBlob.slice(0, 12);
-        const encryptedKey = passkeyBlob.slice(12);
-        const rawMasterKey = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv },
-            kwrap,
-            encryptedKey
-        );
-
-        // 7. Import master key and unlock vault
-        await masterPassCrypto.importKey(rawMasterKey);
-        await masterPassCrypto.unlockWithImportedKey();
-
-        toast.success('Vault unlocked with passkey!', { id: toastId });
-        return true;
-    } catch (error: any) {
-        console.error(error);
-        toast.error(`Passkey unlock failed: ${error.message}`);
         return false;
     }
 }
