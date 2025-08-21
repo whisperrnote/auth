@@ -38,7 +38,7 @@ export class MasterPassCrypto {
       },
       keyMaterial,
       { name: 'AES-GCM', length: MasterPassCrypto.KEY_SIZE },
-      false,
+      true, // Make extractable for passkey functionality
       ['encrypt', 'decrypt']
     );
   }

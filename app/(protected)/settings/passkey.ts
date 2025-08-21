@@ -1,6 +1,6 @@
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { masterPassCrypto } from '@/app/(protected)/masterpass/logic';
-import { setPasskey, removePasskey, AppwriteService } from '@/lib/appwrite';
+import { AppwriteService } from '@/lib/appwrite';
 import toast from 'react-hot-toast';
 
 // Helper to convert ArrayBuffer to Base64 string
