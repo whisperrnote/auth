@@ -39,7 +39,6 @@ export async function enablePasskey(userId: string) {
             true,
             ['encrypt', 'decrypt']
         );
-        const rawKwrap = await crypto.subtle.exportKey('raw', kwrap);
 
         // 2. Encrypt master key with Kwrap to create the passkeyBlob
         const rawMasterKey = await masterPassCrypto.exportKey();
@@ -60,11 +59,13 @@ export async function enablePasskey(userId: string) {
         // 3. Get registration challenge from the server
         const resChallenge = await fetch('/api/passkey/register-challenge', { method: 'GET', credentials: 'include' });
         const options = await resChallenge.json();
-        if (!resChallenge.ok) throw new Error(options.error);
-
-        // Add the largeBlob extension to the options to store Kwrap
-        // Note: largeBlob extension support varies by browser and authenticator
-        // options.extensions = { largeBlob: { write: rawKwrap } };
+        if (!resChallenge.ok) {
+            if (resChallenge.status === 401) {
+                toast.error('You are not logged in. Please sign in and try again.');
+                return false;
+            }
+            throw new Error(options.error);
+        }
 
         // 4. Start WebAuthn registration
         const regResp = await startRegistration(options);
@@ -80,13 +81,17 @@ export async function enablePasskey(userId: string) {
             throw new Error(verification.error || 'Failed to verify passkey registration.');
         }
 
-        // 6. Store the new credential and the encrypted blob
+        // 6. Store the credential and encrypted blob with Kwrap
         const { registrationInfo } = verification;
+        const rawKwrap = await crypto.subtle.exportKey('raw', kwrap);
+        const kwrapBase64 = arrayBufferToBase64(rawKwrap);
+        
         const newCredential = {
             credentialID: arrayBufferToBase64(registrationInfo.credentialID),
             publicKey: arrayBufferToBase64(registrationInfo.credentialPublicKey),
             counter: registrationInfo.counter,
             transports: regResp.response.transports || [],
+            kwrap: kwrapBase64, // Store Kwrap with the credential
         };
 
         await AppwriteService.setPasskey(userId, passkeyBlob, newCredential);
@@ -123,7 +128,13 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
         // 1. Get login challenge
         const resChallenge = await fetch('/api/passkey/login-challenge', { credentials: 'include' });
         const options = await resChallenge.json();
-        if (!resChallenge.ok) throw new Error(options.error);
+        if (!resChallenge.ok) {
+            if (resChallenge.status === 401) {
+                toast.error('You are not logged in. Please sign in and try again.');
+                return false;
+            }
+            throw new Error(options.error);
+        }
 
         // 2. Start authentication
         const authResp = await startAuthentication(options);
@@ -135,17 +146,28 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
             body: JSON.stringify(authResp),
         });
         const verification = await resVerify.json();
-        if (!verification.verified) {
+        if (!resVerify.ok || !verification.verified) {
             throw new Error(verification.error || 'Passkey verification failed.');
         }
 
-        // 4. Get Kwrap from the largeBlob extension output
-        // Note: largeBlob extension support varies by browser and authenticator
-        // const kwrapBytes = authResp.response.largeBlob;
-        const kwrapBytes = null; // Temporary - largeBlob not available
-        if (!kwrapBytes) {
-            throw new Error('Could not retrieve wrapping key from passkey - largeBlob extension not supported.');
+        // 4. Get user document and find the credential used
+        const userDoc = await AppwriteService.getUserDoc(userId);
+        if (!userDoc || !userDoc.passkeyBlob) {
+            throw new Error('No passkey data found for this user.');
         }
+
+        // 5. Find the credential that was used for authentication
+        const credentialId = authResp.rawId; // rawId should already be base64 string from SimpleWebAuthn
+        const credential = userDoc.credentialId === credentialId ? {
+            kwrap: userDoc.kwrap
+        } : null;
+
+        if (!credential || !credential.kwrap) {
+            throw new Error('Could not find matching credential data.');
+        }
+
+        // 6. Import Kwrap and decrypt master key
+        const kwrapBytes = base64ToArrayBuffer(credential.kwrap);
         const kwrap = await crypto.subtle.importKey(
             'raw',
             kwrapBytes,
@@ -154,14 +176,7 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
             ['decrypt']
         );
 
-        // 5. Get passkeyBlob from user document
-        const userDoc = await AppwriteService.getUserDoc(userId);
-        if (!userDoc || !userDoc.passkeyBlob) {
-            throw new Error('No passkey data found for this user.');
-        }
         const passkeyBlob = base64ToArrayBuffer(userDoc.passkeyBlob);
-
-        // 6. Decrypt master key
         const iv = passkeyBlob.slice(0, 12);
         const encryptedKey = passkeyBlob.slice(12);
         const rawMasterKey = await crypto.subtle.decrypt(

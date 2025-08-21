@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         );
         const userDoc = userDocs.documents[0];
 
-        if (!userDoc || !userDoc.passkeys || userDoc.passkeys.length === 0) {
+        if (!userDoc || !userDoc.isPasskey || !userDoc.credentialId) {
             return NextResponse.json({ error: 'No passkeys found for user' }, { status: 400 });
         }
 
@@ -44,9 +44,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No challenge found for user' }, { status: 400 });
         }
 
-        const credential = userDoc.passkeys.find((p: any) => p.credentialID === body.id);
-
-        if (!credential) {
+        if (userDoc.credentialId !== body.id) {
             return NextResponse.json({ error: 'Credential not found for user' }, { status: 404 });
         }
 
@@ -56,10 +54,10 @@ export async function POST(request: Request) {
             expectedOrigin: origin,
             expectedRPID: rpID,
             authenticator: {
-                credentialID: Buffer.from(credential.credentialID, 'base64'),
-                credentialPublicKey: Buffer.from(credential.publicKey, 'base64'),
-                counter: credential.counter,
-                transports: credential.transports,
+                credentialID: Buffer.from(userDoc.credentialId, 'base64'),
+                credentialPublicKey: Buffer.from(userDoc.publicKey!, 'base64'),
+                counter: userDoc.counter!,
+                transports: [],
             },
             requireUserVerification: true,
         });
@@ -68,16 +66,13 @@ export async function POST(request: Request) {
 
         if (verified) {
             const { newCounter } = authenticationInfo;
-            const updatedPasskeys = userDoc.passkeys.map((p: any) =>
-                p.credentialID === body.id ? { ...p, counter: newCounter } : p
-            );
 
             await databases.updateDocument(
                 process.env.APPWRITE_DATABASE_ID!,
                 process.env.APPWRITE_COLLECTION_USER_ID!,
                 userDoc.$id,
                 {
-                    passkeys: updatedPasskeys,
+                    counter: newCounter,
                     passkeyChallenge: null, // Clear the challenge
                 }
             );

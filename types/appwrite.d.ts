@@ -60,4 +60,5 @@ export type User = Models.Document & {
     credentialId: string | null;
     publicKey: string | null;
     counter: number | null;
+    kwrap: string | null;
 }

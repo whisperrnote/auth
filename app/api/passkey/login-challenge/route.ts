@@ -38,11 +38,11 @@ export async function GET() {
             return NextResponse.json({ error: 'User document not found' }, { status: 404 });
         }
 
-        const allowCredentials = userDoc.passkeys ? userDoc.passkeys.map((p: any) => ({
-            id: Buffer.from(p.credentialID, 'base64'),
-            type: 'public-key',
-            transports: p.transports,
-        })) : [];
+        const allowCredentials = userDoc.isPasskey && userDoc.credentialId ? [{
+            id: Buffer.from(userDoc.credentialId, 'base64'),
+            type: 'public-key' as const,
+            transports: [],
+        }] : [];
 
         const options = await generateAuthenticationOptions({
             rpID,

@@ -18,10 +18,6 @@ export async function GET() {
         const sessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
         const sessionCookie = cookieStore.get(sessionCookieName) || cookieStore.get(`${sessionCookieName}_legacy`);
 
-        console.log('Available cookies:', cookieStore.getAll().map(c => c.name));
-        console.log('Looking for session cookie:', sessionCookieName);
-        console.log('Found session cookie:', sessionCookie?.name, sessionCookie?.value?.substring(0, 20) + '...');
-
         if (!sessionCookie) {
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
         }
@@ -42,11 +38,11 @@ export async function GET() {
             return NextResponse.json({ error: 'User document not found' }, { status: 404 });
         }
 
-        const existingCredentials = userDoc.passkeys ? userDoc.passkeys.map((p: any) => ({
-            id: Buffer.from(p.credentialID, 'base64'),
-            type: 'public-key',
-            transports: p.transports,
-        })) : [];
+        const existingCredentials = userDoc.isPasskey && userDoc.credentialId ? [{
+            id: Buffer.from(userDoc.credentialId, 'base64'),
+            type: 'public-key' as const,
+            transports: [],
+        }] : [];
 
         const options = await generateRegistrationOptions({
             rpName,

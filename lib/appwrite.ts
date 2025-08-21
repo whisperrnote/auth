@@ -195,7 +195,7 @@ export class AppwriteService {
   static async setPasskey(
     userId: string,
     passkeyBlob: string,
-    newCredential: { credentialID: string; publicKey: string; counter: number; transports: any }
+    newCredential: { credentialID: string; publicKey: string; counter: number; transports: any; kwrap: string }
   ): Promise<void> {
     const userDoc = await this.getUserDoc(userId);
     if (userDoc && userDoc.$id) {
@@ -209,6 +209,7 @@ export class AppwriteService {
           credentialId: newCredential.credentialID,
           publicKey: newCredential.publicKey,
           counter: newCredential.counter,
+          kwrap: newCredential.kwrap,
         }
       );
     }
@@ -230,6 +231,7 @@ export class AppwriteService {
           credentialId: null,
           publicKey: null,
           counter: null,
+          kwrap: null,
         }
       );
     }
