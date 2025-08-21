@@ -1,4 +1,4 @@
-import { startRegistration, startAuthentication } from '@simplewebauthn/client';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { masterPassCrypto } from '@/app/(protected)/masterpass/logic';
 import { setPasskey, removePasskey, AppwriteService } from '@/lib/appwrite';
 import toast from 'react-hot-toast';

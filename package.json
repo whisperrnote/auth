@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@simplewebauthn/browser": "9.0.1",
+    "@simplewebauthn/browser": "^9.0.1",
     "@simplewebauthn/server": "9.0.3",
     "appwrite": "^18.1.1",
     "base64url": "3.0.1",
