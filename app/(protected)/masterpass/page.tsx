@@ -280,6 +280,31 @@ export default function MasterPassPage() {
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               Logout from Account
             </Button>
+
+            {/* Placeholder button for future passkey/biometric unlock */}
+            {!isFirstTime && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  // For now show a toast; future implementation will trigger WebAuthn/passkey flow
+                  try {
+                    toast("Passkey unlock coming soon", { icon: "🔓" });
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="transform transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0.5 active:scale-95 shadow-[0_8px_16px_rgba(2,6,23,0.08)] dark:shadow-none bg-gradient-to-b from-white/60 to-white/30 dark:from-white/5 dark:to-white/3 border border-muted/30 rounded-lg py-2 px-3 flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 1v4" strokeLinecap="round" strokeLinejoin="round" />
+                  <rect x="4" y="5" width="16" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M8 11a4 4 0 0 1 8 0v2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="font-medium">Unlock with Passkey</span>
+              </Button>
+            )}
+
             <Button
               variant="destructive"
               size="sm"

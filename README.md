@@ -1,4 +1,4 @@
-# 🔐 Whisperrauth
+l# 🔐 Whisperrauth
 
 Welcome to **Whisperrauth** – your next-generation, zero-knowledge password manager built with security, privacy, and usability at its core! 🚀
 
