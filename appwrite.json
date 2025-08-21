@@ -575,6 +575,33 @@
                     "size": 8000,
                     "default": null,
                     "encrypt": false
+                },
+                {
+                    "key": "credentialId",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 1000,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "publicKey",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 5000,
+                    "default": null,
+                    "encrypt": true
+                },
+                {
+                    "key": "counter",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": null
                 }
             ],
             "indexes": []
