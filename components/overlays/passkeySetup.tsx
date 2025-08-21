@@ -227,7 +227,6 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
       await AppwriteService.setPasskey(userId, passkeyBlob, newCredential);
       
       setStep(3); // Success step
-      onSuccess();
       
     } catch (error: any) {
       console.error('Passkey setup failed:', error);
@@ -374,7 +373,7 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button onClick={handleClose} className="w-full">
+                <Button onClick={() => { onSuccess(); handleClose(); }} className="w-full">
                   Done
                 </Button>
               </div>
