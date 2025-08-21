@@ -30,7 +30,7 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
 
         // 1. Get user document with passkey data
         const userDoc = await AppwriteService.getUserDoc(userId);
-        if (!userDoc || !userDoc.passkeyBlob || !userDoc.credentialId || !userDoc.kwrap) {
+        if (!userDoc || !userDoc.passkeyBlob || !userDoc.credentialId) {
             throw new Error('No passkey data found for this user.');
         }
 
@@ -52,13 +52,15 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
         // 3. Start authentication
         const authResp = await startAuthentication(authenticationOptions);
 
-        // 4. Get Kwrap from stored credential data
-        const kwrapBytes = base64ToArrayBuffer(userDoc.kwrap);
+        // 4. Derive Kwrap from WebAuthn credential data (same as setup)
+        const encoder = new TextEncoder();
+        const credentialData = encoder.encode(authResp.id + userId);
+        const kwrapSeed = await crypto.subtle.digest('SHA-256', credentialData);
         const kwrap = await crypto.subtle.importKey(
             'raw',
-            kwrapBytes,
+            kwrapSeed,
             { name: 'AES-GCM' },
-            true,
+            false,
             ['decrypt']
         );
 

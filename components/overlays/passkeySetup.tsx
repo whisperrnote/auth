@@ -138,7 +138,6 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
       const userSalt = await crypto.subtle.digest('SHA-256', userBytes);
       const combinedSalt = new Uint8Array(userSalt);
       
-      // Import password as key material
       const keyMaterial = await crypto.subtle.importKey(
         'raw',
         encoder.encode(masterPassword),
@@ -147,7 +146,6 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
         ['deriveBits', 'deriveKey']
       );
       
-      // Derive the master key
       const masterKey = await crypto.subtle.deriveKey(
         {
           name: 'PBKDF2',
@@ -161,29 +159,7 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
         ['encrypt', 'decrypt']
       );
       
-      // 2. Generate Kwrap
-      const kwrap = await crypto.subtle.generateKey(
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-      );
-      
-      // 3. Export master key and encrypt it with Kwrap
-      const rawMasterKey = await crypto.subtle.exportKey('raw', masterKey);
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encryptedMasterKey = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
-        kwrap,
-        rawMasterKey
-      );
-      
-      // 4. Combine IV + encrypted key for storage
-      const combined = new Uint8Array(iv.length + encryptedMasterKey.byteLength);
-      combined.set(iv);
-      combined.set(new Uint8Array(encryptedMasterKey), iv.length);
-      const passkeyBlob = arrayBufferToBase64(combined.buffer);
-      
-      // 5. Generate WebAuthn registration options (client-side)
+      // 2. Generate WebAuthn registration first to get credential data
       const challenge = crypto.getRandomValues(new Uint8Array(32));
       const challengeBase64 = arrayBufferToBase64(challenge.buffer);
       
@@ -209,19 +185,42 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
         attestation: "none" as const,
       };
       
-      // 6. Start WebAuthn registration
+      // 3. Start WebAuthn registration
       const regResp = await startRegistration(registrationOptions);
       
-      // 7. Store credential and encrypted blob (client-side only)
-      const rawKwrap = await crypto.subtle.exportKey('raw', kwrap);
-      const kwrapBase64 = arrayBufferToBase64(rawKwrap);
+      // 4. Derive Kwrap from WebAuthn credential data 
+      // Use credential ID + user ID to deterministically generate Kwrap
+      const credentialData = encoder.encode(regResp.id + userId);
+      const kwrapSeed = await crypto.subtle.digest('SHA-256', credentialData);
+      const kwrap = await crypto.subtle.importKey(
+        'raw',
+        kwrapSeed,
+        { name: 'AES-GCM' },
+        false,
+        ['encrypt', 'decrypt']
+      );
       
+      // 5. Export master key and encrypt it with Kwrap
+      const rawMasterKey = await crypto.subtle.exportKey('raw', masterKey);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encryptedMasterKey = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        kwrap,
+        rawMasterKey
+      );
+      
+      // 6. Combine IV + encrypted key for passkeyBlob
+      const combined = new Uint8Array(iv.length + encryptedMasterKey.byteLength);
+      combined.set(iv);
+      combined.set(new Uint8Array(encryptedMasterKey), iv.length);
+      const passkeyBlob = arrayBufferToBase64(combined.buffer);
+      
+      // 7. Store credential and encrypted blob (no separate kwrap field needed)
       const newCredential = {
         credentialID: regResp.id,
         publicKey: regResp.response.publicKey || "",
         counter: 0,
         transports: regResp.response.transports || [],
-        kwrap: kwrapBase64,
       };
       
       // Store in database
