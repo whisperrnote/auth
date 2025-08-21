@@ -55,7 +55,7 @@ export async function enablePasskey(userId: string) {
         const combined = new Uint8Array(iv.length + encryptedMasterKey.byteLength);
         combined.set(iv);
         combined.set(new Uint8Array(encryptedMasterKey), iv.length);
-        const passkeyBlob = arrayBufferToBase64(combined);
+        const passkeyBlob = arrayBufferToBase64(combined.buffer);
 
         // 3. Get registration challenge from the server
         const resChallenge = await fetch('/api/passkey/register-challenge', { method: 'GET' });
@@ -63,7 +63,8 @@ export async function enablePasskey(userId: string) {
         if (!resChallenge.ok) throw new Error(options.error);
 
         // Add the largeBlob extension to the options to store Kwrap
-        options.extensions = { largeBlob: { write: rawKwrap } };
+        // Note: largeBlob extension support varies by browser and authenticator
+        // options.extensions = { largeBlob: { write: rawKwrap } };
 
         // 4. Start WebAuthn registration
         const regResp = await startRegistration(options);
@@ -139,9 +140,11 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
         }
 
         // 4. Get Kwrap from the largeBlob extension output
-        const kwrapBytes = authResp.response.largeBlob;
+        // Note: largeBlob extension support varies by browser and authenticator
+        // const kwrapBytes = authResp.response.largeBlob;
+        const kwrapBytes = null; // Temporary - largeBlob not available
         if (!kwrapBytes) {
-            throw new Error('Could not retrieve wrapping key from passkey.');
+            throw new Error('Could not retrieve wrapping key from passkey - largeBlob extension not supported.');
         }
         const kwrap = await crypto.subtle.importKey(
             'raw',

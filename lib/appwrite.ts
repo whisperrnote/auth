@@ -186,7 +186,7 @@ export class AppwriteService {
    */
   static async hasPasskey(userId: string): Promise<boolean> {
     const userDoc = await this.getUserDoc(userId);
-    return !!(userDoc && userDoc.isPasskey === true && userDoc.passkeys?.length > 0);
+    return !!(userDoc && userDoc.isPasskey === true && userDoc.credentialId);
   }
 
   /**
@@ -199,8 +199,6 @@ export class AppwriteService {
   ): Promise<void> {
     const userDoc = await this.getUserDoc(userId);
     if (userDoc && userDoc.$id) {
-      const existingPasskeys = userDoc.passkeys || [];
-      const updatedPasskeys = [...existingPasskeys, newCredential];
       await appwriteDatabases.updateDocument(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_USER_ID,
@@ -208,7 +206,9 @@ export class AppwriteService {
         {
           isPasskey: true,
           passkeyBlob,
-          passkeys: updatedPasskeys,
+          credentialId: newCredential.credentialID,
+          publicKey: newCredential.publicKey,
+          counter: newCredential.counter,
         }
       );
     }
@@ -227,7 +227,9 @@ export class AppwriteService {
         {
           isPasskey: false,
           passkeyBlob: null,
-          passkeys: [],
+          credentialId: null,
+          publicKey: null,
+          counter: null,
         }
       );
     }
@@ -395,7 +397,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_FOLDERS_ID,
       [Query.equal('userId', userId), ...queries]
     );
-    return response.documents as Folders[];
+    return response.documents as unknown as Folders[];
   }
 
   static async listSecurityLogs(userId: string, queries: string[] = []): Promise<SecurityLogs[]> {
@@ -404,7 +406,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       [Query.equal('userId', userId), Query.orderDesc('timestamp'), ...queries]
     );
-    return response.documents as SecurityLogs[];
+    return response.documents as unknown as SecurityLogs[];
   }
 
   // Update with automatic encryption
@@ -435,9 +437,9 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       id,
-      data
+      data as any
     );
-    return doc as Folders;
+    return doc as unknown as Folders;
   }
 
   static async updateUserDoc(id: string, data: Partial<User>): Promise<User> {
@@ -445,9 +447,9 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
       id,
-      data
+      data as any
     );
-    return doc as User;
+    return doc as unknown as User;
   }
 
   static async updateSecurityLog(id: string, data: Partial<SecurityLogs>): Promise<SecurityLogs> {
