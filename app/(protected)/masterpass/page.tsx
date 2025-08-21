@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
-import { hasMasterpass, setMasterpassFlag, logoutAppwrite } from "@/lib/appwrite";
+import { hasMasterpass, setMasterpassFlag, logoutAppwrite, AppwriteService } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
+import { unlockWithPasskey } from "../settings/passkey";
 
 export default function MasterPassPage() {
   const [masterPassword, setMasterPassword] = useState("");
@@ -21,18 +22,28 @@ export default function MasterPassPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [confirmCapsLock, setConfirmCapsLock] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   
   const { user, refresh } = useAppwrite();
   const router = useRouter();
 
-  // Check masterpass status from database
+  // Check masterpass and passkey status from database
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    hasMasterpass(user.$id)
-      .then((present) => setIsFirstTime(!present))
-      .catch(() => setIsFirstTime(true))
-      .finally(() => setLoading(false));
+    Promise.all([
+      hasMasterpass(user.$id),
+      AppwriteService.hasPasskey(user.$id)
+    ]).then(([masterpassPresent, passkeyPresent]) => {
+      setIsFirstTime(!masterpassPresent);
+      setHasPasskey(passkeyPresent);
+    }).catch(() => {
+      setIsFirstTime(true);
+      setHasPasskey(false);
+    }).finally(() => {
+      setLoading(false);
+    });
   }, [user]);
 
   // Redirect to login if not logged in
@@ -100,6 +111,17 @@ export default function MasterPassPage() {
     await logoutAppwrite();
     setLoading(false);
     router.replace('/login');
+  };
+
+  const handlePasskeyUnlock = async () => {
+    if (!user?.$id) return;
+    setPasskeyLoading(true);
+    const success = await unlockWithPasskey(user.$id);
+    if (success) {
+      await refresh();
+      router.replace('/dashboard');
+    }
+    setPasskeyLoading(false);
   };
 
   // Loading state for DB check
@@ -281,19 +303,13 @@ export default function MasterPassPage() {
               Logout from Account
             </Button>
 
-            {/* Placeholder button for future passkey/biometric unlock */}
-            {!isFirstTime && (
+            {/* Passkey/biometric unlock button */}
+            {!isFirstTime && hasPasskey && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => {
-                  // For now show a toast; future implementation will trigger WebAuthn/passkey flow
-                  try {
-                    toast("Passkey unlock coming soon", { icon: "🔓" });
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
+                onClick={handlePasskeyUnlock}
+                disabled={passkeyLoading || loading}
                 className="transform transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0.5 active:scale-95 shadow-[0_8px_16px_rgba(2,6,23,0.08)] dark:shadow-none bg-gradient-to-b from-white/60 to-white/30 dark:from-white/5 dark:to-white/3 border border-muted/30 rounded-lg py-2 px-3 flex items-center justify-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -301,7 +317,9 @@ export default function MasterPassPage() {
                   <rect x="4" y="5" width="16" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M8 11a4 4 0 0 1 8 0v2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span className="font-medium">Unlock with Passkey</span>
+                <span className="font-medium">
+                  {passkeyLoading ? "Unlocking..." : "Unlock with Passkey"}
+                </span>
               </Button>
             )}
 
