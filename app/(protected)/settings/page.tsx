@@ -27,8 +27,9 @@ import { useAppwrite } from "@/app/appwrite-provider";
 import TwofaSetup from "@/components/overlays/twofaSetup";
 import { appwriteAccount, appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, createFolder, updateFolder, deleteFolder, listFolders } from "@/lib/appwrite";
 import { Query } from "appwrite";
-import { updateUserProfile, exportAllUserData, deleteUserAccount } from "@/lib/appwrite";
+import { updateUserProfile, exportAllUserData, deleteUserAccount, AppwriteService } from "@/lib/appwrite";
 import toast from "react-hot-toast";
+import { enablePasskey, disablePasskey } from "./passkey";
 
 import VaultGuard from "@/components/layout/VaultGuard";
 
@@ -62,6 +63,8 @@ export default function SettingsPage() {
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passkeyEnabled, setPasskeyEnabled] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   // Folder Management State
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -107,6 +110,29 @@ export default function SettingsPage() {
     } catch (error) {
       console.error("Failed to fetch 2FA status:", error);
     }
+  };
+
+  // Fetch passkey status
+  useEffect(() => {
+    if (user?.$id) {
+      AppwriteService.hasPasskey(user.$id).then(setPasskeyEnabled);
+    }
+  }, [user?.$id]);
+
+  const handleTogglePasskey = async () => {
+    if (!user?.$id) return;
+    setPasskeyLoading(true);
+    let success = false;
+    if (passkeyEnabled) {
+      success = await disablePasskey(user.$id);
+    } else {
+      success = await enablePasskey(user.$id);
+    }
+    if (success) {
+      // Re-fetch from server to get the latest state
+      AppwriteService.hasPasskey(user.$id).then(setPasskeyEnabled);
+    }
+    setPasskeyLoading(false);
   };
 
   const handleSaveProfile = async () => {
@@ -324,6 +350,20 @@ export default function SettingsPage() {
               >
                 <Shield className="h-4 w-4" />
                 {twofaEnabled ? "✅ Two-Factor Authentication Enabled" : "Setup Two-Factor Authentication"}
+              </Button>
+
+              <Button
+                variant={passkeyEnabled ? "default" : "outline"}
+                className="w-full justify-start gap-2"
+                onClick={handleTogglePasskey}
+                disabled={passkeyLoading}
+              >
+                <Key className="h-4 w-4" />
+                {passkeyLoading
+                  ? "Processing..."
+                  : passkeyEnabled
+                  ? "✅ Passkey / Biometric Unlock Enabled"
+                  : "Enable Passkey / Biometric Unlock"}
               </Button>
               
               {/* Vault Timeout Setting */}

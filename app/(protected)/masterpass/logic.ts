@@ -43,6 +43,41 @@ export class MasterPassCrypto {
     );
   }
 
+  // Getter for the master key, needed for passkey logic
+  getMasterKey(): CryptoKey | null {
+    return this.masterKey;
+  }
+
+  // Export the raw master key
+  async exportKey(): Promise<ArrayBuffer | null> {
+    if (!this.masterKey) return null;
+    return crypto.subtle.exportKey('raw', this.masterKey);
+  }
+
+  // Import a raw key and set it as the master key
+  async importKey(keyBytes: ArrayBuffer): Promise<void> {
+    this.masterKey = await crypto.subtle.importKey(
+      'raw',
+      keyBytes,
+      { name: 'AES-GCM', length: 256 },
+      true, // Make it extractable so it can be re-wrapped
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  // Unlock the vault after a key has been imported (e.g., from passkey)
+  async unlockWithImportedKey(): Promise<boolean> {
+    if (!this.masterKey) {
+      console.error('Cannot unlock with imported key: key is not present.');
+      return false;
+    }
+    this.isUnlocked = true;
+    sessionStorage.setItem('vault_unlocked', Date.now().toString());
+    // We don't need to verify a check value here because the key's authenticity
+    // is guaranteed by the passkey's cryptographic signature.
+    return true;
+  }
+
   // Unlock vault with master password
   async unlock(masterPassword: string, userId: string, isFirstTime: boolean = false): Promise<boolean> {
     try {

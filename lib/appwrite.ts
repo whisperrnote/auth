@@ -181,6 +181,58 @@ export class AppwriteService {
     await masterPassCrypto.setMasterpassCheck(userId);
   }
 
+  /**
+   * Checks if the user has set up a passkey.
+   */
+  static async hasPasskey(userId: string): Promise<boolean> {
+    const userDoc = await this.getUserDoc(userId);
+    return !!(userDoc && userDoc.isPasskey === true && userDoc.passkeys?.length > 0);
+  }
+
+  /**
+   * Adds a new passkey credential to the user's document.
+   */
+  static async setPasskey(
+    userId: string,
+    passkeyBlob: string,
+    newCredential: { credentialID: string; publicKey: string; counter: number; transports: any }
+  ): Promise<void> {
+    const userDoc = await this.getUserDoc(userId);
+    if (userDoc && userDoc.$id) {
+      const existingPasskeys = userDoc.passkeys || [];
+      const updatedPasskeys = [...existingPasskeys, newCredential];
+      await appwriteDatabases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        userDoc.$id,
+        {
+          isPasskey: true,
+          passkeyBlob,
+          passkeys: updatedPasskeys,
+        }
+      );
+    }
+  }
+
+  /**
+   * Removes all passkey credentials for the user.
+   */
+  static async removePasskey(userId: string): Promise<void> {
+    const userDoc = await this.getUserDoc(userId);
+    if (userDoc && userDoc.$id) {
+      await appwriteDatabases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        userDoc.$id,
+        {
+          isPasskey: false,
+          passkeyBlob: null,
+          passkeys: [],
+        }
+      );
+    }
+  }
+
   // Read with automatic decryption
   static async getCredential(id: string): Promise<Credentials> {
     const doc = await appwriteDatabases.getDocument(
