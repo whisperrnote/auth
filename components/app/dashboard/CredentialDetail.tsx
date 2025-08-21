@@ -217,7 +217,13 @@ export default function CredentialDetail({
                   className="text-blue-600 hover:text-blue-700 text-sm inline-flex items-center"
                 >
                   <Globe className="h-3 w-3 mr-1" />
-                  {new URL(credential.url).hostname}
+                  {(() => {
+                    try {
+                      return new URL(credential.url).hostname;
+                    } catch {
+                      return credential.url;
+                    }
+                  })()}
                 </a>
               )}
             </div>
