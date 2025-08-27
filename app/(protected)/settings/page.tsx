@@ -28,7 +28,7 @@ import TwofaSetup from "@/components/overlays/twofaSetup";
 import { PasskeySetup } from "@/components/overlays/passkeySetup";
 import { appwriteAccount, appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, createFolder, updateFolder, deleteFolder, listFolders } from "@/lib/appwrite";
 import { Query } from "appwrite";
-import { updateUserProfile, exportAllUserData, deleteUserAccount, AppwriteService } from "@/lib/appwrite";
+import { updateUserProfile, exportAllUserData, deleteUserAccount, AppwriteService, getUnifiedMfaStatus } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 
 import VaultGuard from "@/components/layout/VaultGuard";
@@ -101,12 +101,11 @@ export default function SettingsPage() {
 
   const fetchTwofaStatus = async () => {
     try {
-      const userDoc = await appwriteDatabases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_USER_ID,
-        [Query.equal("userId", user?.userId || user?.$id)]
-      );
-      setTwofaEnabled(userDoc.documents[0]?.twofa === true);
+      if (!user?.$id) return;
+      
+      // Use the unified MFA status function
+      const mfaStatus = await getUnifiedMfaStatus(user.$id);
+      setTwofaEnabled(mfaStatus.isEnforced);
     } catch (error) {
       console.error("Failed to fetch 2FA status:", error);
     }

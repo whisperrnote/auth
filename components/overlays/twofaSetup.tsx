@@ -10,13 +10,8 @@ import {
   removeTotpFactor,
   listMfaFactors,
   addEmailFactor,
-  completeEmailVerification,
-  AppwriteService,
-  APPWRITE_DATABASE_ID,
-  APPWRITE_COLLECTION_USER_ID,
-  appwriteDatabases
+  getUnifiedMfaStatus
 } from "@/lib/appwrite";
-import { Query } from "appwrite";
 
 export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
   open: boolean;
@@ -45,17 +40,14 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
 
   const loadCurrentStatus = async () => {
     try {
-      // Check current factors
-      const factors = await listMfaFactors();
-      setCurrentFactors(factors);
+      // Use the unified MFA status function
+      const mfaStatus = await getUnifiedMfaStatus(user.$id);
       
-      // Check if MFA is enabled by looking at user doc
-      const userDoc = await AppwriteService.getUserDoc(user.$id);
-      const mfaEnabled = userDoc?.twofa === true;
-      setIsCurrentlyEnabled(mfaEnabled);
+      setCurrentFactors(mfaStatus.factors);
+      setIsCurrentlyEnabled(mfaStatus.isEnforced);
       
       // If MFA is already enabled, show management options
-      if (mfaEnabled && (factors.totp || factors.email)) {
+      if (mfaStatus.isEnforced && (mfaStatus.factors.totp || mfaStatus.factors.email)) {
         setStep("init");
       }
     } catch (error) {
@@ -164,11 +156,8 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       // Enable MFA enforcement
       await updateMfaStatus(true);
       
-      // Update user document to reflect 2FA status
-      const userDoc = await AppwriteService.getUserDoc(user.$id);
-      if (userDoc && userDoc.$id) {
-        await AppwriteService.updateUserDoc(userDoc.$id, { twofa: true });
-      }
+      // The unified status function will automatically sync the database
+      // No need to manually update user document
       
       onStatusChange(true);
       setStep("done");
@@ -195,11 +184,8 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
         await removeTotpFactor();
       }
       
-      // Update user document
-      const userDoc = await AppwriteService.getUserDoc(user.$id);
-      if (userDoc && userDoc.$id) {
-        await AppwriteService.updateUserDoc(userDoc.$id, { twofa: false });
-      }
+      // The unified status function will automatically sync the database
+      // No need to manually update user document
       
       onStatusChange(false);
       setStep("init");
@@ -242,10 +228,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
         if (!hasAnyFactors) {
           // No factors left, disable MFA
           await updateMfaStatus(false);
-          const userDoc = await AppwriteService.getUserDoc(user.$id);
-          if (userDoc && userDoc.$id) {
-            await AppwriteService.updateUserDoc(userDoc.$id, { twofa: false });
-          }
+          // Database will be synced automatically by unified status function
           onStatusChange(false);
           setIsCurrentlyEnabled(false);
         }

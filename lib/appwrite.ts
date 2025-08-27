@@ -1250,38 +1250,78 @@ export async function removeMfaFactor(factorType: 'totp' | 'email' | 'phone'): P
 }
 
 /**
- * Get detailed MFA status including individual factor information
+ * Unified MFA status check that returns comprehensive MFA information
+ * This should be used everywhere for consistent MFA status detection
  */
-export async function getMfaStatus(): Promise<{
-  enabled: boolean;
+export async function getUnifiedMfaStatus(userId?: string): Promise<{
+  isEnforced: boolean;
   factors: { totp: boolean; email: boolean; phone: boolean };
   requiresSetup: boolean;
+  needsAuthentication: boolean;
+  error?: string;
 }> {
   try {
+    // First check what factors are available
     const factors = await listMfaFactors();
     const hasAnyFactor = factors.totp || factors.email || factors.phone;
     
-    // Check if MFA is enforced (this would throw an error if not authenticated properly)
-    let mfaEnabled = false;
+    // Check if MFA is currently being enforced
+    let isEnforced = false;
+    let needsAuthentication = false;
+    
     try {
-      await checkMfaRequired();
-      mfaEnabled = false; // If no error, MFA is not required
+      await appwriteAccount.get();
+      // If account.get() succeeds, user is fully authenticated (no MFA required)
+      isEnforced = false;
+      needsAuthentication = false;
     } catch (error: any) {
-      if (error.type === 'user_more_factors_required') {
-        mfaEnabled = true;
+      if (error.type === "user_more_factors_required") {
+        // User is partially authenticated and MFA is being enforced
+        isEnforced = true;
+        needsAuthentication = true;
+      } else {
+        // Other authentication errors
+        return {
+          isEnforced: false,
+          factors: { totp: false, email: false, phone: false },
+          requiresSetup: false,
+          needsAuthentication: false,
+          error: error.message || "Authentication check failed"
+        };
+      }
+    }
+    
+    // If user has factors but MFA is not enforced, it means they need to enable enforcement
+    const requiresSetup = hasAnyFactor && !isEnforced && !needsAuthentication;
+    
+    // Sync database status if userId is provided
+    if (userId) {
+      try {
+        const userDoc = await AppwriteService.getUserDoc(userId);
+        const dbMfaStatus = userDoc?.twofa === true;
+        
+        // If database status doesn't match actual enforcement, update it
+        if (dbMfaStatus !== isEnforced && userDoc?.$id) {
+          await AppwriteService.updateUserDoc(userDoc.$id, { twofa: isEnforced });
+        }
+      } catch (error) {
+        console.warn("Failed to sync MFA status with database:", error);
       }
     }
     
     return {
-      enabled: mfaEnabled,
+      isEnforced,
       factors,
-      requiresSetup: hasAnyFactor && !mfaEnabled
+      requiresSetup,
+      needsAuthentication
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
-      enabled: false,
+      isEnforced: false,
       factors: { totp: false, email: false, phone: false },
-      requiresSetup: false
+      requiresSetup: false,
+      needsAuthentication: false,
+      error: error.message || "Failed to check MFA status"
     };
   }
 }
