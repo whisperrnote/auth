@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Sun, Moon, Monitor, Check, Mail, KeyRound, Link2 } from "lucide-react";
+import { Eye, EyeOff, Check, Mail, KeyRound, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -12,8 +12,7 @@ import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query, ID } from "@/lib/appwrite";
-import { checkMfaRequired } from "@/lib/appwrite";
-import { hasMasterpass } from "@/lib/appwrite";
+import { getMfaAuthenticationStatus } from "@/lib/appwrite";
 import { redirectIfAuthenticated } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
 
@@ -30,6 +29,13 @@ export default function LoginPage() {
     const emailParam = searchParams.get("email");
     if (emailParam) {
       setFormData((prev) => ({ ...prev, email: emailParam }));
+    }
+    
+    // Handle magic URL completion
+    const userId = searchParams.get("userId");
+    const secret = searchParams.get("secret");
+    if (userId && secret) {
+      handleMagicUrlCompletion(userId, secret);
     }
     // eslint-disable-next-line
   }, []);
@@ -88,6 +94,25 @@ export default function LoginPage() {
     redirectIfAuthenticated(user, isVaultUnlocked, router);
   }, [user, router, isVaultUnlocked]);
 
+  const handleMagicUrlCompletion = async (userId: string, secret: string) => {
+    try {
+      await completeMagicUrl(userId, secret);
+      
+      // Check MFA status after magic URL completion  
+      const mfaStatus = await getMfaAuthenticationStatus();
+      
+      if (mfaStatus.needsMfa) {
+        router.replace("/twofa/access");
+      } else if (mfaStatus.isFullyAuthenticated) {
+        router.replace("/masterpass");
+      } else {
+        toast.error(mfaStatus.error || "Authentication verification failed");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Magic link authentication failed");
+    }
+  };
+
   // Handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,19 +120,18 @@ export default function LoginPage() {
       try {
         await loginWithEmailPassword(formData.email, formData.password);
 
-        // Check if MFA is required using the official method
-        try {
-          await checkMfaRequired();
-          // If no error, MFA is not required, go to masterpass
+        // Check MFA status using the session user ID
+        const mfaStatus = await getMfaAuthenticationStatus();
+        
+        if (mfaStatus.needsMfa) {
+          // MFA is required, redirect to 2FA page
+          router.replace("/twofa/access");
+        } else if (mfaStatus.isFullyAuthenticated) {
+          // No MFA required, proceed to masterpass
           router.replace("/masterpass");
-        } catch (mfaError: any) {
-          if (mfaError.type === "user_more_factors_required") {
-            // MFA is required, redirect to 2FA page
-            router.replace("/twofa/access");
-          } else {
-            // Other error, show it
-            toast.error(mfaError.message || "Login verification failed");
-          }
+        } else {
+          // Error in authentication status
+          toast.error(mfaStatus.error || "Authentication verification failed");
         }
       } catch (err: any) {
         toast.error(err?.message || "Login failed");
@@ -115,16 +139,16 @@ export default function LoginPage() {
     } else if (mode === "otp") {
       try {
         await completeEmailOtp(formData.userId, formData.otp);
-        // --- 2FA check ---
-        try {
-          await checkMfaRequired();
+        
+        // Check MFA status after OTP completion
+        const mfaStatus = await getMfaAuthenticationStatus();
+        
+        if (mfaStatus.needsMfa) {
+          router.replace("/twofa/access");
+        } else if (mfaStatus.isFullyAuthenticated) {
           router.replace("/masterpass");
-        } catch (mfaError: any) {
-          if (mfaError.type === "user_more_factors_required") {
-            router.replace("/twofa/access");
-          } else {
-            toast.error(mfaError.message || "Login verification failed");
-          }
+        } else {
+          toast.error(mfaStatus.error || "Authentication verification failed");
         }
       } catch (err: any) {
         toast.error(err?.message || "Invalid OTP.");
@@ -202,7 +226,6 @@ export default function LoginPage() {
                   }}
                   onClick={() => {
                     setMode(btn.value as Mode);
-                    setError(null);
                   }}
                   type="button"
                 >

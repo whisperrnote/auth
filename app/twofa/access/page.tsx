@@ -180,16 +180,15 @@ export default function TwofaAccessPage() {
                   {loading ? "Verifying..." : "Verify"}
                 </Button>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    setChallengeId(null);
-                    setCode("");
-                    setError(null);
-                  }}
-                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setChallengeId(null);
+                      setCode("");
+                    }}
+                  >
                   Choose different method
                 </Button>
               </div>

@@ -49,10 +49,7 @@
         {
             "$id": "credentials",
             "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "create(\"users\")"
             ],
             "databaseId": "passwordManagerDb",
             "name": "Credentials",
@@ -201,10 +198,7 @@
         {
             "$id": "totpSecrets",
             "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "create(\"users\")"
             ],
             "databaseId": "passwordManagerDb",
             "name": "TOTP Secrets",
@@ -332,10 +326,7 @@
         {
             "$id": "folders",
             "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "create(\"users\")"
             ],
             "databaseId": "passwordManagerDb",
             "name": "Folders",
@@ -410,10 +401,7 @@
         {
             "$id": "securityLogs",
             "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "create(\"users\")"
             ],
             "databaseId": "passwordManagerDb",
             "name": "Security Logs",
@@ -509,15 +497,12 @@
         {
             "$id": "user",
             "$permissions": [
-                "create(\"users\")",
-                "read(\"users\")",
-                "update(\"users\")",
-                "delete(\"users\")"
+                "create(\"users\")"
             ],
             "databaseId": "passwordManagerDb",
             "name": "user",
             "enabled": true,
-            "documentSecurity": false,
+            "documentSecurity": true,
             "attributes": [
                 {
                     "key": "masterpass",

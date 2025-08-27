@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Sun, Moon, Monitor, Check, Mail, KeyRound, Link2 } from "lucide-react";
+import { Eye, EyeOff, Check, Mail, KeyRound, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -12,8 +12,7 @@ import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID } from "@/lib/appwrite";
-import { checkMfaRequired } from "@/lib/appwrite";
-import { hasMasterpass } from "@/lib/appwrite";
+import { getMfaAuthenticationStatus, getAuthenticationNextRoute, hasMasterpass } from "@/lib/appwrite";
 import { redirectIfAuthenticated } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
 
@@ -38,6 +37,13 @@ export default function RegisterPage() {
     const emailParam = searchParams.get("email");
     if (emailParam) {
       setFormData((prev) => ({ ...prev, email: emailParam }));
+    }
+    
+    // Handle magic URL completion for registration
+    const userId = searchParams.get("userId");
+    const secret = searchParams.get("secret");
+    if (userId && secret) {
+      handleMagicUrlCompletion(userId, secret);
     }
     // eslint-disable-next-line
   }, []);
@@ -109,6 +115,18 @@ export default function RegisterPage() {
     redirectIfAuthenticated(user, isVaultUnlocked, router);
   }, [user, router, isVaultUnlocked]);
 
+  const handleMagicUrlCompletion = async (userId: string, secret: string) => {
+    try {
+      await completeMagicUrl(userId, secret);
+      
+      // Use the unified helper to determine next route
+      const nextRoute = await getAuthenticationNextRoute(userId);
+      router.replace(nextRoute);
+    } catch (err: any) {
+      toast.error(err?.message || "Magic link authentication failed");
+    }
+  };
+
   // Handlers
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,15 +143,14 @@ export default function RegisterPage() {
         await loginWithEmailPassword(formData.email, formData.password);
 
         // 3. Continue with MFA/masterpass logic
-        try {
-          await checkMfaRequired();
+        const mfaStatus = await getMfaAuthenticationStatus();
+        
+        if (mfaStatus.needsMfa) {
+          router.replace("/twofa/access");
+        } else if (mfaStatus.isFullyAuthenticated) {
           router.replace("/masterpass");
-        } catch (mfaError: any) {
-          if (mfaError.type === "user_more_factors_required") {
-            router.replace("/twofa/access");
-          } else {
-            toast.error(mfaError.message || "Registration verification failed");
-          }
+        } else {
+          toast.error(mfaStatus.error || "Registration verification failed");
         }
       } catch (err: any) {
         // If error is "user already exists", show a friendly message
@@ -146,15 +163,15 @@ export default function RegisterPage() {
     } else if (mode === "otp") {
       try {
         await completeEmailOtp(formData.userId, formData.otp);
-        try {
-          await checkMfaRequired();
+        
+        const mfaStatus = await getMfaAuthenticationStatus();
+        
+        if (mfaStatus.needsMfa) {
+          router.replace("/twofa/access");
+        } else if (mfaStatus.isFullyAuthenticated) {
           router.replace("/masterpass");
-        } catch (mfaError: any) {
-          if (mfaError.type === "user_more_factors_required") {
-            router.replace("/twofa/access");
-          } else {
-            toast.error(mfaError.message || "Registration verification failed");
-          }
+        } else {
+          toast.error(mfaStatus.error || "Registration verification failed");
         }
       } catch (err: any) {
         toast.error(err?.message || "Invalid OTP.");
@@ -232,7 +249,6 @@ export default function RegisterPage() {
                   }}
                   onClick={() => {
                     setMode(btn.value as Mode);
-                    setError(null);
                   }}
                   type="button"
                 >

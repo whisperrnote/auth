@@ -13,6 +13,7 @@ import {
   resetMasterpassAndWipe,
   hasMasterpass,
   logoutAppwrite,
+  getMfaAuthenticationStatus,
   ID,
 } from "@/lib/appwrite";
 import { masterPassCrypto } from "./(protected)/masterpass/logic";
@@ -136,6 +137,15 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   const completeMagicUrlFn = async (userId: string, secret: string) => {
     const result = await completeMagicUrl(userId, secret);
     await refresh();
+    
+    // Check MFA status after magic URL completion
+    const mfaStatus = await getMfaAuthenticationStatus();
+    
+    if (mfaStatus.needsMfa) {
+      // Return a special indicator that MFA is required
+      return { ...result, requiresMfa: true };
+    }
+    
     return result;
   };
 

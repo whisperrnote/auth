@@ -732,7 +732,26 @@ export async function verifyTotpFactor(otp: string): Promise<boolean> {
  * factor: "totp" | "email" | "phone" | "recoverycode"
  */
 export async function createMfaChallenge(factor: "totp" | "email" | "phone" | "recoverycode"): Promise<{ $id: string }> {
-  return await appwriteAccount.createMfaChallenge(AuthenticationFactor.Totp);
+  let authFactor: AuthenticationFactor;
+  
+  switch (factor) {
+    case "totp":
+      authFactor = AuthenticationFactor.Totp;
+      break;
+    case "email":
+      authFactor = AuthenticationFactor.Email;
+      break;
+    case "phone":
+      authFactor = AuthenticationFactor.Phone;
+      break;
+    case "recoverycode":
+      authFactor = AuthenticationFactor.Recoverycode;
+      break;
+    default:
+      throw new Error(`Unsupported MFA factor: ${factor}`);
+  }
+  
+  return await appwriteAccount.createMfaChallenge(authFactor);
 }
 
 /**
@@ -744,10 +763,55 @@ export async function completeMfaChallenge(challengeId: string, code: string): P
 
 /**
  * Check if user needs MFA after login
- * Throws 'user_more_factors_required' error if MFA is needed
+ * Returns true if MFA is required, false if not required, throws for other errors
  */
-export async function checkMfaRequired(): Promise<any> {
-  return await appwriteAccount.get();
+export async function checkMfaRequired(): Promise<boolean> {
+  try {
+    await appwriteAccount.get();
+    return false; // If account.get() succeeds, no MFA required
+  } catch (error: any) {
+    if (error.type === "user_more_factors_required") {
+      return true; // MFA is required
+    }
+    // Re-throw other errors (like network issues, invalid session, etc.)
+    throw error;
+  }
+}
+
+/**
+ * Robust MFA status check that determines authentication state
+ * Returns: { needsMfa: boolean, isFullyAuthenticated: boolean, error?: string }
+ */
+export async function getMfaAuthenticationStatus(): Promise<{
+  needsMfa: boolean;
+  isFullyAuthenticated: boolean;
+  error?: string;
+}> {
+  try {
+    // Try to get account info
+    await appwriteAccount.get();
+    
+    // If successful, user is fully authenticated
+    return {
+      needsMfa: false,
+      isFullyAuthenticated: true
+    };
+  } catch (error: any) {
+    if (error.type === "user_more_factors_required") {
+      // User is partially authenticated but needs MFA
+      return {
+        needsMfa: true,
+        isFullyAuthenticated: false
+      };
+    }
+    
+    // For other errors (network, invalid session, etc.)
+    return {
+      needsMfa: false,
+      isFullyAuthenticated: false,
+      error: error.message || "Authentication check failed"
+    };
+  }
 }
 
 /**
@@ -1090,17 +1154,68 @@ export async function deleteCredential(id: string) {
 }
 
 /**
+ * Unified authentication state handler
+ * Determines the correct next route after login/registration
+ */
+export async function getAuthenticationNextRoute(userId: string): Promise<string> {
+  try {
+    // First check if MFA is required
+    const mfaStatus = await getMfaAuthenticationStatus();
+    
+    if (mfaStatus.needsMfa) {
+      return "/twofa/access";
+    }
+    
+    if (!mfaStatus.isFullyAuthenticated) {
+      throw new Error(mfaStatus.error || "Authentication failed");
+    }
+    
+    // User is fully authenticated, check master password
+    const hasMp = await hasMasterpass(userId);
+    if (!hasMp) {
+      return "/masterpass";
+    }
+    
+    // Check if vault is unlocked
+    try {
+      const { masterPassCrypto } = await import('../app/(protected)/masterpass/logic');
+      if (!masterPassCrypto.isVaultUnlocked()) {
+        return "/masterpass";
+      }
+    } catch {
+      // If can't import crypto module, assume needs master password
+      return "/masterpass";
+    }
+    
+    // Everything is ready, go to dashboard
+    return "/dashboard";
+    
+  } catch (error) {
+    console.error("Error determining authentication route:", error);
+    throw error;
+  }
+}
+
+/**
  * Redirects authenticated users to /masterpass or /dashboard as appropriate.
+ * Updated to use the new MFA-aware authentication flow
  */
 export async function redirectIfAuthenticated(user: any, isVaultUnlocked: () => boolean, router: any) {
   if (user) {
-    const hasMp = await hasMasterpass(user.$id);
-    if (!hasMp || !isVaultUnlocked()) {
-      router.replace("/masterpass");
+    try {
+      const nextRoute = await getAuthenticationNextRoute(user.$id);
+      router.replace(nextRoute);
       return true;
-    } else {
-      router.replace("/dashboard");
-      return true;
+    } catch (error) {
+      // Fallback to original logic if there's an error
+      const hasMp = await hasMasterpass(user.$id);
+      if (!hasMp || !isVaultUnlocked()) {
+        router.replace("/masterpass");
+        return true;
+      } else {
+        router.replace("/dashboard");
+        return true;
+      }
     }
   }
   return false;

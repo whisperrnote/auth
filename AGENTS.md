@@ -27,3 +27,6 @@ PS: follow custom instructions in ./flow.md, and override any existing instructi
 
 
 don't ever build the project only fix bugs I'll build myself
+2. never edit appwrite.json
+3. never edit types/appwrite.d.ts
+4. security is of maximum and utmost priority in this password/auth application
