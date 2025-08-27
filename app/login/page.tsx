@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Check, Mail, KeyRound, Link2 } from "lucide-react";
+import { Eye, EyeOff, Check, Mail, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -11,14 +11,13 @@ import { useTheme } from "@/app/providers";
 import { useAppwrite } from "../appwrite-provider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query, ID } from "@/lib/appwrite";
 import { getMfaAuthenticationStatus } from "@/lib/appwrite";
 import { redirectIfAuthenticated } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
 
 const OTP_COOLDOWN = 120; // seconds
 
-type Mode = "password" | "otp" | "magic";
+type Mode = "password" | "otp";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("password");
@@ -30,13 +29,6 @@ export default function LoginPage() {
     if (emailParam) {
       setFormData((prev) => ({ ...prev, email: emailParam }));
     }
-    
-    // Handle magic URL completion
-    const userId = searchParams.get("userId");
-    const secret = searchParams.get("secret");
-    if (userId && secret) {
-      handleMagicUrlCompletion(userId, secret);
-    }
     // eslint-disable-next-line
   }, []);
   const { theme, setTheme } = useTheme();
@@ -44,17 +36,14 @@ export default function LoginPage() {
     loginWithEmailPassword,
     sendEmailOtp,
     completeEmailOtp,
-    sendMagicUrl,
-    completeMagicUrl,
     loading,
     user,
     isVaultUnlocked,
   } = useAppwrite();
   const router = useRouter();
 
-  // OTP/Magic state
+  // OTP state
   const [otpSent, setOtpSent] = useState(false);
-  const [magicSent, setMagicSent] = useState(false);
   const [securityPhrase, setSecurityPhrase] = useState("");
   const [otpCooldown, setOtpCooldown] = useState(0);
   const otpTimer = useRef<NodeJS.Timeout | null>(null);
@@ -93,25 +82,6 @@ export default function LoginPage() {
   useEffect(() => {
     redirectIfAuthenticated(user, isVaultUnlocked, router);
   }, [user, router, isVaultUnlocked]);
-
-  const handleMagicUrlCompletion = async (userId: string, secret: string) => {
-    try {
-      await completeMagicUrl(userId, secret);
-      
-      // Check MFA status after magic URL completion  
-      const mfaStatus = await getMfaAuthenticationStatus();
-      
-      if (mfaStatus.needsMfa) {
-        router.replace("/twofa/access");
-      } else if (mfaStatus.isFullyAuthenticated) {
-        router.replace("/masterpass");
-      } else {
-        toast.error(mfaStatus.error || "Authentication verification failed");
-      }
-    } catch (err: any) {
-      toast.error(err?.message || "Magic link authentication failed");
-    }
-  };
 
   // Handlers
   const handleSubmit = async (e: React.FormEvent) => {
@@ -170,22 +140,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleSendMagic = async () => {
-    try {
-      await sendMagicUrl(formData.email, window.location.origin + "/login");
-      setMagicSent(true);
-      toast.success("Magic link sent!");
-      setTimeout(() => setMagicSent(false), 4000);
-    } catch (e: any) {
-      toast.error(e.message || "Error sending magic link.");
-    }
-  };
-
   // UI
   const modeButtons = [
     { label: "Password", value: "password", icon: KeyRound },
     { label: "OTP", value: "otp", icon: Mail },
-    { label: "Magic Link", value: "magic", icon: Link2 },
   ] as const;
 
   return (
@@ -241,11 +199,10 @@ export default function LoginPage() {
                  <Input
                    type="email"
                    value={formData.email}
-                   onChange={(e) => {
-                     setFormData({ ...formData, email: e.target.value });
-                     setOtpSent(false);
-                     setMagicSent(false);
-                   }}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      setOtpSent(false);
+                    }}
                    required
                  />              </div>
               {/* Password login */}
@@ -314,30 +271,6 @@ export default function LoginPage() {
                     </div>
                   )}
                 </>
-              )}
-              {/* Magic Link login */}
-              {mode === "magic" && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="glass flex-1"
-                    disabled={!formData.email || magicSent || loading}
-                    onClick={handleSendMagic}
-                  >
-                    {magicSent ? (
-                      <Check className="h-5 w-5 text-green-600" />
-                    ) : (
-                      "Get Magic Link"
-                    )}
-                  </Button>
-                </div>
-              )}
-              {/* Magic link sent message */}
-              {mode === "magic" && magicSent && (
-                <div className="text-xs text-green-700 mt-2 flex items-center gap-2">
-                  <Check className="h-4 w-4" /> Sent! Check your email for the magic link.
-                </div>
               )}
               {/* Only show submit for password/otp */}
               {(mode === "password" || (mode === "otp" && otpSent)) && (

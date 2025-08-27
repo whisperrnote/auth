@@ -899,20 +899,6 @@ export async function completeEmailOtp(userId: string, otp: string) {
   return await appwriteAccount.createSession(userId, otp);
 }
 
-/**
- * Magic URL: Send magic link to email
- */
-export async function sendMagicUrl(email: string, redirectUrl: string) {
-  return await appwriteAccount.createMagicURLToken(ID.unique(), email, redirectUrl);
-}
-
-/**
- * Magic URL: Complete magic link login (returns session)
- */
-export async function completeMagicUrl(userId: string, secret: string) {
-  return await appwriteAccount.createSession(userId, secret);
-}
-
 // --- Standalone Service Functions ---
 
 /**
