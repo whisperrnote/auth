@@ -31,6 +31,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default function DashboardPage() {
   const { user } = useAppwrite();
+  // Master list of all loaded credentials for client-side search
+  const [allCredentials, setAllCredentials] = useState<any[]>([]);
+  // Currently displayed credentials (derived from allCredentials + search + pagination)
   const [credentials, setCredentials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -87,13 +90,34 @@ export default function DashboardPage() {
           docs = docs.filter((c) => c.folderId === selectedFolder);
         }
 
+        // Update the master list of all loaded credentials
         if (resetData || isFirstPage) {
-          setCredentials(docs);
+          setAllCredentials(docs);
         } else {
-          setCredentials(prev => [...prev, ...docs]);
+          setAllCredentials(prev => {
+            const merged = [...prev, ...docs];
+            // de-duplicate by $id to avoid duplicates when changing filters
+            const seen = new Set<string>();
+            return merged.filter((c) => {
+              const id = c.$id as string;
+              if (seen.has(id)) return false;
+              seen.add(id);
+              return true;
+            });
+          });
+        }
+
+        // For initial/non-search view, set current page items
+        if (!searchTerm.trim()) {
+          if (resetData || isFirstPage) {
+            setCredentials(docs);
+          } else {
+            setCredentials(prev => [...prev, ...docs]);
+          }
         }
         
         setTotal(result.total);
+
       } catch (error) {
         toast.error("Failed to load credentials. Please try again.");
         console.error("Failed to load credentials:", error);
@@ -136,20 +160,28 @@ export default function DashboardPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchCredentials(page, true);
+    if (!searchTerm.trim()) {
+      // Server-backed pagination when not searching
+      fetchCredentials(page, true);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-    fetchCredentials(1, true);
+    if (!searchTerm.trim()) {
+      fetchCredentials(1, true);
+    }
   };
 
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-    fetchCredentials(nextPage, false);
+    // Only load more from server when not searching
+    if (!searchTerm.trim()) {
+      fetchCredentials(nextPage, false);
+    }
   };
 
   const handleCopy = (value: string) => {
@@ -201,16 +233,18 @@ export default function DashboardPage() {
 
   const { isAuthReady } = useAppwrite();
 
+  // Filter across ALL loaded credentials for client-side search
   const filteredCredentials = useMemo(() => {
-    if (!searchTerm.trim()) return credentials;
+    const source = searchTerm.trim() ? allCredentials : credentials;
+    if (!searchTerm.trim()) return source;
     const term = searchTerm.toLowerCase();
-    return credentials.filter((c) => {
+    return source.filter((c) => {
       const name = (c.name ?? "").toLowerCase();
       const username = (c.username ?? "").toLowerCase();
       const url = (c.url ?? "").toLowerCase();
       return name.includes(term) || username.includes(term) || url.includes(term);
     });
-  }, [credentials, searchTerm]);
+  }, [allCredentials, credentials, searchTerm]);
 
   if (!isAuthReady || !user) {
     return (
@@ -220,8 +254,11 @@ export default function DashboardPage() {
     );
   }
 
-  const totalPages = Math.ceil(total / pageSize);
-  const hasMore = currentPage < totalPages;
+  // Determine totals based on context: when searching, use client-side total
+  const clientTotal = filteredCredentials.length;
+  const effectiveTotal = searchTerm.trim() ? clientTotal : total;
+  const totalPages = Math.ceil(effectiveTotal / pageSize) || 1;
+  const hasMore = !searchTerm.trim() && currentPage < totalPages;
  
   return (
 
@@ -317,17 +354,18 @@ export default function DashboardPage() {
           </div>
           
           {/* Top Pagination Controls */}
-          {!loading && total > 0 && (
+          {!loading && effectiveTotal > 0 && (
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={total}
+              totalItems={effectiveTotal}
               pageSize={pageSize}
               onPageChange={handlePageChange}
               onPageSizeChange={handlePageSizeChange}
               loading={loadingMore}
             />
           )}
+
           
           {/* Credentials List */}
           <div className="space-y-2 text-foreground dark:text-foreground">
@@ -343,7 +381,11 @@ export default function DashboardPage() {
                 }
               </div>
             ) : (
-              filteredCredentials.map((cred) => (
+              (searchTerm.trim() ?
+                // Client-side pagination when searching
+                filteredCredentials.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                : filteredCredentials
+              ).map((cred) => (
                 <CredentialItem
                   key={cred.$id}
                   credential={cred}
@@ -358,6 +400,7 @@ export default function DashboardPage() {
                 />
               ))
             )}
+
             
             {loadingMore && (
               <div className="space-y-2">
@@ -369,12 +412,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Bottom Pagination Controls */}
-          {!loading && total > 0 && (
+          {!loading && effectiveTotal > 0 && (
             <div className="mt-6">
               <PaginationControls
                 currentPage={currentPage}
                 totalPages={totalPages}
-                totalItems={total}
+                totalItems={effectiveTotal}
                 pageSize={pageSize}
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
@@ -384,8 +427,9 @@ export default function DashboardPage() {
             </div>
           )}
 
+
           {/* Load More Button */}
-          {!loading && hasMore && !searchTerm && (
+          {!loading && hasMore && !searchTerm.trim() && (
             <div className="mt-6 flex justify-center">
               <Button 
                 onClick={handleLoadMore} 
@@ -396,6 +440,7 @@ export default function DashboardPage() {
               </Button>
             </div>
           )}
+
         </div>
         
         <CredentialDialog
