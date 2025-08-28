@@ -6,7 +6,8 @@ import clsx from "clsx";
 
 const MENU_EVENT = "credential-menu-open";
 
-function MobileCopyMenu({ credential, onCopy }: { credential: any; onCopy: (v: string) => void; }) {
+import type { Credentials } from "@/types/appwrite.d";
+function MobileCopyMenu({ credential, onCopy }: { credential: Credentials; onCopy: (v: string) => void; }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -178,7 +179,7 @@ export default function CredentialItem({
   onDelete,
   onClick,
 }: {
-  credential: any;
+  credential: Credentials;
   onCopy: (value: string) => void;
   isDesktop: boolean;
   onEdit: () => void;
@@ -193,7 +194,7 @@ export default function CredentialItem({
     setTimeout(() => setCopied(false), 1200);
   };
 
-  const getFaviconUrl = (url: string) => {
+  const getFaviconUrl = (url: string | null) => {
     if (!url) return null;
     try {
       const domain = new URL(url).hostname;

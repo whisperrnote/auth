@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import type { Credentials, Folders as FolderDoc } from "@/types/appwrite.d";
 import { Folder, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAppwrite } from "@/app/appwrite-provider";
@@ -32,14 +33,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 export default function DashboardPage() {
   const { user } = useAppwrite();
   // Master list of all loaded credentials for client-side search
-  const [allCredentials, setAllCredentials] = useState<any[]>([]);
+  const [allCredentials, setAllCredentials] = useState<Credentials[]>([]);
   // Currently displayed credentials (derived from allCredentials + search + pagination)
-  const [credentials, setCredentials] = useState<any[]>([]);
+  const [credentials, setCredentials] = useState<Credentials[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDialog, setShowDialog] = useState(false);
-  const [editCredential, setEditCredential] = useState<any | null>(null);
-  const [selectedCredential, setSelectedCredential] = useState<any | null>(null);
+  const [editCredential, setEditCredential] = useState<Credentials | null>(null);
+  const [selectedCredential, setSelectedCredential] = useState<Credentials | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const isDesktop = typeof window !== "undefined" ? window.innerWidth > 900 : true;
@@ -51,14 +52,14 @@ export default function DashboardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Folder state
-  const [folders, setFolders] = useState<any[]>([]);
+  const [folders, setFolders] = useState<FolderDoc[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
   // Recent credentials state
-  const [recentCredentials, setRecentCredentials] = useState<any[]>([]);
+  const [recentCredentials, setRecentCredentials] = useState<Credentials[]>([]);
 
   // Delete confirmation state
-  const [credentialToDelete, setCredentialToDelete] = useState<any | null>(null);
+  const [credentialToDelete, setCredentialToDelete] = useState<Credentials | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
@@ -86,25 +87,25 @@ export default function DashboardPage() {
         const result = await listCredentials(user.$id, pageSize, offset);
 
         let docs = result.documents;
-        if (selectedFolder) {
-          docs = docs.filter((c) => c.folderId === selectedFolder);
-        }
+         if (selectedFolder) {
+           docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
+         }
 
         // Update the master list of all loaded credentials
         if (resetData || isFirstPage) {
           setAllCredentials(docs);
         } else {
-          setAllCredentials(prev => {
-            const merged = [...prev, ...docs];
-            // de-duplicate by $id to avoid duplicates when changing filters
-            const seen = new Set<string>();
-            return merged.filter((c) => {
-              const id = c.$id as string;
-              if (seen.has(id)) return false;
-              seen.add(id);
-              return true;
+            setAllCredentials(prev => {
+              const merged = [...prev, ...docs];
+              // de-duplicate by $id to avoid duplicates when changing filters
+              const seen = new Set<string>();
+              return merged.filter((c: Credentials) => {
+                const id = c.$id as string;
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+              });
             });
-          });
         }
 
         // For initial/non-search view, set current page items
@@ -112,7 +113,7 @@ export default function DashboardPage() {
           if (resetData || isFirstPage) {
             setCredentials(docs);
           } else {
-            setCredentials(prev => [...prev, ...docs]);
+             setCredentials(prev => [...prev, ...docs as Credentials[]]);
           }
         }
         
@@ -194,12 +195,12 @@ export default function DashboardPage() {
     setShowDialog(true);
   };
 
-  const handleEdit = (cred: any) => {
+  const handleEdit = (cred: Credentials) => {
     setEditCredential(cred);
     setShowDialog(true);
   };
 
-  const openDeleteModal = (cred: any) => {
+  const openDeleteModal = (cred: Credentials) => {
     setCredentialToDelete(cred);
     setIsDeleteModalOpen(true);
   };
@@ -234,11 +235,11 @@ export default function DashboardPage() {
   const { isAuthReady } = useAppwrite();
 
   // Filter across ALL loaded credentials for client-side search
-  const filteredCredentials = useMemo(() => {
+   const filteredCredentials = useMemo<Credentials[]>(() => {
     const source = searchTerm.trim() ? allCredentials : credentials;
     if (!searchTerm.trim()) return source;
     const term = searchTerm.toLowerCase();
-    return source.filter((c) => {
+     return source.filter((c: Credentials) => {
       const name = (c.name ?? "").toLowerCase();
       const username = (c.username ?? "").toLowerCase();
       const url = (c.url ?? "").toLowerCase();
