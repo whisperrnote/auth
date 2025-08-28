@@ -57,7 +57,7 @@ export default function SettingsPage() {
   const [dangerLoading, setDangerLoading] = useState(false);
   const [vaultTimeout, setVaultTimeoutState] = useState(getVaultTimeout());
   const [showTwofa, setShowTwofa] = useState(false);
-  const [twofaEnabled, setTwofaEnabled] = useState(user?.twofa ?? false);
+  const [twofaEnabled, setTwofaEnabled] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
@@ -94,10 +94,10 @@ export default function SettingsPage() {
 
   // Fetch latest 2fa status on mount and when dialog closes
   useEffect(() => {
-    if (user?.userId || user?.$id) {
+    if (user?.$id) {
       fetchTwofaStatus();
     }
-  }, [user?.userId, user?.$id, showTwofa]); // Add showTwofa to dependencies
+  }, [user?.$id, showTwofa]);
 
   // Sync and validate MFA status between Appwrite and database on page load
   useEffect(() => {
@@ -607,7 +607,8 @@ export default function SettingsPage() {
             // Refresh 2FA status after dialog closes
             setTimeout(fetchTwofaStatus, 500);
           }}
-          user={user}
+           user={user ? { $id: user.$id, email: user.email } : null}
+
           onStatusChange={(enabled) => {
             setTwofaEnabled(enabled);
             // Also refresh from database to ensure consistency

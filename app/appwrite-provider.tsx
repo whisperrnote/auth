@@ -14,15 +14,10 @@ import {
 import { masterPassCrypto } from "./(protected)/masterpass/logic";
 
 // Types
-interface AppwriteUser {
-  $id: string;
-  email: string;
-  name?: string;
-  [key: string]: unknown;
-}
+import type { Models } from "appwrite";
 
 interface AppwriteContextType {
-  user: AppwriteUser | null;
+  user: Models.User<Models.Preferences> | null;
   loading: boolean;
   isAuthenticated: boolean;
   isAuthReady: boolean;
@@ -31,10 +26,10 @@ interface AppwriteContextType {
   logout: () => Promise<void>;
   resetMasterpass: () => Promise<void>;
   refresh: () => Promise<void>;
-  loginWithEmailPassword: (email: string, password: string) => Promise<any>;
-  registerWithEmailPassword: (email: string, password: string, name?: string) => Promise<any>;
-  sendEmailOtp: (email: string, enablePhrase?: boolean) => Promise<any>;
-  completeEmailOtp: (userId: string, otp: string) => Promise<any>;
+  loginWithEmailPassword: (email: string, password: string) => Promise<Models.Session>;
+  registerWithEmailPassword: (email: string, password: string, name?: string) => Promise<Models.User<Models.Preferences>>;
+  sendEmailOtp: (email: string, enablePhrase?: boolean) => Promise<Models.Token>;
+  completeEmailOtp: (userId: string, otp: string) => Promise<Models.Session>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (userId: string, secret: string, password: string, passwordAgain: string) => Promise<void>;
 }
@@ -42,7 +37,7 @@ interface AppwriteContextType {
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
 
 export function AppwriteProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AppwriteUser | null>(null);
+  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsMasterPassword, setNeedsMasterPassword] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -125,19 +120,19 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   };
 
   // AUTH FUNCTIONS
-  const loginWithEmailPasswordFn = async (email: string, password: string) => {
+  const loginWithEmailPasswordFn = async (email: string, password: string): Promise<Models.Session> => {
     const result = await loginWithEmailPassword(email, password);
     await refresh();
     return result;
   };
 
-  const registerWithEmailPasswordFn = async (email: string, password: string, name?: string) => {
+  const registerWithEmailPasswordFn = async (email: string, password: string, name?: string): Promise<Models.User<Models.Preferences>> => {
     const result = await registerWithEmailPassword(email, password, name);
     await refresh();
     return result;
   };
 
-  const completeEmailOtpFn = async (userId: string, otp: string) => {
+  const completeEmailOtpFn = async (userId: string, otp: string): Promise<Models.Session> => {
     const result = await completeEmailOtp(userId, otp);
     await refresh();
     return result;

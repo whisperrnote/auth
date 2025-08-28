@@ -18,10 +18,12 @@ import {
   appwriteAccount
 } from "@/lib/appwrite";
 
+import type { Models } from "appwrite";
+
 export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
   open: boolean;
   onClose: () => void;
-  user: any;
+  user: Pick<Models.User<Models.Preferences>, "$id" | "email"> | null;
   onStatusChange: (enabled: boolean) => void;
 }) {
   const [step, setStep] = useState<"init" | "recovery" | "factors" | "totp_qr" | "totp_verify" | "email_setup" | "email_verify" | "done">("init");
@@ -167,6 +169,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
     setError(null);
     try {
       // Add email as MFA factor (requires current password - we'll need to handle this)
+      if (!user) throw new Error("No user context");
       await addEmailFactor(user.email, ""); // This might fail - email is already verified for login
       setEmailVerificationSent(true);
       setStep("email_verify");
