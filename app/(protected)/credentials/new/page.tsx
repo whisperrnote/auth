@@ -133,8 +133,9 @@ export default function NewCredentialPage() {
         toast.success("TOTP code added!");
         router.push("/totp");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to save. Please check if your vault is unlocked.");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to save. Please check if your vault is unlocked.";
+      toast.error(message);
     }
     setLoading(false);
   };

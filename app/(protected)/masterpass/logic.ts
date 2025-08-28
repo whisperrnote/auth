@@ -371,7 +371,7 @@ export class MasterPassCrypto {
   }
 
   // Encrypt data before sending to database
-  async encryptData(data: any): Promise<string> {
+  async encryptData(data: unknown): Promise<string> {
     console.log('encryptData called, isVaultUnlocked:', this.isVaultUnlocked());
     console.log('masterKey exists:', !!this.masterKey);
     console.log('isUnlocked flag:', this.isUnlocked);
@@ -421,7 +421,7 @@ export class MasterPassCrypto {
   }
 
   // Decrypt data received from database
-  async decryptData(encryptedData: string): Promise<any> {
+  async decryptData(encryptedData: string): Promise<unknown> {
     if (!this.isVaultUnlocked()) {
       throw new Error('Vault is locked');
     }
@@ -569,7 +569,7 @@ export const decryptField = async (encryptedValue: string): Promise<string> => {
     throw new Error('Cannot decrypt empty string');
   }
   
-  return masterPassCrypto.decryptData(encryptedValue);
+  return masterPassCrypto.decryptData(encryptedValue) as Promise<string>;
 };
 
 // Middleware for automatic encryption/decryption of database operations

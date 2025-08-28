@@ -156,7 +156,7 @@ export default function DashboardPage() {
       setSearchTerm(term);
       setCurrentPage(1);
     },
-    []
+    [setSearchTerm]
   );
 
   const handlePageChange = (page: number) => {
@@ -350,7 +350,7 @@ export default function DashboardPage() {
           {/* All Items Section */}
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>
-              {searchTerm ? `Search Results for "${searchTerm}"` : "All Items"}
+                {searchTerm ? `Search Results for \"${searchTerm}\"` : "All Items"}
             </SectionTitle>
           </div>
           
@@ -377,7 +377,7 @@ export default function DashboardPage() {
             ) : filteredCredentials.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 {searchTerm 
-                  ? `No credentials found matching "${searchTerm}"`
+                  ? `No credentials found matching \"${searchTerm}\"`
                   : "No credentials found. Add your first password to get started!"
                 }
               </div>
