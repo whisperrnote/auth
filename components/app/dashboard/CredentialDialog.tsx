@@ -4,6 +4,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createCredential, updateCredential } from "@/lib/appwrite";
+import type { Credentials } from "@/types/appwrite.d";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { generateRandomPassword } from "@/utils/password";
 

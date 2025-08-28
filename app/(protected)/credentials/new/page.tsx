@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { createCredential, createFolder, createTotpSecret, listFolders } from "@/lib/appwrite";
+import type { Folders, Credentials, TotpSecrets } from "@/types/appwrite.d";
 import { generateRandomPassword } from "@/utils/password";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 import toast from "react-hot-toast";
@@ -20,9 +21,9 @@ export default function NewCredentialPage() {
   const { user } = useAppwrite();
   const [showPassword, setShowPassword] = useState(false);
   const [customFields, setCustomFields] = useState<Array<{id: string, label: string, value: string}>>([]);
-  const [folders, setFolders] = useState<any[]>([]);
+  const [folders, setFolders] = useState<Folders[]>([]);
   const [formData, setFormData] = useState({
-    type: "credential", // "credential" | "folder" | "totp" (future)
+    type: "credential" as "credential" | "folder" | "totp",
     name: "",
     url: "",
     username: "",
@@ -75,13 +76,19 @@ export default function NewCredentialPage() {
 
       if (formData.type === "credential") {
         // Clean and prepare credential data with proper null handling
-        const credentialData: any = {
+         const credentialData: Pick<Credentials, 'userId'|'name'|'url'|'username'|'notes'|'folderId'|'tags'|'customFields'|'faviconUrl'|'createdAt'|'updatedAt'|'password'> = {
           userId: user.$id,
           name: formData.name.trim(),
+          url: null,
           username: formData.username.trim(),
-          password: formData.password.trim(),
+          notes: null,
+          folderId: null,
+          tags: null,
+          customFields: null,
+          faviconUrl: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          password: formData.password.trim(),
         };
         if (formData.url && formData.url.trim()) credentialData.url = formData.url.trim();
         if (formData.notes && formData.notes.trim()) credentialData.notes = formData.notes.trim();
@@ -92,7 +99,7 @@ export default function NewCredentialPage() {
         }
         if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields);
 
-        await createCredential(credentialData);
+        await createCredential(credentialData as Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>);
         toast.success("Credential created!");
         router.push("/dashboard");
       } else if (formData.type === "folder") {
@@ -100,7 +107,8 @@ export default function NewCredentialPage() {
           userId: user.$id,
           name: formData.name,
           parentFolderId: null,
-        } as any);
+          // createdAt/updatedAt are server-managed; omit to avoid type clashes
+        } as unknown as Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>);
         toast.success("Folder created!");
         router.push("/dashboard");
       } else if (formData.type === "totp") {
@@ -118,7 +126,10 @@ export default function NewCredentialPage() {
           algorithm: "SHA1",
           digits: 6,
           period: 30,
-        } as any);
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          url: null,
+        } as Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>);
         toast.success("TOTP code added!");
         router.push("/totp");
       }
