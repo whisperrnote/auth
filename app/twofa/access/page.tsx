@@ -88,8 +88,9 @@ export default function TwofaAccessPage() {
     setLoading(true);
     try {
       await completeMfaChallenge(challengeId, code);
-      // Success! User is now fully authenticated, go to masterpass
-      router.replace("/masterpass");
+      // Centralized post-auth finalization
+      const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+      await finalizeAuth({ redirect: true, fallback: "/login" });
     } catch (e: any) {
       toast.error(e.message || "Invalid code");
     }

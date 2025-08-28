@@ -125,7 +125,8 @@ export default function RegisterPage() {
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
-          router.replace("/masterpass");
+          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
@@ -159,7 +160,8 @@ export default function RegisterPage() {
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
-          router.replace("/masterpass");
+          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error(mfaStatus.error || "Registration verification failed");
         }

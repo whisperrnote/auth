@@ -74,23 +74,22 @@ export default function MasterPassPage() {
         // Unlock vault with first-time flag
         const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', true);
         
-        if (success) {
-          // Mark as setup complete in DB and set check value
-          if (user) {
-            await setMasterpassFlag(user.$id, user.email);
+          if (success) {
+            if (user) {
+              await setMasterpassFlag(user.$id, user.email);
+            }
+            const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+            await finalizeAuth({ redirect: true, fallback: "/login" });
+          } else {
+            toast.error("Failed to set master password");
           }
-          await refresh();
-          router.replace('/dashboard');
-        } else {
-          toast.error("Failed to set master password");
-        }
       } else {
         // Existing user - attempt to unlock vault normally
         const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', false);
         
         if (success) {
-          await refresh();
-          router.replace('/dashboard');
+          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error("Incorrect master password. Please try again.");
         }
@@ -118,8 +117,8 @@ export default function MasterPassPage() {
     setPasskeyLoading(true);
     const success = await unlockWithPasskey(user.$id);
     if (success) {
-      await refresh();
-      router.replace('/dashboard');
+      const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+      await finalizeAuth({ redirect: true, fallback: "/login" });
     }
     setPasskeyLoading(false);
   };

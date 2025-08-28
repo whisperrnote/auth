@@ -103,13 +103,11 @@ export default function LoginPage() {
         const mfaStatus = await getMfaAuthenticationStatus();
         
         if (mfaStatus.needsMfa) {
-          // MFA is required, redirect to 2FA page
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
-          // No MFA required, proceed to masterpass
-          router.replace("/masterpass");
+          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
-          // Error in authentication status
           toast.error(mfaStatus.error || "Authentication verification failed");
         }
       } catch (err: any) {
@@ -118,12 +116,11 @@ export default function LoginPage() {
         // Check if this is an MFA requirement error
         if (
           err.type === "user_more_factors_required" ||
-          err.code === 401 && err.message?.includes("more factors") ||
+          (err.code === 401 && err.message?.includes("more factors")) ||
           err.message?.includes("More factors are required") ||
           err.message?.includes("user_more_factors_required")
         ) {
           console.log("MFA required during login, redirecting to /twofa/access");
-          // User is partially authenticated but needs MFA
           router.replace("/twofa/access");
         } else {
           toast.error(err?.message || "Login failed");
@@ -139,7 +136,8 @@ export default function LoginPage() {
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
-          router.replace("/masterpass");
+          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error(mfaStatus.error || "Authentication verification failed");
         }
