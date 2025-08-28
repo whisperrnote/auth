@@ -125,6 +125,7 @@ export default function RegisterPage() {
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
+          // Finalize auth after full authentication
           const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
           await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
@@ -160,6 +161,7 @@ export default function RegisterPage() {
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
+          // Finalize auth after full authentication
           const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
           await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {

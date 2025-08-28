@@ -211,7 +211,8 @@ export default function DashboardPage() {
       .catch(console.error);
   };
 
-  if (!user) {
+  const { isAuthReady } = useAppwrite();
+  if (!isAuthReady || !user) {
     return (
       <div className="w-full min-h-screen bg-background flex items-center justify-center">
         <div className="text-lg text-muted-foreground dark:text-foreground">Loading...</div>

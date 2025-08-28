@@ -13,7 +13,7 @@ import { useAppwrite } from "@/app/appwrite-provider";
  */
 export function useFinalizeAuth() {
   const router = useRouter();
-  const { refresh, user, isVaultUnlocked } = useAppwrite();
+  const { refresh, user, isVaultUnlocked, isAuthReady } = useAppwrite();
 
   const finalize = async (options?: { redirect?: boolean; fallback?: string }) => {
     // 1) Touch account to ensure cookies/session are applied

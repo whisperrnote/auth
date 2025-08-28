@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
+import { useFinalizeAuth } from "@/lib/finalizeAuth";
 import { hasMasterpass, setMasterpassFlag, logoutAppwrite, AppwriteService } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
@@ -26,6 +27,7 @@ export default function MasterPassPage() {
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   
   const { user, refresh } = useAppwrite();
+  const { finalizeAuth } = useFinalizeAuth();
   const router = useRouter();
 
   // Check masterpass and passkey status from database
@@ -78,7 +80,6 @@ export default function MasterPassPage() {
             if (user) {
               await setMasterpassFlag(user.$id, user.email);
             }
-            const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
             await finalizeAuth({ redirect: true, fallback: "/login" });
           } else {
             toast.error("Failed to set master password");
@@ -88,7 +89,6 @@ export default function MasterPassPage() {
         const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', false);
         
         if (success) {
-          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
           await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error("Incorrect master password. Please try again.");
@@ -117,7 +117,6 @@ export default function MasterPassPage() {
     setPasskeyLoading(true);
     const success = await unlockWithPasskey(user.$id);
     if (success) {
-      const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
       await finalizeAuth({ redirect: true, fallback: "/login" });
     }
     setPasskeyLoading(false);

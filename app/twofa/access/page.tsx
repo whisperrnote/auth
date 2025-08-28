@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useFinalizeAuth } from "@/lib/finalizeAuth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -82,6 +83,8 @@ export default function TwofaAccessPage() {
     setLoading(false);
   };
 
+  const { finalizeAuth } = useFinalizeAuth();
+
   const handleCompleteChallenge = async () => {
     if (!challengeId || !code) return;
     
@@ -89,7 +92,6 @@ export default function TwofaAccessPage() {
     try {
       await completeMfaChallenge(challengeId, code);
       // Centralized post-auth finalization
-      const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
       await finalizeAuth({ redirect: true, fallback: "/login" });
     } catch (e: any) {
       toast.error(e.message || "Invalid code");

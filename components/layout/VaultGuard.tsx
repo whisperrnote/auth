@@ -14,22 +14,29 @@ import { useAppwrite } from "@/app/appwrite-provider";
  *   </VaultGuard>
  */
 export default function VaultGuard({ children }: { children: React.ReactNode }) {
-  const { isVaultUnlocked, needsMasterPassword } = useAppwrite();
+  const { isVaultUnlocked, needsMasterPassword, isAuthReady } = useAppwrite();
   const router = useRouter();
   const pathname = usePathname();
+  const verbose = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_LOGGING_VERBOSE === 'true' : false;
 
   useEffect(() => {
-    // If vault is locked or needs master password, redirect to /masterpass
-    if (needsMasterPassword || !isVaultUnlocked()) {
-      // Store current path for return after unlock
+    if (!isAuthReady) return; // wait for hydration/auth
+
+    const locked = needsMasterPassword || !isVaultUnlocked();
+    if (verbose) console.log('[vault-guard] ready, locked?', locked, 'path', pathname);
+
+    if (locked) {
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("masterpass_return_to", pathname);
+        try { sessionStorage.setItem("masterpass_return_to", pathname); } catch {}
       }
       router.replace("/masterpass");
     }
-  }, [needsMasterPassword, isVaultUnlocked, pathname, router]);
+  }, [isAuthReady, needsMasterPassword, isVaultUnlocked, pathname, router, verbose]);
 
-  // Only render children if vault is unlocked
+  if (!isAuthReady) {
+    return null; // or a skeleton
+  }
+
   if (needsMasterPassword || !isVaultUnlocked()) {
     return null;
   }

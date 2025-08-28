@@ -203,7 +203,14 @@ export class MasterPassCrypto {
         encrypted
       );
       const decoder = new TextDecoder();
-      return JSON.parse(decoder.decode(decrypted));
+      // Stored check is JSON.stringify(userId), so decode -> string and compare raw
+      const decoded = decoder.decode(decrypted);
+      try {
+        return JSON.parse(decoded);
+      } catch {
+        // If value was stored as plain string without JSON quotes (legacy), return raw
+        return decoded;
+      }
     } catch {
       throw new Error('Invalid master password');
     }

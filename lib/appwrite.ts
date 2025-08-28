@@ -950,6 +950,13 @@ export async function createTotpSecret(data: Omit<TotpSecrets, '$id' | '$created
 }
 
 /**
+ * List TOTP secrets for a user (decrypted).
+ */
+export async function listTotpSecrets(userId: string, queries: string[] = []) {
+  return await AppwriteService.listTOTPSecrets(userId, queries);
+}
+
+/**
  * Delete a TOTP secret by document ID.
  */
 export async function deleteTotpSecret(id: string) {
