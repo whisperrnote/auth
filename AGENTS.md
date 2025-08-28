@@ -30,3 +30,6 @@ don't ever build the project only fix bugs I'll build myself
 2. never edit appwrite.json
 3. never edit types/appwrite.d.ts
 4. security is of maximum and utmost priority in this password/auth application
+5. in order to save tokens, try as much as possible to tackle a particular problem completely in one conversation response. use discretion where necessary to avoid unnecessary questions and confirmations that consume conversation time and tokens.
+6. when a question is asked that involves code changes, you are to implement those code changes. it is out of conduct to direct the user what to do, as this wastes tokens in further persuasions. do what you're to do in one conversation reply.
+7. after each reply give a detailed analyis of the problems, solutions that worked or will work, or didnt work, thoughts, creative ideas, etc with code snippets if necessary.

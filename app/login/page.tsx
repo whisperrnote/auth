@@ -31,7 +31,7 @@ export default function LoginPage() {
     }
     // eslint-disable-next-line
   }, []);
-  const { theme, setTheme } = useTheme();
+  useTheme();
   const {
     loginWithEmailPassword,
     sendEmailOtp,
@@ -80,7 +80,16 @@ export default function LoginPage() {
 
   // Redirect if already logged in and needs master password
   useEffect(() => {
-    redirectIfAuthenticated(user, isVaultUnlocked, router);
+    // Avoid redirecting away from MFA flow: only redirect when fully authenticated
+    (async () => {
+      if (!user) return;
+      try {
+        const mfa = await getMfaAuthenticationStatus();
+        if (mfa.isFullyAuthenticated) {
+          redirectIfAuthenticated(user, isVaultUnlocked, router);
+        }
+      } catch {}
+    })();
   }, [user, router, isVaultUnlocked]);
 
   // Handlers

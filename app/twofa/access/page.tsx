@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { listMfaFactors, createMfaChallenge, completeMfaChallenge, getMfaAuthenticationStatus } from "@/lib/appwrite";
-import { Navbar } from "@/components/layout/Navbar";
+
 import toast from "react-hot-toast";
 
 export default function TwofaAccessPage() {
@@ -22,27 +22,30 @@ export default function TwofaAccessPage() {
     loadFactors();
   }, []);
 
-  // Check if user needs MFA - redirect if fully authenticated or not logged in
+  // Make this route unguarded: allow partial sessions to stay
   useEffect(() => {
     const checkMfaStatus = async () => {
       try {
         const mfaStatus = await getMfaAuthenticationStatus();
-        
         if (mfaStatus.isFullyAuthenticated) {
-          // User is fully authenticated, redirect to masterpass
           router.replace("/masterpass");
-        } else if (!mfaStatus.needsMfa && mfaStatus.error) {
-          // User is not logged in at all, redirect to login
-          router.replace("/login");
+          return;
         }
-        // If needsMfa is true, stay on this page (correct state)
-      } catch (error) {
-        console.error("Error checking MFA status:", error);
-        // On error, redirect to login to be safe
+        // If needsMfa, do nothing; stay on page
+        if (mfaStatus.needsMfa) return;
+        // If neither fully auth nor needs MFA, treat as logged-out and send to login
+        router.replace("/login");
+      } catch (error: any) {
+        // If Appwrite signals partial auth explicitly, stay here
+        const msg = error?.message || "";
+        const type = error?.type || "";
+        if (type === "user_more_factors_required" || msg.includes("More factors are required")) {
+          return;
+        }
+        // Otherwise, redirect to login
         router.replace("/login");
       }
     };
-    
     checkMfaStatus();
   }, [router]);
 
@@ -99,7 +102,7 @@ export default function TwofaAccessPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
