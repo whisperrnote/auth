@@ -43,7 +43,7 @@ export default function PasswordGenerator() {
     setPassword(newPassword);
     setCopied(false);
     // Add to history
-    setHistory((prev: any[]) => {
+    setHistory((prev: { value: string; ts: number }[]) => {
       const next = [{ value: newPassword, ts: Date.now() }, ...prev];
       return next.slice(0, 20);
     });
@@ -175,7 +175,7 @@ export default function PasswordGenerator() {
               <div className="text-xs text-muted-foreground">No history yet.</div>
             ) : (
               <ul className="space-y-1">
-                {history.map((item: any, i: number) => (
+                {history.map((item: { value: string; ts: number }, i: number) => (
                   <li key={i} className="flex items-center gap-2 text-xs font-mono bg-muted/30 rounded px-2 py-1">
                     <span className="truncate flex-1" title={item.value}>{item.value}</span>
                     <span className="text-[10px] text-muted-foreground">{new Date(item.ts).toLocaleTimeString()}</span>

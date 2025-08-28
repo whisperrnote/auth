@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID, Query, AuthenticationFactor, Avatars } from "appwrite";
+import { Client, Account, Databases, ID, Query, AuthenticationFactor, Avatars, Models } from "appwrite";
 import type { Credentials, TotpSecrets, Folders, SecurityLogs, User } from "@/types/appwrite.d";
 import { AuthenticatorType } from "appwrite";
 import { updateMasterpassCheckValue, masterPassCrypto } from "@/app/(protected)/masterpass/logic";
@@ -196,7 +196,7 @@ export class AppwriteService {
   static async setPasskey(
     userId: string,
     passkeyBlob: string,
-    newCredential: { credentialID: string; publicKey: string; counter: number; transports: any }
+    newCredential: { credentialID: string; publicKey: string; counter: number; transports: string[] }
   ): Promise<void> {
     const userDoc = await this.getUserDoc(userId);
     if (userDoc && userDoc.$id) {
@@ -508,7 +508,7 @@ export class AppwriteService {
   static async logSecurityEvent(
     userId: string,
     eventType: string,
-    details?: Record<string, any>,
+    details?: Record<string, unknown>,
     ipAddress?: string,
     userAgent?: string
   ): Promise<void> {
@@ -523,9 +523,12 @@ export class AppwriteService {
   }
 
   // --- Encryption/Decryption Helpers ---
-  private static async encryptDocumentFields(data: any, collectionType: keyof typeof COLLECTION_SCHEMAS): Promise<any> {
+  private static async encryptDocumentFields(
+    data: unknown,
+    collectionType: keyof typeof COLLECTION_SCHEMAS
+  ): Promise<Record<string, unknown>> {
     const schema = COLLECTION_SCHEMAS[collectionType];
-    const result = { ...data };
+    const result: Record<string, unknown> = { ...(data as Record<string, unknown>) };
 
     try {
       const { encryptField, masterPassCrypto } = await import('../app/(protected)/masterpass/logic');
@@ -556,9 +559,12 @@ export class AppwriteService {
     return result;
   }
 
-  private static async decryptDocumentFields(doc: any, collectionType: keyof typeof COLLECTION_SCHEMAS): Promise<any> {
+  private static async decryptDocumentFields(
+    doc: unknown,
+    collectionType: keyof typeof COLLECTION_SCHEMAS
+  ): Promise<any> {
     const schema = COLLECTION_SCHEMAS[collectionType];
-    const result = { ...doc };
+    const result: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
 
     try {
       const { decryptField, masterPassCrypto } = await import('../app/(protected)/masterpass/logic');
@@ -576,7 +582,7 @@ export class AppwriteService {
         if (this.shouldDecryptField(fieldValue)) {
           try {
             console.log(`Decrypting field: ${field} for collection: ${collectionType}`);
-            result[field] = await decryptField(fieldValue);
+            result[field] = await decryptField(fieldValue as string);
           } catch (error) {
             console.error(`Failed to decrypt field ${field}:`, error);
             result[field] = '[DECRYPTION_FAILED]';
@@ -596,7 +602,7 @@ export class AppwriteService {
   }
 
   // Helper method to determine if a field should be encrypted
-  private static shouldEncryptField(value: any): boolean {
+  private static shouldEncryptField(value: unknown): boolean {
     // Only encrypt if value is a non-empty string
     return (
       value !== null &&
@@ -607,7 +613,7 @@ export class AppwriteService {
   }
 
   // Helper method to determine if a field should be decrypted
-  private static shouldDecryptField(value: any): boolean {
+  private static shouldDecryptField(value: unknown): boolean {
     // Only decrypt non-null, non-empty string values
     return (
       value !== null &&
@@ -687,7 +693,7 @@ export async function listMfaFactors(): Promise<{ totp: boolean; email: boolean;
  * Enable/disable MFA enforcement on the account
  * Note: User must have at least 2 factors before MFA is enforced
  */
-export async function updateMfaStatus(enabled: boolean): Promise<any> {
+export async function updateMfaStatus(enabled: boolean): Promise<Models.Preferences> {
   return await appwriteAccount.updateMFA(enabled);
 }
 
@@ -757,7 +763,7 @@ export async function createMfaChallenge(factor: "totp" | "email" | "phone" | "r
 /**
  * Complete MFA challenge with code
  */
-export async function completeMfaChallenge(challengeId: string, code: string): Promise<any> {
+export async function completeMfaChallenge(challengeId: string, code: string): Promise<Models.Session> {
   return await appwriteAccount.updateMfaChallenge(challengeId, code);
 }
 

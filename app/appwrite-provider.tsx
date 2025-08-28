@@ -18,7 +18,7 @@ interface AppwriteUser {
   $id: string;
   email: string;
   name?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface AppwriteContextType {
@@ -46,7 +46,12 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [needsMasterPassword, setNeedsMasterPassword] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const verbose = typeof window !== 'undefined' && (window as any).NEXT_PUBLIC_LOGGING_VERBOSE ? String((window as any).NEXT_PUBLIC_LOGGING_VERBOSE).toLowerCase() === 'true' : (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_LOGGING_VERBOSE === 'true' : false);
+  const verbose =
+    typeof window !== "undefined" && (window as unknown as Record<string, unknown>).NEXT_PUBLIC_LOGGING_VERBOSE
+      ? String((window as unknown as Record<string, unknown>).NEXT_PUBLIC_LOGGING_VERBOSE).toLowerCase() === "true"
+      : typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_LOGGING_VERBOSE === "true"
+      : false;
 
   // Fetch current user and check master password status
   const fetchUser = async () => {
@@ -145,7 +150,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     await appwriteAccount.createRecovery(email, getRedirectUrl());
   };
 
-  const resetPassword = async (userId: string, secret: string, password: string) => {
+  const resetPassword = async (userId: string, secret: string, password: string, _passwordAgain: string) => {
     await appwriteAccount.updateRecovery(userId, secret, password);
     await fetchUser();
   };
