@@ -1304,3 +1304,110 @@ export async function getUnifiedMfaStatus(userId?: string): Promise<{
     };
   }
 }
+
+/**
+ * Get MFA status directly from Appwrite account (native method)
+ */
+export async function getAppwriteMfaStatus(): Promise<{
+  isEnforced: boolean;
+  factors: { totp: boolean; email: boolean; phone: boolean };
+}> {
+  try {
+    // Get factors available for MFA
+    const factors = await listMfaFactors();
+    
+    // Get current user account info
+    const account = await appwriteAccount.get();
+    
+    // Check if MFA is enforced by looking at account.mfa property
+    // This is the most reliable way to check actual MFA enforcement
+    const isEnforced = account.mfa || false;
+    
+    return {
+      isEnforced,
+      factors
+    };
+  } catch (error: any) {
+    console.error("Failed to get Appwrite MFA status:", error);
+    return {
+      isEnforced: false,
+      factors: { totp: false, email: false, phone: false }
+    };
+  }
+}
+
+/**
+ * Sync and validate MFA status between Appwrite and database
+ * This function ensures the database user.twofa field matches Appwrite's actual MFA status
+ */
+export async function syncAndValidateMfaStatus(userId: string): Promise<{
+  wasOutOfSync: boolean;
+  currentStatus: boolean;
+  error?: string;
+}> {
+  try {
+    // Get MFA status from Appwrite (source of truth)
+    const appwriteStatus = await getAppwriteMfaStatus();
+    
+    // Get current database status
+    let databaseStatus = false;
+    let userDocId: string | null = null;
+    
+    try {
+      const userDocResponse = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        [Query.equal("userId", userId)]
+      );
+      
+      if (userDocResponse.documents.length > 0) {
+        const userDoc = userDocResponse.documents[0];
+        databaseStatus = userDoc.twofa === true;
+        userDocId = userDoc.$id;
+      }
+    } catch (dbError) {
+      console.warn("Could not read user document for MFA sync:", dbError);
+      return {
+        wasOutOfSync: false,
+        currentStatus: appwriteStatus.isEnforced,
+        error: "Could not access database"
+      };
+    }
+    
+    // Check if they're out of sync
+    const wasOutOfSync = databaseStatus !== appwriteStatus.isEnforced;
+    
+    // If out of sync, update database to match Appwrite
+    if (wasOutOfSync && userDocId) {
+      try {
+        await appwriteDatabases.updateDocument(
+          APPWRITE_DATABASE_ID,
+          APPWRITE_COLLECTION_USER_ID,
+          userDocId,
+          { twofa: appwriteStatus.isEnforced }
+        );
+        console.log(`MFA status synced: database updated from ${databaseStatus} to ${appwriteStatus.isEnforced}`);
+      } catch (updateError) {
+        console.error("Failed to sync MFA status to database:", updateError);
+        return {
+          wasOutOfSync,
+          currentStatus: appwriteStatus.isEnforced,
+          error: "Could not update database"
+        };
+      }
+    }
+    
+    return {
+      wasOutOfSync,
+      currentStatus: appwriteStatus.isEnforced
+    };
+  } catch (error: any) {
+    console.error("Failed to sync MFA status:", error);
+    return {
+      wasOutOfSync: false,
+      currentStatus: false,
+      error: error.message || "Sync failed"
+    };
+  }
+}
+

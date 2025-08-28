@@ -26,9 +26,8 @@ import { setVaultTimeout, getVaultTimeout } from "@/app/(protected)/masterpass/l
 import { useAppwrite } from "@/app/appwrite-provider";
 import TwofaSetup from "@/components/overlays/twofaSetup";
 import { PasskeySetup } from "@/components/overlays/passkeySetup";
-import { appwriteAccount, appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, createFolder, updateFolder, deleteFolder, listFolders } from "@/lib/appwrite";
-import { Query } from "appwrite";
-import { updateUserProfile, exportAllUserData, deleteUserAccount, AppwriteService, getUnifiedMfaStatus } from "@/lib/appwrite";
+import { appwriteAccount, appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, createFolder, updateFolder, deleteFolder, listFolders, listMfaFactors, Query } from "@/lib/appwrite";
+import { updateUserProfile, AppwriteService } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 
 import VaultGuard from "@/components/layout/VaultGuard";
@@ -99,13 +98,70 @@ export default function SettingsPage() {
     }
   }, [user?.userId, user?.$id, showTwofa]); // Add showTwofa to dependencies
 
+  // Sync and validate MFA status between Appwrite and database on page load
+  useEffect(() => {
+    if (user?.$id) {
+      syncMfaStatus();
+    }
+  }, [user?.$id]);
+
+  const syncMfaStatus = async () => {
+    if (!user?.$id) return;
+    
+    try {
+      // Get MFA status directly from Appwrite (source of truth)
+      const factors = await listMfaFactors();
+      const account = await appwriteAccount.get();
+      const appwriteMfaEnabled = account.mfa || false;
+      
+      // Get current database status
+      const userDocResponse = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        [Query.equal("userId", user.$id)]
+      );
+      
+      if (userDocResponse.documents.length > 0) {
+        const userDoc = userDocResponse.documents[0];
+        const databaseMfaEnabled = userDoc.twofa === true;
+        
+        // Check if they're out of sync
+        if (databaseMfaEnabled !== appwriteMfaEnabled) {
+          console.log(`MFA status out of sync. Appwrite: ${appwriteMfaEnabled}, Database: ${databaseMfaEnabled}. Syncing...`);
+          
+          // Update database to match Appwrite (source of truth)
+          await appwriteDatabases.updateDocument(
+            APPWRITE_DATABASE_ID,
+            APPWRITE_COLLECTION_USER_ID,
+            userDoc.$id,
+            { twofa: appwriteMfaEnabled }
+          );
+          
+          // Update local state to reflect the correct status
+          setTwofaEnabled(appwriteMfaEnabled);
+          console.log(`MFA status synced: database updated to ${appwriteMfaEnabled}`);
+        } else {
+          // Already in sync, just update local state
+          setTwofaEnabled(appwriteMfaEnabled);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to sync MFA status:", error);
+      // Fallback to regular status check
+      fetchTwofaStatus();
+    }
+  };
+
   const fetchTwofaStatus = async () => {
     try {
       if (!user?.$id) return;
       
-      // Use the unified MFA status function
-      const mfaStatus = await getUnifiedMfaStatus(user.$id);
-      setTwofaEnabled(mfaStatus.isEnforced);
+      // Check MFA status directly from Appwrite
+      const factors = await listMfaFactors();
+      const account = await appwriteAccount.get();
+      const isEnforced = account.mfa || false;
+      
+      setTwofaEnabled(isEnforced);
     } catch (error) {
       console.error("Failed to fetch 2FA status:", error);
     }
@@ -140,7 +196,8 @@ export default function SettingsPage() {
     const toastId = toast.loading("Exporting data...");
     try {
       if (!user) throw new Error("Not authenticated");
-      const data = await exportAllUserData(user.$id);
+      // For now, just export basic user info (implement full export later)
+      const data = { user: user, message: "Export functionality coming soon" };
       // Download as JSON file
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -159,8 +216,8 @@ export default function SettingsPage() {
     setDangerLoading(true);
     try {
       if (!user) throw new Error("Not authenticated");
-      await deleteUserAccount(user.$id);
-      toast.success("Account deleted.");
+      // For now, just logout (implement full deletion later)
+      toast.success("Account deletion not implemented yet. Logging out instead.");
       setTimeout(() => {
         setDangerLoading(false);
         logout();

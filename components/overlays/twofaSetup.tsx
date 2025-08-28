@@ -11,7 +11,11 @@ import {
   removeTotpFactor,
   listMfaFactors,
   addEmailFactor,
-  getUnifiedMfaStatus
+  appwriteDatabases,
+  Query,
+  APPWRITE_DATABASE_ID,
+  APPWRITE_COLLECTION_USER_ID,
+  appwriteAccount
 } from "@/lib/appwrite";
 
 export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
@@ -52,16 +56,18 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
 
   const loadCurrentStatus = async () => {
     try {
-      // Use the unified MFA status function
-      const mfaStatus = await getUnifiedMfaStatus(user.$id);
+      // Get MFA status directly from Appwrite
+      const factors = await listMfaFactors();
+      const account = await appwriteAccount.get();
+      const isEnforced = account.mfa || false;
       
-      console.log("MFA Status Debug:", mfaStatus); // Debug log
+      console.log("MFA Status Debug:", { factors, isEnforced }); // Debug log
       
-      setCurrentFactors(mfaStatus.factors);
-      setIsCurrentlyEnabled(mfaStatus.isEnforced);
+      setCurrentFactors(factors);
+      setIsCurrentlyEnabled(isEnforced);
       
       // If MFA is already enabled, show management options
-      if (mfaStatus.isEnforced && (mfaStatus.factors.totp || mfaStatus.factors.email)) {
+      if (isEnforced && (factors.totp || factors.email)) {
         setStep("init");
       }
     } catch (error) {
@@ -171,8 +177,31 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       // Enable MFA enforcement
       await updateMfaStatus(true);
       
-      // The unified status function will automatically sync the database
-      // No need to manually update user document
+      // Manually update the user document to reflect MFA status
+      // This ensures the database is immediately in sync
+      if (user?.$id) {
+        try {
+          // Get current user doc and update it
+          const userDocResponse = await appwriteDatabases.listDocuments(
+            APPWRITE_DATABASE_ID,
+            APPWRITE_COLLECTION_USER_ID,
+            [Query.equal("userId", user.$id)]
+          );
+          
+          if (userDocResponse.documents.length > 0) {
+            const userDoc = userDocResponse.documents[0];
+            await appwriteDatabases.updateDocument(
+              APPWRITE_DATABASE_ID,
+              APPWRITE_COLLECTION_USER_ID, 
+              userDoc.$id,
+              { twofa: true }
+            );
+          }
+        } catch (dbError) {
+          console.warn("Failed to update user document:", dbError);
+          // Continue anyway - MFA is still enabled in Appwrite
+        }
+      }
       
       onStatusChange(true);
       setStep("done");
@@ -199,8 +228,28 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
         await removeTotpFactor();
       }
       
-      // The unified status function will automatically sync the database
-      // No need to manually update user document
+      // Update the user document to reflect disabled MFA status
+      if (user?.$id) {
+        try {
+          const userDocResponse = await appwriteDatabases.listDocuments(
+            APPWRITE_DATABASE_ID,
+            APPWRITE_COLLECTION_USER_ID,
+            [Query.equal("userId", user.$id)]
+          );
+          
+          if (userDocResponse.documents.length > 0) {
+            const userDoc = userDocResponse.documents[0];
+            await appwriteDatabases.updateDocument(
+              APPWRITE_DATABASE_ID,
+              APPWRITE_COLLECTION_USER_ID, 
+              userDoc.$id,
+              { twofa: false }
+            );
+          }
+        } catch (dbError) {
+          console.warn("Failed to update user document:", dbError);
+        }
+      }
       
       onStatusChange(false);
       setStep("init");
