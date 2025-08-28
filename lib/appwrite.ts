@@ -110,7 +110,7 @@ export class AppwriteService {
       ID.unique(),
       encryptedData
     );
-    return await this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials;
+    return await this.decryptDocumentFields(doc, 'credentials') as Credentials;
   }
 
   static async createTOTPSecret(data: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>): Promise<TotpSecrets> {
@@ -243,7 +243,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_CREDENTIALS_ID,
       id
     );
-    return await this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials;
+    return await this.decryptDocumentFields(doc, 'credentials') as Credentials;
   }
 
   static async getTOTPSecret(id: string): Promise<TotpSecrets> {
@@ -302,7 +302,7 @@ export class AppwriteService {
     );
 
     const decryptedDocuments = await Promise.all(
-      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials') as Promise<Credentials>)
     );
 
     return {
@@ -332,7 +332,7 @@ export class AppwriteService {
     );
 
     const decryptedDocuments = await Promise.all(
-      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials') as Promise<Credentials>)
     );
 
     return {
@@ -377,7 +377,7 @@ export class AppwriteService {
       [Query.equal('userId', userId), Query.orderDesc('$updatedAt'), Query.limit(limit)]
     );
     return await Promise.all(
-      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials') as Promise<Credentials>)
     );
   }
 
@@ -388,7 +388,7 @@ export class AppwriteService {
       [Query.equal('userId', userId), ...queries]
     );
     return await Promise.all(
-      response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'totpSecrets'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'totpSecrets') as Promise<TotpSecrets>)
     );
   }
 
@@ -419,7 +419,7 @@ export class AppwriteService {
       id,
       encryptedData
     );
-    return await this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials;
+    return await this.decryptDocumentFields(doc, 'credentials') as Credentials;
   }
 
   static async updateTOTPSecret(id: string, data: Partial<TotpSecrets>): Promise<TotpSecrets> {

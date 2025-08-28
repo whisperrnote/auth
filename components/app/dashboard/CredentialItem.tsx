@@ -70,11 +70,11 @@ function MobileCopyMenu({ credential, onCopy }: { credential: Credentials; onCop
 
   return (
     <div className="relative">
-      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={toggle} title="Copy">
+      <Button ref={btnRef} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={toggle} title="Copy">
         <Copy className="h-6 w-6 text-[rgb(141,103,72)]" />
       </Button>
       {open && typeof document !== "undefined" && createPortal(
-        <div ref={menuRef as any} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1 w-44" style={{ top: menuStyle?.top ?? 0, left: menuStyle?.left ?? 0 }}>
+        <div ref={menuRef} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1 w-44" style={{ top: menuStyle?.top ?? 0, left: menuStyle?.left ?? 0 }}>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onCopy(credential.username); setOpen(false); }}>
             Copy username
           </button>
@@ -150,7 +150,7 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
 
   return (
     <div className="relative">
-      <Button ref={btnRef as any} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={toggle} title="More">
+      <Button ref={btnRef} variant="ghost" size="sm" className="rounded-full h-10 w-10" onClick={toggle} title="More">
         <svg className="h-6 w-6 text-[rgb(141,103,72)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="5" r="1.5" />
           <circle cx="12" cy="12" r="1.5" />
@@ -158,7 +158,7 @@ function MobileMoreMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: ()
         </svg>
       </Button>
       {open && typeof document !== "undefined" && createPortal(
-        <div ref={menuRef as any} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1 w-36" style={{ top: menuStyle?.top ?? 0, left: menuStyle?.left ?? 0 }}>
+        <div ref={menuRef} className="fixed z-[99999] bg-background border rounded-md shadow-md py-1 w-36" style={{ top: menuStyle?.top ?? 0, left: menuStyle?.left ?? 0 }}>
           <button className="w-full text-left px-3 py-2 text-sm hover:bg-accent" onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}>
             Edit
           </button>
