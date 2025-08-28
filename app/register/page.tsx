@@ -130,11 +130,24 @@ export default function RegisterPage() {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
       } catch (err: any) {
-        // If error is "user already exists", show a friendly message
-        if (err?.code === 409) {
-          toast.error("An account with this email already exists.");
+        console.log("Registration error caught:", { err, type: err.type, code: err.code, message: err.message });
+        
+        // Check if this is an MFA requirement error (can happen during the login step)
+        if (
+          err.type === "user_more_factors_required" ||
+          err.code === 401 && err.message?.includes("more factors") ||
+          err.message?.includes("More factors are required") ||
+          err.message?.includes("user_more_factors_required")
+        ) {
+          console.log("MFA required during registration login, redirecting to /twofa/access");
+          router.replace("/twofa/access");
         } else {
-          toast.error(err?.message || "Registration failed");
+          // If error is "user already exists", show a friendly message
+          if (err?.code === 409) {
+            toast.error("An account with this email already exists.");
+          } else {
+            toast.error(err?.message || "Registration failed");
+          }
         }
       }
     } else if (mode === "otp") {
@@ -151,7 +164,20 @@ export default function RegisterPage() {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
       } catch (err: any) {
-        toast.error(err?.message || "Invalid OTP.");
+        console.log("Registration OTP error caught:", { err, type: err.type, code: err.code, message: err.message });
+        
+        // Check if this is an MFA requirement error
+        if (
+          err.type === "user_more_factors_required" ||
+          err.code === 401 && err.message?.includes("more factors") ||
+          err.message?.includes("More factors are required") ||
+          err.message?.includes("user_more_factors_required")
+        ) {
+          console.log("MFA required during registration OTP, redirecting to /twofa/access");
+          router.replace("/twofa/access");
+        } else {
+          toast.error(err?.message || "Invalid OTP.");
+        }
       }
     }
     // Magic handled separately

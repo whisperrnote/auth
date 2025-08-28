@@ -90,7 +90,7 @@ export default function LoginPage() {
       try {
         await loginWithEmailPassword(formData.email, formData.password);
 
-        // Check MFA status using the session user ID
+        // If login succeeds, check MFA status
         const mfaStatus = await getMfaAuthenticationStatus();
         
         if (mfaStatus.needsMfa) {
@@ -104,7 +104,21 @@ export default function LoginPage() {
           toast.error(mfaStatus.error || "Authentication verification failed");
         }
       } catch (err: any) {
-        toast.error(err?.message || "Login failed");
+        console.log("Login error caught:", { err, type: err.type, code: err.code, message: err.message });
+        
+        // Check if this is an MFA requirement error
+        if (
+          err.type === "user_more_factors_required" ||
+          err.code === 401 && err.message?.includes("more factors") ||
+          err.message?.includes("More factors are required") ||
+          err.message?.includes("user_more_factors_required")
+        ) {
+          console.log("MFA required during login, redirecting to /twofa/access");
+          // User is partially authenticated but needs MFA
+          router.replace("/twofa/access");
+        } else {
+          toast.error(err?.message || "Login failed");
+        }
       }
     } else if (mode === "otp") {
       try {
@@ -121,7 +135,20 @@ export default function LoginPage() {
           toast.error(mfaStatus.error || "Authentication verification failed");
         }
       } catch (err: any) {
-        toast.error(err?.message || "Invalid OTP.");
+        console.log("OTP login error caught:", { err, type: err.type, code: err.code, message: err.message });
+        
+        // Check if this is an MFA requirement error
+        if (
+          err.type === "user_more_factors_required" ||
+          err.code === 401 && err.message?.includes("more factors") ||
+          err.message?.includes("More factors are required") ||
+          err.message?.includes("user_more_factors_required")
+        ) {
+          console.log("MFA required during OTP login, redirecting to /twofa/access");
+          router.replace("/twofa/access");
+        } else {
+          toast.error(err?.message || "Invalid OTP.");
+        }
       }
     }
     // Magic handled separately

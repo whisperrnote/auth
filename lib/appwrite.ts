@@ -789,7 +789,8 @@ export async function getMfaAuthenticationStatus(): Promise<{
 }> {
   try {
     // Try to get account info
-    await appwriteAccount.get();
+    const account = await appwriteAccount.get();
+    console.log("getMfaAuthenticationStatus: Account retrieved successfully", account);
     
     // If successful, user is fully authenticated
     return {
@@ -797,7 +798,21 @@ export async function getMfaAuthenticationStatus(): Promise<{
       isFullyAuthenticated: true
     };
   } catch (error: any) {
-    if (error.type === "user_more_factors_required") {
+    console.log("getMfaAuthenticationStatus: Error caught", {
+      error,
+      type: error.type,
+      code: error.code,
+      message: error.message
+    });
+    
+    // Check for MFA requirement using multiple possible error indicators
+    if (
+      error.type === "user_more_factors_required" ||
+      error.code === 401 && error.message?.includes("more factors") ||
+      error.message?.includes("More factors are required") ||
+      error.message?.includes("user_more_factors_required")
+    ) {
+      console.log("getMfaAuthenticationStatus: MFA required detected");
       // User is partially authenticated but needs MFA
       return {
         needsMfa: true,
@@ -805,6 +820,7 @@ export async function getMfaAuthenticationStatus(): Promise<{
       };
     }
     
+    console.log("getMfaAuthenticationStatus: Not authenticated");
     // For other errors (network, invalid session, etc.)
     return {
       needsMfa: false,

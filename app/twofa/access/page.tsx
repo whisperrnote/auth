@@ -5,15 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { listMfaFactors, createMfaChallenge, completeMfaChallenge } from "@/lib/appwrite";
-import { useAppwrite } from "@/app/appwrite-provider";
-import { hasMasterpass, redirectIfAuthenticated } from "@/lib/appwrite";
+import { listMfaFactors, createMfaChallenge, completeMfaChallenge, getMfaAuthenticationStatus } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
 import toast from "react-hot-toast";
 
 export default function TwofaAccessPage() {
   const router = useRouter();
-  const { user, isVaultUnlocked } = useAppwrite();
   const [factors, setFactors] = useState<{ totp: boolean; email: boolean; phone: boolean } | null>(null);
   const [selectedFactor, setSelectedFactor] = useState<"totp" | "email" | "phone" | "recoverycode" | null>(null);
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -25,9 +22,29 @@ export default function TwofaAccessPage() {
     loadFactors();
   }, []);
 
+  // Check if user needs MFA - redirect if fully authenticated or not logged in
   useEffect(() => {
-    redirectIfAuthenticated(user, isVaultUnlocked, router);
-  }, [user, router, isVaultUnlocked]);
+    const checkMfaStatus = async () => {
+      try {
+        const mfaStatus = await getMfaAuthenticationStatus();
+        
+        if (mfaStatus.isFullyAuthenticated) {
+          // User is fully authenticated, redirect to masterpass
+          router.replace("/masterpass");
+        } else if (!mfaStatus.needsMfa && mfaStatus.error) {
+          // User is not logged in at all, redirect to login
+          router.replace("/login");
+        }
+        // If needsMfa is true, stay on this page (correct state)
+      } catch (error) {
+        console.error("Error checking MFA status:", error);
+        // On error, redirect to login to be safe
+        router.replace("/login");
+      }
+    };
+    
+    checkMfaStatus();
+  }, [router]);
 
   const loadFactors = async () => {
     try {

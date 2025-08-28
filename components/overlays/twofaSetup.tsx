@@ -37,6 +37,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
   const [isCurrentlyEnabled, setIsCurrentlyEnabled] = useState(false);
   const [secretCopied, setSecretCopied] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [disableOption, setDisableOption] = useState<"disable_only" | "remove_factors">("disable_only");
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -218,54 +219,97 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
     setLoading(false);
   };
 
-  // Disable 2FA completely
-  const handleDisable = async () => {
+  // Disable 2FA completely - with proper error handling
+  const executeDisable = async () => {
     setLoading(true);
     setError(null);
+    
+    const operations: Promise<any>[] = [];
+    const operationNames: string[] = [];
+    
     try {
-      // First disable MFA enforcement
-      await updateMfaStatus(false);
-      
-      // Remove TOTP factor if present
-      if (currentFactors?.totp) {
-        await removeTotpFactor();
-      }
-      
-      // Update the user document to reflect disabled MFA status
-      if (user?.$id) {
-        try {
-          const userDocResponse = await appwriteDatabases.listDocuments(
-            APPWRITE_DATABASE_ID,
-            APPWRITE_COLLECTION_USER_ID,
-            [Query.equal("userId", user.$id)]
-          );
-          
-          if (userDocResponse.documents.length > 0) {
-            const userDoc = userDocResponse.documents[0];
-            await appwriteDatabases.updateDocument(
-              APPWRITE_DATABASE_ID,
-              APPWRITE_COLLECTION_USER_ID, 
-              userDoc.$id,
-              { twofa: false }
-            );
-          }
-        } catch (dbError) {
-          console.warn("Failed to update user document:", dbError);
+      if (disableOption === "remove_factors") {
+        // Remove TOTP factor if present
+        if (currentFactors?.totp) {
+          operations.push(removeTotpFactor());
+          operationNames.push("Remove TOTP factor");
         }
       }
       
+      // Always disable MFA enforcement
+      operations.push(updateMfaStatus(false));
+      operationNames.push("Disable MFA enforcement");
+      
+      // Execute all operations
+      const results = await Promise.allSettled(operations);
+      
+      // Check results and provide detailed feedback
+      const failures: string[] = [];
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const error = result.reason;
+          console.error(`${operationNames[index]} failed:`, error);
+          
+          if (error?.message?.includes("recently completed challenge") || 
+              error?.message?.includes("challenge is necessary")) {
+            failures.push(`${operationNames[index]}: Requires recent verification (complete MFA challenge within 5 minutes)`);
+          } else {
+            failures.push(`${operationNames[index]}: ${error?.message || "Unknown error"}`);
+          }
+        }
+      });
+      
+      if (failures.length > 0) {
+        setError(`Some operations failed:\n${failures.join('\n')}\n\nTo complete, please:\n1. Sign out and sign back in with MFA\n2. Return to settings within 5 minutes\n3. Try disabling again`);
+        setLoading(false);
+        return;
+      }
+      
+      // Update database status
+      await updateUserMfaStatus(false);
+      
+      // Refresh factors to get current state
+      await loadCurrentStatus();
+      
       onStatusChange(false);
-      setStep("init");
-      setIsCurrentlyEnabled(false);
+      setShowDisableConfirm(false);
+      
     } catch (e: any) {
-      setError(e.message || "Failed to disable 2FA.");
+      console.error("Unexpected error during disable:", e);
+      setError(e.message || "Unexpected error occurred. Please try again.");
     }
+    
     setLoading(false);
   };
 
-  const confirmDisable = () => {
-    setShowDisableConfirm(false);
-    handleDisable();
+  // Helper to update user document
+  const updateUserMfaStatus = async (status: boolean) => {
+    if (!user?.$id) return;
+    
+    try {
+      const userDocResponse = await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        [Query.equal("userId", user.$id)]
+      );
+      
+      if (userDocResponse.documents.length > 0) {
+        const userDoc = userDocResponse.documents[0];
+        await appwriteDatabases.updateDocument(
+          APPWRITE_DATABASE_ID,
+          APPWRITE_COLLECTION_USER_ID, 
+          userDoc.$id,
+          { twofa: status }
+        );
+      }
+    } catch (dbError) {
+      console.warn("Failed to update user document:", dbError);
+    }
+  };
+
+  // Legacy disable function - simplified
+  const handleDisable = () => {
+    setShowDisableConfirm(true);
   };
 
   // Modified: Handle factor changes (enable/disable)
@@ -554,11 +598,55 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
         {/* Disable 2FA Confirmation Dialog */}
         {showDisableConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-background border rounded-lg p-6 max-w-sm w-full">
-              <h3 className="text-lg font-semibold text-foreground mb-3">Disable Two-Factor Authentication?</h3>
+            <div className="bg-background border rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold text-foreground mb-3">Disable Two-Factor Authentication</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Are you sure you want to disable two-factor authentication? This will make your account less secure.
+                Choose how you want to disable MFA:
               </p>
+              
+              <div className="space-y-3 mb-4">
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50">
+                  <input
+                    type="radio"
+                    name="disableOption"
+                    value="disable_only"
+                    checked={disableOption === "disable_only"}
+                    onChange={(e) => setDisableOption(e.target.value as "disable_only")}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="font-medium text-sm">Disable MFA (Recommended)</div>
+                    <div className="text-xs text-muted-foreground">
+                      Turn off MFA requirement but keep factors for future use
+                    </div>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50">
+                  <input
+                    type="radio"
+                    name="disableOption"
+                    value="remove_factors"
+                    checked={disableOption === "remove_factors"}
+                    onChange={(e) => setDisableOption(e.target.value as "remove_factors")}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="font-medium text-sm">Remove All Factors</div>
+                    <div className="text-xs text-muted-foreground">
+                      Completely remove authenticators and disable MFA
+                    </div>
+                  </div>
+                </label>
+              </div>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-yellow-800">
+                  <strong>Note:</strong> If you recently completed MFA verification, this will proceed immediately. 
+                  Otherwise, you may need to sign out and sign back in with MFA first.
+                </p>
+              </div>
+              
               <div className="flex gap-2 justify-end">
                 <Button 
                   variant="ghost" 
@@ -569,10 +657,10 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
                 </Button>
                 <Button 
                   variant="destructive" 
-                  onClick={confirmDisable}
+                  onClick={executeDisable}
                   disabled={loading}
                 >
-                  {loading ? "Disabling..." : "Disable 2FA"}
+                  {loading ? "Processing..." : "Disable MFA"}
                 </Button>
               </div>
             </div>
