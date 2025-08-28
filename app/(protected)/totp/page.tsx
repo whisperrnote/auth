@@ -59,10 +59,15 @@ export default function TOTPPage() {
   };
 
 
-  const generateTOTP = (secret: string, period: number = 30): string => {
+  const generateTOTP = (secret: string, period: number = 30, digits: number = 6, algorithm: string = "SHA1"): string => {
     try {
-      // otplib expects the secret to be a string, period is optional
-      return authenticator.generate(secret);
+      // Normalize secret per RFC (remove spaces) and configure options
+      const normalized = (secret || "").replace(/\s+/g, "");
+      authenticator.options = {
+        ...authenticator.options,
+        step: period || 30,
+      } as any;
+      return authenticator.generate(normalized);
     } catch {
       return "------";
     }
