@@ -67,12 +67,13 @@ export default function SettingsPage() {
 
   // Folder Management State
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const [editingFolder, setEditingFolder] = useState<any | null>(null);
+  type FolderItem = { $id: string; name: string };
+  const [editingFolder, setEditingFolder] = useState<FolderItem | null>(null);
   const [folderName, setFolderName] = useState("");
   const [isDeleteFolderModalOpen, setIsDeleteFolderModalOpen] = useState(false);
-  const [folderToDelete, setFolderToDelete] = useState<any | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<FolderItem | null>(null);
   // Folders list
-  const [folders, setFolders] = useState<any[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>([]);
 
   // Load folders on mount
   useEffect(() => {
@@ -689,7 +690,8 @@ export default function SettingsPage() {
           <div className="p-6">
             <h3 className="text-lg font-bold">Delete Folder</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to delete the folder "{folderToDelete?.name}"? This will not delete the credentials inside it.
+               Are you sure you want to delete the folder &quot;{folderToDelete?.name}&quot;? This will not delete the credentials inside it.
+
             </p>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDeleteFolderModalOpen(false)} disabled={dangerLoading}>Cancel</Button>

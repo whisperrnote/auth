@@ -110,7 +110,7 @@ export class AppwriteService {
       ID.unique(),
       encryptedData
     );
-    return await this.decryptDocumentFields(doc, 'credentials');
+    return await this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials;
   }
 
   static async createTOTPSecret(data: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>): Promise<TotpSecrets> {
@@ -121,7 +121,7 @@ export class AppwriteService {
       ID.unique(),
       encryptedData
     );
-    return await this.decryptDocumentFields(doc, 'totpSecrets');
+     return await this.decryptDocumentFields(doc, 'totpSecrets') as unknown as TotpSecrets;
   }
 
   static async createFolder(data: Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>): Promise<Folders> {
@@ -243,7 +243,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_CREDENTIALS_ID,
       id
     );
-    return await this.decryptDocumentFields(doc, 'credentials');
+    return await this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials;
   }
 
   static async getTOTPSecret(id: string): Promise<TotpSecrets> {
@@ -252,7 +252,7 @@ export class AppwriteService {
       APPWRITE_COLLECTION_TOTPSECRETS_ID,
       id
     );
-    return await this.decryptDocumentFields(doc, 'totpSecrets');
+     return await this.decryptDocumentFields(doc, 'totpSecrets') as unknown as TotpSecrets;
   }
 
   static async getFolder(id: string): Promise<Folders> {
@@ -358,9 +358,9 @@ export class AppwriteService {
         [Query.equal('userId', userId), Query.limit(limit), Query.offset(offset), ...queries]
       );
 
-      const decryptedDocuments = await Promise.all(
-        response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
-      );
+    const decryptedDocuments = await Promise.all(
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials)
+    );
 
       documents = documents.concat(decryptedDocuments);
       offset += limit;
@@ -419,7 +419,7 @@ export class AppwriteService {
       id,
       encryptedData
     );
-    return await this.decryptDocumentFields(doc, 'credentials');
+    return await this.decryptDocumentFields(doc, 'credentials') as unknown as Credentials;
   }
 
   static async updateTOTPSecret(id: string, data: Partial<TotpSecrets>): Promise<TotpSecrets> {
@@ -430,7 +430,7 @@ export class AppwriteService {
       id,
       encryptedData
     );
-    return await this.decryptDocumentFields(doc, 'totpSecrets');
+     return await this.decryptDocumentFields(doc, 'totpSecrets') as unknown as TotpSecrets;
   }
 
   static async updateFolder(id: string, data: Partial<Folders>): Promise<Folders> {

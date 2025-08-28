@@ -82,7 +82,8 @@ export default function ImportSection() {
       await AppwriteService.bulkCreateCredentials(credentials as unknown as Parameters<typeof AppwriteService.bulkCreateCredentials>[0]);
       setSuccess(`Successfully imported ${credentials.length} credentials!`);
     } catch (e) {
-      setError(e.message || "Import failed.");
+      const msg = e instanceof Error ? e.message : 'Import failed.';
+      setError(msg);
     }
     setImporting(false);
   };
