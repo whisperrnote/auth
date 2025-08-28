@@ -1,19 +1,27 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 
 export default function SearchBar({
   onSearch,
+  delay = 150,
 }: {
   onSearch: (term: string) => void;
+  delay?: number;
 }) {
   const [value, setValue] = useState("");
-  
+  const timer = useRef<number | null>(null);
+
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      onSearch(value);
-    }, 200); // lightning fast debounce
-    return () => clearTimeout(timeout);
-  }, [value, onSearch]);
+    return () => {
+      if (timer.current) window.clearTimeout(timer.current);
+    };
+  }, []);
+
+  const handleChange = (v: string) => {
+    setValue(v);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => onSearch(v), delay);
+  };
 
   return (
     <div className="rounded-full overflow-hidden shadow-sm border border-border bg-card flex items-center h-11 px-4">
@@ -23,7 +31,8 @@ export default function SearchBar({
         placeholder="Search passwords, usernames..."
         type="text"
         value={value}
-        onChange={e => setValue(e.target.value)}
+        onChange={e => handleChange(e.target.value)}
+        aria-label="Search credentials"
       />
     </div>
   );

@@ -88,9 +88,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <Navbar />
 
-      <div className="flex-1 flex w-full overflow-x-hidden">
-        {/* Sidebar (desktop only, fixed) */}
-        <aside
+    <div className="flex-1 flex w-full overflow-x-hidden pt-16">
+      {/* Sidebar (desktop only, fixed) */}
+      <aside
           className={clsx(
             "hidden lg:block",
             "fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-card border-r overflow-y-auto z-30"

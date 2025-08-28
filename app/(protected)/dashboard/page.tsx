@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Folder, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAppwrite } from "@/app/appwrite-provider";
 import {
   deleteCredential,
   listCredentials,
-  searchCredentials,
   listFolders,
   listRecentCredentials,
 } from "@/lib/appwrite";
@@ -81,29 +80,17 @@ export default function DashboardPage() {
       
       try {
         const offset = (page - 1) * pageSize;
-        let result;
-        
-        if (searchTerm.trim()) {
-          const searchResults = await searchCredentials(user.$id, searchTerm.trim());
-          const start = offset;
-          const end = start + pageSize;
-          result = {
-            documents: searchResults.slice(start, end),
-            total: searchResults.length
-          };
-        } else {
-          result = await listCredentials(user.$id, pageSize, offset);
-        }
+        const result = await listCredentials(user.$id, pageSize, offset);
 
-        let filteredDocuments = result.documents;
+        let docs = result.documents;
         if (selectedFolder) {
-          filteredDocuments = filteredDocuments.filter((c) => c.folderId === selectedFolder);
+          docs = docs.filter((c) => c.folderId === selectedFolder);
         }
 
         if (resetData || isFirstPage) {
-          setCredentials(filteredDocuments);
+          setCredentials(docs);
         } else {
-          setCredentials(prev => [...prev, ...filteredDocuments]);
+          setCredentials(prev => [...prev, ...docs]);
         }
         
         setTotal(result.total);
@@ -115,7 +102,7 @@ export default function DashboardPage() {
         setLoadingMore(false);
       }
     },
-    [user, pageSize, searchTerm, selectedFolder]
+    [user, pageSize, selectedFolder]
   );
 
   useEffect(() => {
@@ -136,10 +123,11 @@ export default function DashboardPage() {
           console.error("Failed to fetch recent credentials:", err);
         });
     }
-  }, [user, searchTerm, selectedFolder, fetchCredentials]);
+  }, [user, selectedFolder, fetchCredentials]);
 
   const handleSearch = useCallback(
-    async (term: string) => {
+    (term: string) => {
+      // client-side instant filtering, keep pagination intact
       setSearchTerm(term);
       setCurrentPage(1);
     },
@@ -212,6 +200,18 @@ export default function DashboardPage() {
   };
 
   const { isAuthReady } = useAppwrite();
+
+  const filteredCredentials = useMemo(() => {
+    if (!searchTerm.trim()) return credentials;
+    const term = searchTerm.toLowerCase();
+    return credentials.filter((c) => {
+      const name = (c.name ?? "").toLowerCase();
+      const username = (c.username ?? "").toLowerCase();
+      const url = (c.url ?? "").toLowerCase();
+      return name.includes(term) || username.includes(term) || url.includes(term);
+    });
+  }, [credentials, searchTerm]);
+
   if (!isAuthReady || !user) {
     return (
       <div className="w-full min-h-screen bg-background flex items-center justify-center">
@@ -222,8 +222,9 @@ export default function DashboardPage() {
 
   const totalPages = Math.ceil(total / pageSize);
   const hasMore = currentPage < totalPages;
-
+ 
   return (
+
     <VaultGuard>
       <div className="w-full min-h-screen bg-background flex flex-col pb-20 lg:pb-6">
         {/* Desktop AppBar */}
@@ -334,7 +335,7 @@ export default function DashboardPage() {
               Array.from({ length: pageSize }).map((_, i) => (
                 <CredentialSkeleton key={i} />
               ))
-            ) : credentials.length === 0 ? (
+            ) : filteredCredentials.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 {searchTerm 
                   ? `No credentials found matching "${searchTerm}"`
@@ -342,7 +343,7 @@ export default function DashboardPage() {
                 }
               </div>
             ) : (
-              credentials.map((cred) => (
+              filteredCredentials.map((cred) => (
                 <CredentialItem
                   key={cred.$id}
                   credential={cred}
