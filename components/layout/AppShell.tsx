@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           style={{ minHeight: "calc(100vh - 4rem)" }}
         >
           <div className="flex flex-col h-full">
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 px-2 py-3 space-y-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 const isBig = item.big;
@@ -120,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-            <div className="p-4 border-t space-y-2">
+            <div className="px-2 py-3 border-t space-y-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -153,8 +153,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden lg:ml-64">
-          <main className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-x-hidden max-w-full">
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+          <main className="flex-1 px-2 py-4 sm:px-3 md:px-4 lg:px-4 pb-20 lg:pb-6 overflow-x-hidden max-w-full">
             {children}
           </main>
         </div>
