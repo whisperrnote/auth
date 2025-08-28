@@ -79,9 +79,9 @@ export default function ImportSection() {
         return;
       }
 
-      await AppwriteService.bulkCreateCredentials(credentials as any);
+      await AppwriteService.bulkCreateCredentials(credentials as unknown as Parameters<typeof AppwriteService.bulkCreateCredentials>[0]);
       setSuccess(`Successfully imported ${credentials.length} credentials!`);
-    } catch (e: any) {
+    } catch (e) {
       setError(e.message || "Import failed.");
     }
     setImporting(false);

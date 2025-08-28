@@ -90,12 +90,12 @@ export const COLLECTION_SCHEMAS = {
 // --- Secure CRUD Operations ---
 export class AppwriteService {
   // Map a single Appwrite document to domain type
-  private static mapDoc<T>(doc: any): T {
+  private static mapDoc<T>(doc: Models.Document | Record<string, unknown>): T {
     return doc as unknown as T;
   }
 
   // Map Appwrite DocumentList response to domain DocumentList shape
-  private static mapDocumentList<T>(response: any): { total: number; documents: T[] } {
+  private static mapDocumentList<T>(response: Models.DocumentList<Models.Document> | any): { total: number; documents: T[] } {
     return {
       total: response.total ?? (Array.isArray(response) ? response.length : 0),
       documents: (response.documents ?? response.items ?? response ?? []) as unknown as T[],
@@ -302,7 +302,7 @@ export class AppwriteService {
     );
 
     const decryptedDocuments = await Promise.all(
-      response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
     );
 
     return {
@@ -332,7 +332,7 @@ export class AppwriteService {
     );
 
     const decryptedDocuments = await Promise.all(
-      response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
     );
 
     return {
@@ -359,7 +359,7 @@ export class AppwriteService {
       );
 
       const decryptedDocuments = await Promise.all(
-        response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+        response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
       );
 
       documents = documents.concat(decryptedDocuments);
@@ -377,7 +377,7 @@ export class AppwriteService {
       [Query.equal('userId', userId), Query.orderDesc('$updatedAt'), Query.limit(limit)]
     );
     return await Promise.all(
-      response.documents.map((doc: any) => this.decryptDocumentFields(doc, 'credentials'))
+      response.documents.map((doc: Models.Document) => this.decryptDocumentFields(doc, 'credentials'))
     );
   }
 
@@ -562,7 +562,7 @@ export class AppwriteService {
   private static async decryptDocumentFields(
     doc: unknown,
     collectionType: keyof typeof COLLECTION_SCHEMAS
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const schema = COLLECTION_SCHEMAS[collectionType];
     const result: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
 
