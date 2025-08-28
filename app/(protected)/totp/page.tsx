@@ -61,8 +61,9 @@ export default function TOTPPage() {
 
   const generateTOTP = (secret: string, period: number = 30, digits: number = 6, algorithm: string = "SHA1"): string => {
     try {
-      // Normalize secret per RFC (remove spaces) and configure options
+      // Sanitize: remove all spaces to ensure spaced/unspaced secrets yield same code
       const normalized = (secret || "").replace(/\s+/g, "");
+      if (!normalized) return "------";
       authenticator.options = {
         ...authenticator.options,
         step: period || 30,
@@ -228,6 +229,50 @@ export default function TOTPPage() {
         <div className="p-6">
           <h2 className="text-lg font-bold mb-2">Delete TOTP Code</h2>
           <p className="mb-4">Are you sure you want to delete this TOTP code? This action cannot be undone.</p>
+          {/* Show issuer and account name with truncation and hover title */}
+          {deleteDialog.open && (
+            <div className="mb-4">
+              {/* Resolve the selected TOTP for display */}
+              {(() => {
+                const selected = totpCodes.find((t) => t.$id === deleteDialog.id);
+                if (!selected) return null;
+                return (
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-muted-foreground">Issuer</div>
+                    <div className="group relative">
+                      <div
+                        className="max-w-full truncate px-2 py-1 rounded bg-secondary"
+                        title={selected.issuer || ""}
+                        aria-label={selected.issuer || ""}
+                      >
+                        <span className="sm:hidden" aria-label={selected.issuer || ""}>
+                          {(selected.issuer || "").length > 6 ? `${(selected.issuer || "").slice(0, 6)}...` : (selected.issuer || "—")}
+                        </span>
+                        <span className="hidden sm:inline" aria-label={selected.issuer || ""}>
+                          {(selected.issuer || "").length > 15 ? `${(selected.issuer || "").slice(0, 15)}...` : (selected.issuer || "—")}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-2">Account</div>
+                    <div className="group relative">
+                      <div
+                        className="max-w-full truncate px-2 py-1 rounded bg-secondary"
+                        title={selected.accountName || ""}
+                        aria-label={selected.accountName || ""}
+                      >
+                        <span className="sm:hidden" aria-label={selected.accountName || ""}>
+                          {(selected.accountName || "").length > 6 ? `${(selected.accountName || "").slice(0, 6)}...` : (selected.accountName || "—")}
+                        </span>
+                        <span className="hidden sm:inline" aria-label={selected.accountName || ""}>
+                          {(selected.accountName || "").length > 15 ? `${(selected.accountName || "").slice(0, 15)}...` : (selected.accountName || "—")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           <div className="flex gap-2">
             <Button
               variant="destructive"
