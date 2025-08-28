@@ -187,7 +187,7 @@ export default function SettingsPage() {
       // Only allow updating the name, not the email
       await updateUserProfile(user.$id, { name: profile.name });
       toast.success("Profile updated!");
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Failed to update profile.");
     }
     setSaving(false);
@@ -208,7 +208,7 @@ export default function SettingsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Data exported!", { id: toastId });
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Failed to export data.", { id: toastId });
     }
   };
@@ -223,7 +223,7 @@ export default function SettingsPage() {
         setDangerLoading(false);
         logout();
       }, 1500);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setDangerLoading(false);
       toast.error(e.message || "Failed to delete account.");
     } finally {
@@ -254,7 +254,7 @@ export default function SettingsPage() {
       toast.success("Password updated successfully!");
       setIsChangePasswordModalOpen(false);
       setPasswords({ current: "", new: "", confirm: "" });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setPasswordError(e.message || "Failed to update password.");
     }
     setSaving(false);
@@ -278,7 +278,7 @@ export default function SettingsPage() {
       setIsFolderModalOpen(false);
       setEditingFolder(null);
       setFolderName("");
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Failed to save folder.");
     }
     setSaving(false);
@@ -309,7 +309,7 @@ export default function SettingsPage() {
       toast.success("Folder deleted!");
       setIsDeleteFolderModalOpen(false);
       setFolderToDelete(null);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message || "Failed to delete folder.");
     }
     setDangerLoading(false);
