@@ -713,15 +713,13 @@ export async function removeTotpFactor(): Promise<void> {
 }
 
 /**
- * Verify TOTP factor by creating and completing a challenge
+ * Verify TOTP factor using the proper MFA authenticator verification
  * This step confirms the authenticator app is working
  */
 export async function verifyTotpFactor(otp: string): Promise<boolean> {
   try {
-    // Create challenge for TOTP
-    const challenge = await appwriteAccount.createMfaChallenge(AuthenticationFactor.Totp);
-    // Complete challenge with OTP
-    await appwriteAccount.updateMfaChallenge(challenge.$id, otp);
+    // Use the proper MFA authenticator verification method
+    await appwriteAccount.updateMfaAuthenticator(AuthenticatorType.Totp, otp);
     return true;
   } catch (error) {
     console.error("TOTP verification failed:", error);
@@ -902,13 +900,6 @@ export async function completeEmailOtp(userId: string, otp: string) {
 }
 
 // --- Standalone Service Functions ---
-
-/**
- * List all TOTP secrets for a user (decrypted).
- */
-export async function listTotpSecrets(userId: string) {
-  return await AppwriteService.listTOTPSecrets(userId);
-}
 
 export async function listFolders(userId: string, queries: string[] = []) {
     const response = await appwriteDatabases.listDocuments(

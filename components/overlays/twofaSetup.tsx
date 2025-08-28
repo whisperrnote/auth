@@ -36,6 +36,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [isCurrentlyEnabled, setIsCurrentlyEnabled] = useState(false);
   const [secretCopied, setSecretCopied] = useState(false);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -61,7 +62,12 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       const account = await appwriteAccount.get();
       const isEnforced = account.mfa || false;
       
-      console.log("MFA Status Debug:", { factors, isEnforced }); // Debug log
+      console.log("MFA Status Debug:", { 
+        factors, 
+        isEnforced, 
+        accountMfa: account.mfa,
+        fullAccount: account 
+      });
       
       setCurrentFactors(factors);
       setIsCurrentlyEnabled(isEnforced);
@@ -72,6 +78,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       }
     } catch (error) {
       console.error("Failed to load MFA status:", error);
+      setError("Failed to load MFA status. Please refresh and try again.");
     }
   };
 
@@ -213,10 +220,6 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
 
   // Disable 2FA completely
   const handleDisable = async () => {
-    if (!confirm("Are you sure you want to disable two-factor authentication? This will make your account less secure.")) {
-      return;
-    }
-    
     setLoading(true);
     setError(null);
     try {
@@ -258,6 +261,11 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       setError(e.message || "Failed to disable 2FA.");
     }
     setLoading(false);
+  };
+
+  const confirmDisable = () => {
+    setShowDisableConfirm(false);
+    handleDisable();
   };
 
   // Modified: Handle factor changes (enable/disable)
@@ -347,19 +355,33 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
               <div className="space-y-3">
                 <div className="text-sm">
                   <p className="font-medium">Currently enabled factors:</p>
-                  <ul className="list-disc list-inside mt-1 text-muted-foreground">
-                    {currentFactors?.totp && <li>Authenticator App (TOTP)</li>}
-                    {currentFactors?.email && <li>Email Verification</li>}
-                    {currentFactors?.phone && <li>SMS Verification</li>}
-                  </ul>
+                  {(currentFactors?.totp || currentFactors?.email || currentFactors?.phone) ? (
+                    <ul className="list-disc list-inside mt-1 text-muted-foreground">
+                      {currentFactors?.totp && <li>Authenticator App (TOTP)</li>}
+                      {currentFactors?.email && <li>Email Verification</li>}
+                      {currentFactors?.phone && <li>SMS Verification</li>}
+                    </ul>
+                  ) : (
+                    <div className="mt-1 text-muted-foreground">
+                      <p className="text-sm">No factors detected. This may indicate:</p>
+                      <ul className="list-disc list-inside text-xs mt-1 space-y-0.5">
+                        <li>MFA setup is incomplete</li>
+                        <li>Factors need to be re-verified</li>
+                        <li>Browser session needs refresh</li>
+                      </ul>
+                      <p className="text-xs mt-2 text-orange-600">
+                        Try refreshing the page or contact support if this persists.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-2">
                   <Button onClick={handleFactorSelection} disabled={loading}>
-                    Add More Factors
+                    Manage Factors
                   </Button>
-                  <Button variant="destructive" onClick={handleDisable} disabled={loading}>
-                    {loading ? "Disabling..." : "Disable 2FA"}
+                  <Button variant="destructive" onClick={() => setShowDisableConfirm(true)} disabled={loading}>
+                    Disable 2FA
                   </Button>
                 </div>
               </div>
@@ -528,6 +550,34 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
         )}
 
         {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
+        
+        {/* Disable 2FA Confirmation Dialog */}
+        {showDisableConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-background border rounded-lg p-6 max-w-sm w-full">
+              <h3 className="text-lg font-semibold text-foreground mb-3">Disable Two-Factor Authentication?</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Are you sure you want to disable two-factor authentication? This will make your account less secure.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowDisableConfirm(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={confirmDisable}
+                  disabled={loading}
+                >
+                  {loading ? "Disabling..." : "Disable 2FA"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Dialog>
   );
