@@ -65,9 +65,10 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
         await createTotpSecret({
           userId: user.$id,
           ...form,
+          url: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        });
+        } as any);
         toast.success("TOTP code added!");
       }
       onClose();

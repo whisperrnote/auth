@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AppwriteService } from "@/lib/appwrite";
+import { ImportService } from "@/utils/import/import-service";
 import { useAppwrite } from "@/app/appwrite-provider";
 
 function parseBitwardenCSV(csv: string) {
@@ -29,7 +30,8 @@ function parseJSON(json: string) {
 
 export default function ImportSection() {
   const { user } = useAppwrite();
-  const [importType, setImportType] = useState<string>("bitwarden");
+  type ImportVendor = "bitwarden" | "zoho" | "proton" | "json";
+  const [importType, setImportType] = useState<ImportVendor>("bitwarden");
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,14 +57,29 @@ export default function ImportSection() {
     setSuccess(null);
     try {
       const text = await file.text();
-      let credentials: any[] = [];
+      type Imported = Record<string, unknown>;
+      let credentials: Imported[] = [];
       if (importType === "bitwarden") credentials = parseBitwardenCSV(text);
       else if (importType === "zoho") credentials = parseZohoCSV(text);
       else if (importType === "proton") credentials = parseProtonCSV(text);
       else if (importType === "json") credentials = parseJSON(text);
       if (!credentials.length) throw new Error("No credentials found in file.");
       credentials = credentials.map((c) => ({ ...c, userId: user.$id }));
-      await AppwriteService.bulkCreateCredentials(credentials);
+      // Use robust ImportService for Bitwarden JSON; CSV parsers are placeholders
+      if (importType === "bitwarden" && file.name.toLowerCase().endsWith('.json')) {
+        const service = new ImportService();
+        const result = await service.importBitwardenData(text, user.$id);
+        if (!result.success) {
+          setError(result.errors.join("\n") || "Import encountered issues.");
+        } else {
+          setSuccess(
+            `Imported ${result.summary.credentialsCreated} credentials, ${result.summary.totpSecretsCreated} TOTP secrets, created ${result.summary.foldersCreated} folders. Skipped: ${result.summary.skipped}.`
+          );
+        }
+        return;
+      }
+
+      await AppwriteService.bulkCreateCredentials(credentials as any);
       setSuccess(`Successfully imported ${credentials.length} credentials!`);
     } catch (e: any) {
       setError(e.message || "Import failed.");

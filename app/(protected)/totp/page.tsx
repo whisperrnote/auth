@@ -16,13 +16,23 @@ import VaultGuard from "@/components/layout/VaultGuard";
 export default function TOTPPage() {
   const [search, setSearch] = useState("");
   const { user } = useAppwrite();
-  const [totpCodes, setTotpCodes] = useState<any[]>([]);
+  type TotpItem = {
+    $id: string;
+    issuer?: string | null;
+    accountName?: string | null;
+    secretKey: string; // stored/encrypted elsewhere; never display
+    period?: number | null;
+    digits?: number | null;
+    algorithm?: string | null;
+    folderId?: string | null;
+  };
+  const [totpCodes, setTotpCodes] = useState<TotpItem[]>([]);
   const [folders, setFolders] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
-  const [editingTotp, setEditingTotp] = useState<any | null>(null);
+  const [editingTotp, setEditingTotp] = useState<TotpItem | null>(null);
 
   useEffect(() => {
     if (!user?.$id) return;
@@ -82,12 +92,12 @@ export default function TOTPPage() {
     navigator.clipboard.writeText(text);
   };
 
-  const openEditDialog = (totp: any) => {
+  const openEditDialog = (totp: TotpItem) => {
     setEditingTotp(totp);
     setShowNew(true);
   };
 
-  const TOTPCard = ({ totp }: { totp: any }) => {
+  const TOTPCard = ({ totp }: { totp: TotpItem }) => {
     const code = generateTOTP(totp.secretKey, totp.period || 30);
     const timeRemaining = getTimeRemaining(totp.period || 30);
     const progress = (timeRemaining / (totp.period || 30)) * 100;
@@ -97,8 +107,8 @@ export default function TOTPPage() {
       <Card className="p-4 overflow-hidden relative">
         <div className="flex items-center justify-between mb-3 min-w-0">
           <div className="min-w-0">
-            <h3 className="font-semibold truncate max-w-full" title={totp.issuer}>{totp.issuer}</h3>
-            <p className="text-sm text-muted-foreground truncate max-w-full" title={totp.accountName}>{totp.accountName}</p>
+            <h3 className="font-semibold truncate max-w-full" title={totp.issuer ?? undefined}>{totp.issuer || ""}</h3>
+            <p className="text-sm text-muted-foreground truncate max-w-full" title={totp.accountName ?? undefined}>{totp.accountName || ""}</p>
             {folderName && (
               <span className="text-xs bg-secondary px-2 py-1 rounded mt-1 inline-block">
                 {folderName}

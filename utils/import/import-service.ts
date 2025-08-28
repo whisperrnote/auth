@@ -261,7 +261,7 @@ export class ImportService {
           currentStep: 4,
           totalSteps: 4,
           message: `Importing TOTP secrets... (${created}/${totpSecrets.length})`,
-          itemsProcessed: folderIdMapping.size + this.progressCallback ? 0 : 0 + created, // Will be updated properly in actual implementation
+           itemsProcessed: folderIdMapping.size + created,
           itemsTotal: folderIdMapping.size + totpSecrets.length,
           errors: errorMessages,
         });
