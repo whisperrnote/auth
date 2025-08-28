@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog } from "../ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Copy, Check } from "lucide-react";
 import { 
   generateRecoveryCodes,
   addTotpFactor, 
@@ -30,6 +31,17 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
   const [selectedFactors, setSelectedFactors] = useState<{ totp: boolean; email: boolean }>({ totp: false, email: false });
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [isCurrentlyEnabled, setIsCurrentlyEnabled] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
 
   // Load current MFA status
   useEffect(() => {
@@ -42,6 +54,8 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
     try {
       // Use the unified MFA status function
       const mfaStatus = await getUnifiedMfaStatus(user.$id);
+      
+      console.log("MFA Status Debug:", mfaStatus); // Debug log
       
       setCurrentFactors(mfaStatus.factors);
       setIsCurrentlyEnabled(mfaStatus.isEnforced);
@@ -74,12 +88,13 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       setRecoveryCodes(codes.recoveryCodes);
       setStep("recovery");
     } catch (e: any) {
-      // If recovery codes already generated, allow user to proceed to factor selection
+      // If recovery codes already generated, allow user to proceed but show warning
       if (
         e?.message?.toLowerCase().includes("already generated recovery codes") ||
+        e?.message?.toLowerCase().includes("recovery codes have already been generated") ||
         e?.code === 409
       ) {
-        setRecoveryCodes(null);
+        setRecoveryCodes(null); // No codes to show
         setStep("recovery");
       } else {
         setError(e.message || "Failed to generate recovery codes.");
@@ -263,8 +278,8 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <div className="p-6 max-w-md w-full bg-white rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-2">Two-Factor Authentication</h2>
+      <div className="p-6 max-w-md w-full bg-background text-foreground">
+        <h2 className="text-xl font-bold mb-4 text-primary">Two-Factor Authentication</h2>
         
         {step === "init" && (
           <>
@@ -305,18 +320,24 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
 
         {step === "recovery" && (
           <>
-            <p className="mb-2 font-semibold text-red-600">Save your recovery codes!</p>
-            <p className="mb-2 text-sm">These codes can be used to access your account if you lose your authenticator:</p>
+            <p className="mb-2 font-semibold text-destructive">Save your recovery codes!</p>
+            <p className="mb-2 text-sm text-muted-foreground">These codes can be used to access your account if you lose your authenticator:</p>
             {recoveryCodes ? (
               <div className="mb-4">
-                <ul className="text-xs bg-gray-100 p-2 rounded font-mono">
-                  {recoveryCodes.map(code => <li key={code}>{code}</li>)}
+                <ul className="text-xs bg-muted p-3 rounded-lg border font-mono space-y-1">
+                  {recoveryCodes.map(code => <li key={code} className="select-all">{code}</li>)}
                 </ul>
+                <p className="text-xs text-destructive mt-2 font-medium">
+                  ⚠️ Save these codes now! They cannot be shown again.
+                </p>
               </div>
             ) : (
-              <div className="mb-4 text-xs text-muted-foreground">
+              <div className="mb-4 text-xs text-muted-foreground bg-muted p-3 rounded-lg border">
                 Recovery codes have already been generated and cannot be shown again.<br />
-                If you have saved them, continue to the next step.
+                If you have saved them, continue to the next step.<br />
+                <span className="text-destructive font-medium">
+                  If you haven't saved them, you'll need to disable and re-enable 2FA to generate new ones.
+                </span>
               </div>
             )}
             <p className="text-xs text-muted-foreground mb-4">Save these codes in a secure place. They will not be shown again.</p>
@@ -384,14 +405,40 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
 
         {step === "totp_qr" && (
           <>
-            <p className="mb-2">Scan this QR code with your authenticator app:</p>
-            {qrUrl && <img src={qrUrl} alt="TOTP QR" className="mx-auto mb-4" />}
-            <p className="text-xs mb-4">Or enter this secret manually: <code className="bg-gray-100 px-1">{secret}</code></p>
+            <p className="mb-4 text-sm">Scan this QR code with your authenticator app:</p>
+            {qrUrl && (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={qrUrl} 
+                  alt="TOTP QR Code" 
+                  className="border border-border rounded-lg w-40 h-40 sm:w-48 sm:h-48 object-contain" 
+                />
+              </div>
+            )}
+            <div className="mb-4">
+              <p className="text-xs text-muted-foreground mb-2">Or enter this secret manually:</p>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg border">
+                <code className="text-xs font-mono flex-1 break-all select-all">{secret}</code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => secret && copyToClipboard(secret)}
+                  className="h-8 w-8 p-0 flex-shrink-0"
+                  title="Copy secret"
+                >
+                  {secretCopied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
             <Input
               placeholder="Enter 6-digit code from app"
               value={otp}
               onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="mb-2"
+              className="mb-4"
               maxLength={6}
             />
             <Button onClick={handleVerifyTotp} disabled={loading || otp.length !== 6}>

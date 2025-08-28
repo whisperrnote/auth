@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID, Query, AuthenticationFactor } from "appwrite";
+import { Client, Account, Databases, ID, Query, AuthenticationFactor, Avatars } from "appwrite";
 import type { Credentials, TotpSecrets, Folders, SecurityLogs, User } from "@/types/appwrite.d";
 import { AuthenticatorType } from "appwrite";
 import { updateMasterpassCheckValue, masterPassCrypto } from "@/app/(protected)/masterpass/logic";
@@ -10,6 +10,7 @@ export const appwriteClient = new Client()
 
 export const appwriteAccount = new Account(appwriteClient);
 export const appwriteDatabases = new Databases(appwriteClient);
+export const appwriteAvatars = new Avatars(appwriteClient);
 
 export { ID, Query };
 
@@ -696,9 +697,10 @@ export async function updateMfaStatus(enabled: boolean): Promise<any> {
  */
 export async function addTotpFactor(): Promise<{ qrUrl: string; secret: string }> {
   const result = await appwriteAccount.createMfaAuthenticator(AuthenticatorType.Totp);
-  // Appwrite returns 'secret' and 'uri' (not 'qrUrl'), so map accordingly
+  // Generate QR code using Avatars API with smaller size (200px instead of 400px)
+  const qrUrl = appwriteAvatars.getQR(result.uri, 200);
   return {
-    qrUrl: result.uri || "",
+    qrUrl,
     secret: result.secret
   };
 }
@@ -1251,34 +1253,25 @@ export async function getUnifiedMfaStatus(userId?: string): Promise<{
     const factors = await listMfaFactors();
     const hasAnyFactor = factors.totp || factors.email || factors.phone;
     
-    // Check if MFA is currently being enforced
+    // For logged-in users, we need to check MFA status differently
+    // The account.get() method won't throw "user_more_factors_required" for already authenticated users
+    // We need to determine MFA enforcement from the user document and factors
     let isEnforced = false;
     let needsAuthentication = false;
     
-    try {
-      await appwriteAccount.get();
-      // If account.get() succeeds, user is fully authenticated (no MFA required)
-      isEnforced = false;
-      needsAuthentication = false;
-    } catch (error: any) {
-      if (error.type === "user_more_factors_required") {
-        // User is partially authenticated and MFA is being enforced
-        isEnforced = true;
-        needsAuthentication = true;
-      } else {
-        // Other authentication errors
-        return {
-          isEnforced: false,
-          factors: { totp: false, email: false, phone: false },
-          requiresSetup: false,
-          needsAuthentication: false,
-          error: error.message || "Authentication check failed"
-        };
+    // If user has factors, check if MFA is actually enforced by looking at user doc
+    if (hasAnyFactor && userId) {
+      try {
+        const userDoc = await AppwriteService.getUserDoc(userId);
+        isEnforced = userDoc?.twofa === true;
+      } catch (error) {
+        console.warn("Could not check user MFA status from database:", error);
+        // Fallback: if user has factors, assume MFA should be enforced
+        isEnforced = hasAnyFactor;
       }
     }
     
-    // If user has factors but MFA is not enforced, it means they need to enable enforcement
-    const requiresSetup = hasAnyFactor && !isEnforced && !needsAuthentication;
+    const requiresSetup = !hasAnyFactor || !isEnforced;
     
     // Sync database status if userId is provided
     if (userId) {
