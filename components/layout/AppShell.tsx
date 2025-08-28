@@ -89,13 +89,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Navbar />
 
       <div className="flex-1 flex w-full overflow-x-hidden">
-        {/* Sidebar (desktop only) */}
+        {/* Sidebar (desktop only, fixed) */}
         <aside
           className={clsx(
-            "hidden lg:flex flex-col w-64 bg-card border-r transition-transform duration-200",
-            "pt-16 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto"
+            "hidden lg:block",
+            "fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-card border-r overflow-y-auto z-30"
           )}
-          style={{ minHeight: "calc(100vh - 4rem)" }}
+          aria-label="Primary sidebar navigation"
         >
           <div className="flex flex-col h-full">
             <nav className="flex-1 px-2 py-3 space-y-1">
@@ -152,8 +152,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+        {/* Main content (offset for fixed sidebar) */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden lg:ml-64">
           <main className="flex-1 px-2 py-4 sm:px-3 md:px-4 lg:px-4 pb-20 lg:pb-6 overflow-x-hidden max-w-full">
             {children}
           </main>

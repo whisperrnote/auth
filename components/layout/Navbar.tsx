@@ -15,7 +15,7 @@ export function Navbar() {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <nav className="border-b border-border">
+    <nav className="border-b border-border fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="max-w-screen-xl mx-auto flex justify-between items-center h-16 px-4 relative">
         <Link href="/" className="flex items-center gap-2">
           <img
