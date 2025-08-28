@@ -74,38 +74,38 @@ export default function DashboardPage() {
   const fetchCredentials = useCallback(
     async (page: number = 1, resetData: boolean = true) => {
       if (!user?.$id) return;
-      
+
       const isFirstPage = page === 1;
       if (isFirstPage) {
         setLoading(true);
       } else {
         setLoadingMore(true);
       }
-      
+
       try {
         const offset = (page - 1) * pageSize;
         const result = await listCredentials(user.$id, pageSize, offset);
 
         let docs = result.documents;
-         if (selectedFolder) {
-           docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
-         }
+        if (selectedFolder) {
+          docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
+        }
 
         // Update the master list of all loaded credentials
         if (resetData || isFirstPage) {
           setAllCredentials(docs);
         } else {
-            setAllCredentials(prev => {
-              const merged = [...prev, ...docs];
-              // de-duplicate by $id to avoid duplicates when changing filters
-              const seen = new Set<string>();
-              return merged.filter((c: Credentials) => {
-                const id = c.$id as string;
-                if (seen.has(id)) return false;
-                seen.add(id);
-                return true;
-              });
+          setAllCredentials((prev) => {
+            const merged = [...prev, ...docs];
+            // de-duplicate by $id to avoid duplicates when changing filters
+            const seen = new Set<string>();
+            return merged.filter((c: Credentials) => {
+              const id = c.$id as string;
+              if (seen.has(id)) return false;
+              seen.add(id);
+              return true;
             });
+          });
         }
 
         // For initial/non-search view, set current page items
@@ -113,12 +113,11 @@ export default function DashboardPage() {
           if (resetData || isFirstPage) {
             setCredentials(docs);
           } else {
-             setCredentials(prev => [...prev, ...docs as Credentials[]]);
+            setCredentials((prev) => [...prev, ...(docs as Credentials[])]);
           }
         }
-        
-        setTotal(result.total);
 
+        setTotal(result.total);
       } catch (error) {
         toast.error("Failed to load credentials. Please try again.");
         console.error("Failed to load credentials:", error);
@@ -127,7 +126,7 @@ export default function DashboardPage() {
         setLoadingMore(false);
       }
     },
-    [user, pageSize, selectedFolder]
+    [user, pageSize, selectedFolder, searchTerm]
   );
 
   useEffect(() => {
@@ -350,7 +349,7 @@ export default function DashboardPage() {
           {/* All Items Section */}
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>
-                {searchTerm ? `Search Results for \"${searchTerm}\"` : "All Items"}
+                {searchTerm ? `Search Results for &quot;${searchTerm}&quot;` : "All Items"}
             </SectionTitle>
           </div>
           
@@ -377,7 +376,7 @@ export default function DashboardPage() {
             ) : filteredCredentials.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 {searchTerm 
-                  ? `No credentials found matching \"${searchTerm}\"`
+                  ? `No credentials found matching &quot;${searchTerm}&quot;`
                   : "No credentials found. Add your first password to get started!"
                 }
               </div>

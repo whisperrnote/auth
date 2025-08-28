@@ -111,20 +111,21 @@ export default function LoginPage() {
         } else {
           toast.error(mfaStatus.error || "Authentication verification failed");
         }
-      } catch (err: any) {
-        console.log("Login error caught:", { err, type: err.type, code: err.code, message: err.message });
+      } catch (err: unknown) {
+        const e = err as { type?: string; code?: number; message?: string };
+        console.log("Login error caught:", { err: e, type: e?.type, code: e?.code, message: e?.message });
         
         // Check if this is an MFA requirement error
         if (
-          err.type === "user_more_factors_required" ||
-          (err.code === 401 && err.message?.includes("more factors")) ||
-          err.message?.includes("More factors are required") ||
-          err.message?.includes("user_more_factors_required")
+          e?.type === "user_more_factors_required" ||
+          (e?.code === 401 && e?.message?.includes("more factors")) ||
+          e?.message?.includes("More factors are required") ||
+          e?.message?.includes("user_more_factors_required")
         ) {
           console.log("MFA required during login, redirecting to /twofa/access");
           router.replace("/twofa/access");
         } else {
-          toast.error(err?.message || "Login failed");
+          toast.error(e?.message || "Login failed");
         }
       }
     } else if (mode === "otp") {
