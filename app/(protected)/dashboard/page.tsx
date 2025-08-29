@@ -91,22 +91,8 @@ export default function DashboardPage() {
           docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
         }
 
-        // Update the master list of all loaded credentials
-        if (resetData || isFirstPage) {
-          setAllCredentials(docs);
-        } else {
-          setAllCredentials((prev) => {
-            const merged = [...prev, ...docs];
-            // de-duplicate by $id to avoid duplicates when changing filters
-            const seen = new Set<string>();
-            return merged.filter((c: Credentials) => {
-              const id = c.$id as string;
-              if (seen.has(id)) return false;
-              seen.add(id);
-              return true;
-            });
-          });
-        }
+        // Note: allCredentials is only populated by loadAllCredentials for search
+        // Regular pagination doesn't update allCredentials to avoid partial data
 
         // For initial/non-search view, set current page items
         if (!searchTerm.trim()) {
@@ -132,15 +118,17 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user?.$id) {
       setCurrentPage(1);
+      // Clear allCredentials cache when folder changes to ensure fresh data
+      setAllCredentials([]);
       fetchCredentials(1, true);
-      
+
       listFolders(user.$id)
         .then(setFolders)
         .catch((err: unknown) => {
           console.error("Failed to fetch folders:", err);
           toast.error("Could not load your folders.");
         });
-      
+
       listRecentCredentials(user.$id)
         .then(setRecentCredentials)
         .catch((err: unknown) => {
@@ -166,6 +154,7 @@ export default function DashboardPage() {
         if (result.documents.length === 0) break;
 
         let docs = result.documents;
+        // Apply folder filter client-side if selected
         if (selectedFolder) {
           docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
         }
@@ -200,7 +189,7 @@ export default function DashboardPage() {
         return;
       }
 
-      // If starting a search and we don't have all data loaded, load it first
+      // Always load all credentials for search (only once per session)
       if (allCredentials.length === 0) {
         await loadAllCredentials();
       }
@@ -208,7 +197,7 @@ export default function DashboardPage() {
       setSearchTerm(trimmedTerm);
       setCurrentPage(1);
     },
-    [setSearchTerm, allCredentials.length, loadAllCredentials, fetchCredentials]
+    [allCredentials.length, loadAllCredentials, fetchCredentials]
   );
 
   const handlePageChange = (page: number) => {
@@ -280,8 +269,10 @@ export default function DashboardPage() {
   const refreshCredentials = () => {
     if (!user?.$id) return;
     setCurrentPage(1);
+    // Clear allCredentials cache to ensure fresh search results after modifications
+    setAllCredentials([]);
     fetchCredentials(1, true);
-    
+
     listRecentCredentials(user.$id)
       .then(setRecentCredentials)
       .catch(console.error);
