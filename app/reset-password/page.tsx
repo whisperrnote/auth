@@ -27,8 +27,9 @@ export default function ResetPasswordPage() {
       // Use current origin as redirect URL
       await createPasswordRecovery(email, window.location.origin + "/reset-password");
       toast.success("Password reset email sent! Check your inbox.");
-    } catch (e: any) {
-      toast.error(e.message || "Error sending reset email.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Error sending reset email.");
     }
     setLoading(false);
   };
@@ -43,8 +44,9 @@ export default function ResetPasswordPage() {
     try {
       await updatePasswordRecovery(userId, secret, password);
       toast.success("Password reset successful! You can now log in.");
-    } catch (e: any) {
-      toast.error(e.message || "Error resetting password.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Error resetting password.");
     }
     setLoading(false);
   };

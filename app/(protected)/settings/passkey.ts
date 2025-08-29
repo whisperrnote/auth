@@ -80,9 +80,10 @@ export async function unlockWithPasskey(userId: string): Promise<boolean> {
 
         toast.success('Vault unlocked with passkey!', { id: toastId });
         return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
-        toast.error(`Passkey unlock failed: ${error.message}`);
+        const err = error as { message?: string };
+        toast.error(`Passkey unlock failed: ${err.message || 'Unknown error'}`);
         return false;
     }
 }
@@ -92,9 +93,10 @@ export async function disablePasskey(userId: string) {
         await AppwriteService.removePasskey(userId);
         toast.success('Passkey disabled successfully.');
         return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
-        toast.error(`Failed to disable passkey: ${error.message}`);
+        const err = error as { message?: string };
+        toast.error(`Failed to disable passkey: ${err.message || 'Unknown error'}`);
         return false;
     }
 }

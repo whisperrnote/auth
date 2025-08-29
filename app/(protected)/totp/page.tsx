@@ -63,8 +63,9 @@ export default function TOTPPage() {
       await deleteTotpSecret(id);
       setTotpCodes((codes) => codes.filter((c) => c.$id !== id));
       toast.success("TOTP code deleted.");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to delete TOTP code.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to delete TOTP code.");
     }
   };
 
@@ -77,7 +78,7 @@ export default function TOTPPage() {
       authenticator.options = {
         ...authenticator.options,
         step: period || 30,
-      } as any;
+      };
       return authenticator.generate(normalized);
     } catch {
       return "------";

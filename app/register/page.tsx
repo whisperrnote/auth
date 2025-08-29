@@ -131,24 +131,25 @@ export default function RegisterPage() {
         } else {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
-      } catch (err: any) {
-        console.log("Registration error caught:", { err, type: err.type, code: err.code, message: err.message });
+      } catch (err: unknown) {
+        const error = err as { type?: string; code?: number; message?: string };
+        console.log("Registration error caught:", { err, type: error.type, code: error.code, message: error.message });
         
         // Check if this is an MFA requirement error (can happen during the login step)
         if (
-          err.type === "user_more_factors_required" ||
-          err.code === 401 && err.message?.includes("more factors") ||
-          err.message?.includes("More factors are required") ||
-          err.message?.includes("user_more_factors_required")
+          error.type === "user_more_factors_required" ||
+          error.code === 401 && error.message?.includes("more factors") ||
+          error.message?.includes("More factors are required") ||
+          error.message?.includes("user_more_factors_required")
         ) {
           console.log("MFA required during registration login, redirecting to /twofa/access");
           router.replace("/twofa/access");
         } else {
           // If error is "user already exists", show a friendly message
-          if (err?.code === 409) {
+          if (error?.code === 409) {
             toast.error("An account with this email already exists.");
           } else {
-            toast.error(err?.message || "Registration failed");
+            toast.error(error?.message || "Registration failed");
           }
         }
       }
@@ -167,20 +168,21 @@ export default function RegisterPage() {
         } else {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
-      } catch (err: any) {
-        console.log("Registration OTP error caught:", { err, type: err.type, code: err.code, message: err.message });
+      } catch (err: unknown) {
+        const error = err as { type?: string; code?: number; message?: string };
+        console.log("Registration OTP error caught:", { err, type: error.type, code: error.code, message: error.message });
         
         // Check if this is an MFA requirement error
         if (
-          err.type === "user_more_factors_required" ||
-          err.code === 401 && err.message?.includes("more factors") ||
-          err.message?.includes("More factors are required") ||
-          err.message?.includes("user_more_factors_required")
+          error.type === "user_more_factors_required" ||
+          error.code === 401 && error.message?.includes("more factors") ||
+          error.message?.includes("More factors are required") ||
+          error.message?.includes("user_more_factors_required")
         ) {
           console.log("MFA required during registration OTP, redirecting to /twofa/access");
           router.replace("/twofa/access");
         } else {
-          toast.error(err?.message || "Invalid OTP.");
+          toast.error(error?.message || "Invalid OTP.");
         }
       }
     }
@@ -195,8 +197,9 @@ export default function RegisterPage() {
       setFormData((f) => ({ ...f, userId: resp.userId }));
       localStorage.setItem("register_otp_last_" + formData.email, Date.now().toString());
       setOtpCooldown(OTP_COOLDOWN);
-    } catch (e: any) {
-      toast.error(e.message || "Error sending OTP.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Error sending OTP.");
     }
   };
 

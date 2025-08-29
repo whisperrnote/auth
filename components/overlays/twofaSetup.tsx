@@ -591,7 +591,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
         {step === "done" && (
           <>
             <p className="mb-2 text-green-600">✅ Two-Factor Authentication enabled!</p>
-            <p className="text-sm mb-4">Your account is now protected with 2FA. You'll need your selected factors to sign in.</p>
+            <p className="text-sm mb-4">Your account is now protected with 2FA. You&apos;ll need your selected factors to sign in.</p>
             <Button onClick={onClose}>Done</Button>
           </>
         )}

@@ -29,7 +29,7 @@ export default function MasterpassResetPage() {
         await resetMasterpassAndWipe(user.$id);
         setStep("done");
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error("Failed to reset master password");
     }
     setLoading(false);

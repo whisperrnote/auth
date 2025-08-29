@@ -228,11 +228,12 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
       
       setStep(3); // Success step
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Passkey setup failed:', error);
-      const message = error.name === 'InvalidStateError'
+      const err = error as { name?: string; message?: string };
+      const message = err.name === 'InvalidStateError'
         ? 'This passkey is already registered.'
-        : error.message;
+        : err.message;
       toast.error(`Failed to create passkey: ${message}`);
     }
     setLoading(false);
@@ -245,9 +246,10 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
       toast.success('Passkey disabled successfully.');
       onSuccess();
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(`Failed to disable passkey: ${error.message}`);
+      const err = error as { message?: string };
+      toast.error(`Failed to disable passkey: ${err.message || 'Unknown error'}`);
     }
     setLoading(false);
   };

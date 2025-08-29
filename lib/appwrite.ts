@@ -1277,7 +1277,7 @@ export async function getUnifiedMfaStatus(userId?: string): Promise<{
     // The account.get() method won't throw "user_more_factors_required" for already authenticated users
     // We need to determine MFA enforcement from the user document and factors
     let isEnforced = false;
-    let needsAuthentication = false;
+    const needsAuthentication = false;
     
     // If user has factors, check if MFA is actually enforced by looking at user doc
     if (hasAnyFactor && userId) {
