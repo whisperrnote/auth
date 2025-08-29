@@ -94,7 +94,14 @@ export default function MasterPassPage() {
           toast.error("Incorrect master password. Please try again.");
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      if (e?.message?.includes('Vault is locked') || e?.message?.includes('master password is incorrect')) {
+        toast.error("Incorrect master password. Please try again.");
+      } else {
+        toast.error("Failed to unlock vault");
+      }
+    }
       if (err.message?.includes('Vault is locked') || err.message?.includes('master password is incorrect')) {
         toast.error("Incorrect master password. Please try again.");
       } else {
