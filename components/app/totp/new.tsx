@@ -11,8 +11,9 @@ import { createTotpSecret, updateTotpSecret } from "@/lib/appwrite";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
+import { TotpSecrets } from "@/types/appwrite";
 
-export default function NewTotpDialog({ open, onClose, initialData }: { open: boolean; onClose: () => void; initialData?: any }) {
+export default function NewTotpDialog({ open, onClose, initialData }: { open: boolean; onClose: () => void; initialData?: TotpSecrets }) {
   const { user } = useAppwrite();
   const [form, setForm] = useState({
     issuer: "",
@@ -68,12 +69,17 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
           url: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        } as any);
+          $sequence: 0,
+          $collectionId: "",
+          $databaseId: "",
+          $permissions: [],
+        });
         toast.success("TOTP code added!");
       }
       onClose();
-    } catch (e: any) {
-      toast.error(e.message || `Failed to ${initialData ? 'update' : 'add'} TOTP code.`);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || `Failed to ${initialData ? 'update' : 'add'} TOTP code.`);
     }
     setLoading(false);
   };

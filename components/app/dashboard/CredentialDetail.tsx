@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Copy, Eye, EyeOff, ArrowLeft, X, Globe, Calendar, Tag } from "lucide-react";
+import { Credentials } from "@/types/appwrite";
 
 export default function CredentialDetail({ 
   credential, 
   onClose, 
   isMobile 
 }: {
-  credential: any;
+  credential: Credentials;
   onClose: () => void;
   isMobile: boolean;
 }) {
@@ -162,7 +163,7 @@ export default function CredentialDetail({
     }
   };
 
-  const faviconUrl = getFaviconUrl(credential.url);
+  const faviconUrl = getFaviconUrl(credential.url || "");
 
   return (
     <div ref={rootRef}
@@ -292,7 +293,7 @@ export default function CredentialDetail({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleCopy(credential.url, 'url')}
+                  onClick={() => handleCopy(credential.url || "", 'url')}
                   className="h-6 px-2"
                 >
                   <Copy className="h-3 w-3" />
@@ -320,7 +321,7 @@ export default function CredentialDetail({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleCopy(credential.notes, 'notes')}
+                  onClick={() => handleCopy(credential.notes || "", 'notes')}
                   className="h-6 px-2"
                 >
                   <Copy className="h-3 w-3" />
@@ -358,7 +359,7 @@ export default function CredentialDetail({
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-3 block">Custom Fields</label>
               <div className="space-y-3">
-                {customFields.map((field: any, index: number) => (
+                {customFields.map((field: { id?: string; label?: string; value?: string }, index: number) => (
                   <div key={field.id || index}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-muted-foreground">
@@ -367,7 +368,7 @@ export default function CredentialDetail({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleCopy(field.value, `custom-${index}`)}
+                        onClick={() => handleCopy(field.value || "", `custom-${index}`)}
                         className="h-5 px-1"
                       >
                         <Copy className="h-3 w-3" />

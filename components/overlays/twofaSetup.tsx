@@ -103,17 +103,18 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       const codes = await generateRecoveryCodes();
       setRecoveryCodes(codes.recoveryCodes);
       setStep("recovery");
-    } catch (e: any) {
+    } catch (e: unknown) {
       // If recovery codes already generated, allow user to proceed but show warning
+      const err = e as { message?: string; code?: number };
       if (
-        e?.message?.toLowerCase().includes("already generated recovery codes") ||
-        e?.message?.toLowerCase().includes("recovery codes have already been generated") ||
-        e?.code === 409
+        err?.message?.toLowerCase().includes("already generated recovery codes") ||
+        err?.message?.toLowerCase().includes("recovery codes have already been generated") ||
+        err?.code === 409
       ) {
         setRecoveryCodes(null); // No codes to show
         setStep("recovery");
       } else {
-        setError(e.message || "Failed to generate recovery codes.");
+        setError(err.message || "Failed to generate recovery codes.");
       }
     }
     setLoading(false);
@@ -133,8 +134,9 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       setSecret(totp.secret);
       setQrUrl(totp.qrUrl);
       setStep("totp_qr");
-    } catch (e: any) {
-      setError(e.message || "Failed to add TOTP factor.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message || "Failed to add TOTP factor.");
     }
     setLoading(false);
   };
@@ -157,8 +159,9 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       } else {
         await finalizeSetup();
       }
-    } catch (e: any) {
-      setError(e.message || "Verification failed.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message || "Verification failed.");
     }
     setLoading(false);
   };

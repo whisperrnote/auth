@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { Folders } from "@/types/appwrite";
 import {
   User,
   Shield,
@@ -271,7 +272,17 @@ export default function SettingsPage() {
         toast.success("Folder updated!");
       } else {
         // Create new folder
-        const newFolder = await createFolder({ name: folderName, userId: user.$id } as any);
+        const newFolder = await createFolder({
+          name: folderName,
+          userId: user.$id,
+          parentFolderId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          $sequence: 0,
+          $collectionId: "",
+          $databaseId: "",
+          $permissions: [],
+        });
         setFolders([...folders, newFolder]);
         toast.success("Folder created!");
       }
@@ -284,7 +295,7 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  const openFolderModal = (folder: any | null = null) => {
+  const openFolderModal = (folder: Folders | null = null) => {
     if (folder) {
       setEditingFolder(folder);
       setFolderName(folder.name);
@@ -295,7 +306,7 @@ export default function SettingsPage() {
     setIsFolderModalOpen(true);
   };
 
-  const openDeleteFolderModal = (folder: any) => {
+  const openDeleteFolderModal = (folder: Folders) => {
     setFolderToDelete(folder);
     setIsDeleteFolderModalOpen(true);
   };

@@ -36,10 +36,11 @@ export default function TwofaAccessPage() {
         if (mfaStatus.needsMfa) return;
         // If neither fully auth nor needs MFA, treat as logged-out and send to login
         router.replace("/login");
-      } catch (error: any) {
+      } catch (error: unknown) {
         // If Appwrite signals partial auth explicitly, stay here
-        const msg = error?.message || "";
-        const type = error?.type || "";
+        const err = error as { message?: string; type?: string };
+        const msg = err?.message || "";
+        const type = err?.type || "";
         if (type === "user_more_factors_required" || msg.includes("More factors are required")) {
           return;
         }
@@ -68,17 +69,18 @@ export default function TwofaAccessPage() {
     setLoading(true);
     try {
       // Use the correct AuthenticationFactor mapping for createMfaChallenge
-      let factorEnum: any = factor;
+      let factorEnum: "totp" | "email" | "phone" | "recoverycode" = factor;
       // Map string to enum if needed (for compatibility with appwrite.ts)
       if (factor === "totp") factorEnum = "totp";
       else if (factor === "email") factorEnum = "email";
       else if (factor === "phone") factorEnum = "phone";
       else if (factor === "recoverycode") factorEnum = "recoverycode";
-      const challenge = await createMfaChallenge(factorEnum as any);
+      const challenge = await createMfaChallenge(factorEnum);
       setChallengeId(challenge.$id);
       setSelectedFactor(factor);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to create challenge");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to create challenge");
     }
     setLoading(false);
   };
@@ -93,8 +95,9 @@ export default function TwofaAccessPage() {
       await completeMfaChallenge(challengeId, code);
       // Centralized post-auth finalization
       await finalizeAuth({ redirect: true, fallback: "/login" });
-    } catch (e: any) {
-      toast.error(e.message || "Invalid code");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Invalid code");
     }
     setLoading(false);
   };

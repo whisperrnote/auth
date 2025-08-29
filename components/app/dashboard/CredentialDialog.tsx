@@ -4,7 +4,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createCredential, updateCredential } from "@/lib/appwrite";
-import type { Credentials } from "@/types/appwrite.d";
+import type { Credentials } from "@/types/appwrite";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { generateRandomPassword } from "@/utils/password";
 
@@ -16,7 +16,7 @@ export default function CredentialDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  initial?: any;
+  initial?: Credentials | null;
   onSaved: () => void;
 }) {
   const { user } = useAppwrite();
@@ -76,12 +76,23 @@ export default function CredentialDialog({
       if (!user) throw new Error("Not authenticated");
 
       // Clean and prepare credential data with proper null handling
-      const credentialData: any = {
+      const credentialData: Omit<Credentials, "$id" | "$createdAt" | "$updatedAt"> = {
+        userId: user.$id,
         name: form.name.trim(),
+        url: null,
         username: form.username.trim(),
+        notes: null,
+        folderId: null,
+        tags: null,
+        customFields: null,
+        faviconUrl: null,
         password: form.password.trim(),
         createdAt: initial && initial.createdAt ? initial.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        $sequence: 0,
+        $collectionId: "",
+        $databaseId: "",
+        $permissions: [],
       };
       if (form.url && form.url.trim()) credentialData.url = form.url.trim();
       if (form.notes && form.notes.trim()) credentialData.notes = form.notes.trim();
@@ -89,22 +100,18 @@ export default function CredentialDialog({
         const tagsArr = form.tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
         if (tagsArr.length > 0) credentialData.tags = tagsArr;
       }
-      if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields);
+      if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields) as string;
 
       if (initial && initial.$id) {
         await updateCredential(initial.$id, credentialData);
       } else {
-        await createCredential({
-          userId: user.$id,
-          ...credentialData,
-          folderId: null,
-          faviconUrl: null,
-        });
+        await createCredential(credentialData);
       }
       onSaved();
       onClose();
-    } catch (e: any) {
-      setError(e.message || "Failed to save credential.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message || "Failed to save credential.");
     }
     setLoading(false);
   };
