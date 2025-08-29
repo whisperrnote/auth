@@ -13,7 +13,7 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { TotpSecrets } from "@/types/appwrite";
 
-export default function NewTotpDialog({ open, onClose, initialData }: { open: boolean; onClose: () => void; initialData?: TotpSecrets }) {
+export default function NewTotpDialog({ open, onClose, initialData }: { open: boolean; onClose: () => void; initialData?: { $id?: string; issuer?: string | null; accountName?: string | null; secretKey?: string; period?: number | null; digits?: number | null; algorithm?: string | null; folderId?: string | null } }) {
   const { user } = useAppwrite();
   const [form, setForm] = useState({
     issuer: "",
@@ -56,8 +56,8 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
     setLoading(true);
     try {
       if (!user) throw new Error("Not authenticated");
-      if (initialData) {
-        await updateTotpSecret(initialData.$id, {
+       if (initialData && initialData.$id) {
+         await updateTotpSecret(initialData.$id, {
           ...form,
           updatedAt: new Date().toISOString(),
         });

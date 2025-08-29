@@ -189,7 +189,8 @@ export default function SettingsPage() {
       await updateUserProfile(user.$id, { name: profile.name });
       toast.success("Profile updated!");
     } catch (e: unknown) {
-      toast.error(e.message || "Failed to update profile.");
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to update profile.");
     }
     setSaving(false);
   };
@@ -210,7 +211,8 @@ export default function SettingsPage() {
       URL.revokeObjectURL(url);
       toast.success("Data exported!", { id: toastId });
     } catch (e: unknown) {
-      toast.error(e.message || "Failed to export data.", { id: toastId });
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to export data.", { id: toastId });
     }
   };
 
@@ -226,7 +228,8 @@ export default function SettingsPage() {
       }, 1500);
     } catch (e: unknown) {
       setDangerLoading(false);
-      toast.error(e.message || "Failed to delete account.");
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to delete account.");
     } finally {
       setIsDeleteAccountModalOpen(false);
     }
@@ -256,7 +259,8 @@ export default function SettingsPage() {
       setIsChangePasswordModalOpen(false);
       setPasswords({ current: "", new: "", confirm: "" });
     } catch (e: unknown) {
-      setPasswordError(e.message || "Failed to update password.");
+      const err = e as { message?: string };
+      setPasswordError(err.message || "Failed to update password.");
     }
     setSaving(false);
   };
@@ -290,12 +294,13 @@ export default function SettingsPage() {
       setEditingFolder(null);
       setFolderName("");
     } catch (e: unknown) {
-      toast.error(e.message || "Failed to save folder.");
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to save folder.");
     }
     setSaving(false);
   };
 
-  const openFolderModal = (folder: Folders | null = null) => {
+  const openFolderModal = (folder: FolderItem | null = null) => {
     if (folder) {
       setEditingFolder(folder);
       setFolderName(folder.name);
@@ -306,7 +311,7 @@ export default function SettingsPage() {
     setIsFolderModalOpen(true);
   };
 
-  const openDeleteFolderModal = (folder: Folders) => {
+  const openDeleteFolderModal = (folder: FolderItem) => {
     setFolderToDelete(folder);
     setIsDeleteFolderModalOpen(true);
   };
@@ -321,7 +326,8 @@ export default function SettingsPage() {
       setIsDeleteFolderModalOpen(false);
       setFolderToDelete(null);
     } catch (e: unknown) {
-      toast.error(e.message || "Failed to delete folder.");
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to delete folder.");
     }
     setDangerLoading(false);
   };

@@ -176,9 +176,10 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       await addEmailFactor(user.email, ""); // This might fail - email is already verified for login
       setEmailVerificationSent(true);
       setStep("email_verify");
-    } catch (e: any) {
+    } catch (e: unknown) {
       // If email is already verified for account, it might already be usable as MFA
-      console.log("Email factor setup:", e.message);
+      const err = e as { message?: string };
+      console.log("Email factor setup:", err.message);
       await finalizeSetup();
     }
     setLoading(false);
@@ -219,8 +220,9 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       
       onStatusChange(true);
       setStep("done");
-    } catch (e: any) {
-      setError(e.message || "Failed to enable MFA.");
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message || "Failed to enable MFA.");
     }
     setLoading(false);
   };
@@ -230,7 +232,7 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
     setLoading(true);
     setError(null);
     
-    const operations: Promise<any>[] = [];
+    const operations: Promise<unknown>[] = [];
     const operationNames: string[] = [];
     
     try {
@@ -280,9 +282,10 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
       onStatusChange(false);
       setShowDisableConfirm(false);
       
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Unexpected error during disable:", e);
-      setError(e.message || "Unexpected error occurred. Please try again.");
+      const err = e as { message?: string };
+      setError(err.message || "Unexpected error occurred. Please try again.");
     }
     
     setLoading(false);
@@ -354,8 +357,9 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
           onStatusChange(false);
           setIsCurrentlyEnabled(false);
         }
-      } catch (e: any) {
-        setError(e.message || `Failed to remove ${factorType} factor`);
+      } catch (e: unknown) {
+        const err = e as { message?: string };
+        setError(err.message || `Failed to remove ${factorType} factor`);
         // Revert the checkbox
         setSelectedFactors(prev => ({ ...prev, [factorType]: wasEnabled }));
       }

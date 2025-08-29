@@ -233,7 +233,7 @@ export default function TOTPPage() {
           setShowNew(false);
           setEditingTotp(null);
         }}
-        initialData={editingTotp}
+        initialData={editingTotp || undefined}
       />
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, id: null })}>

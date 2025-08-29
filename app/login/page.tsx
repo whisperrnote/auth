@@ -176,7 +176,6 @@ export default function LoginPage() {
     } catch (e: unknown) {
       const err = e as { message?: string };
       toast.error(err?.message || "Error sending OTP.");
-      toast.error(e.message || "Error sending OTP.");
     }
   };
 

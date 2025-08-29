@@ -101,7 +101,9 @@ export default function RegisterPage() {
   }, [user, router, isVaultUnlocked]);
 
   useEffect(() => {
-    redirectIfAuthenticated(user, isVaultUnlocked, router);
+    if (user) {
+      redirectIfAuthenticated(user, isVaultUnlocked, router);
+    }
   }, [user, router, isVaultUnlocked]);
 
   // Handlers

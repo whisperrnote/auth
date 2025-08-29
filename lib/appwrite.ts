@@ -95,10 +95,18 @@ export class AppwriteService {
   }
 
   // Map Appwrite DocumentList response to domain DocumentList shape
-  private static mapDocumentList<T>(response: Models.DocumentList<Models.Document> | any): { total: number; documents: T[] } {
+  private static mapDocumentList<T>(response: Models.DocumentList<Models.Document> | { documents?: unknown[]; items?: unknown[]; total?: number } | unknown[]): { total: number; documents: T[] } {
+    if (Array.isArray(response)) {
+      return {
+        total: response.length,
+        documents: response as unknown as T[],
+      };
+    }
+
+    const resp = response as { documents?: unknown[]; items?: unknown[]; total?: number };
     return {
-      total: response.total ?? (Array.isArray(response) ? response.length : 0),
-      documents: (response.documents ?? response.items ?? response ?? []) as unknown as T[],
+      total: resp.total ?? 0,
+      documents: (resp.documents ?? resp.items ?? []) as unknown as T[],
     };
   }
   // Create with automatic encryption
@@ -129,7 +137,7 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       ID.unique(),
-      data as unknown as Record<string, any>
+      data as unknown as Record<string, unknown>
     );
     return this.mapDoc<Folders>(doc);
   }
@@ -438,7 +446,7 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_FOLDERS_ID,
       id,
-      data as any
+      data as unknown as Record<string, unknown>
     );
     return doc as unknown as Folders;
   }
@@ -448,7 +456,7 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
       id,
-      data as any
+      data as unknown as Record<string, unknown>
     );
     return doc as unknown as User;
   }
@@ -458,7 +466,7 @@ export class AppwriteService {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_SECURITYLOGS_ID,
       id,
-      data as any
+      data as unknown as Record<string, unknown>
     );
     return doc as unknown as SecurityLogs;
   }
@@ -518,8 +526,14 @@ export class AppwriteService {
       details: details ? JSON.stringify(details) : null,
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
-      timestamp: new Date().toISOString()
-    } as any);
+      timestamp: new Date().toISOString(),
+      $sequence: 0,
+      $collectionId: "",
+      $databaseId: "",
+      $createdAt: new Date().toISOString(),
+      $updatedAt: new Date().toISOString(),
+      $permissions: [],
+    });
   }
 
   // --- Encryption/Decryption Helpers ---
@@ -775,8 +789,9 @@ export async function checkMfaRequired(): Promise<boolean> {
   try {
     await appwriteAccount.get();
     return false; // If account.get() succeeds, no MFA required
-  } catch (error: any) {
-    if (error.type === "user_more_factors_required") {
+  } catch (error: unknown) {
+    const err = error as { type?: string };
+    if (err.type === "user_more_factors_required") {
       return true; // MFA is required
     }
     // Re-throw other errors (like network issues, invalid session, etc.)
@@ -803,20 +818,21 @@ export async function getMfaAuthenticationStatus(): Promise<{
       needsMfa: false,
       isFullyAuthenticated: true
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { type?: string; code?: number; message?: string };
     console.log("getMfaAuthenticationStatus: Error caught", {
       error,
-      type: error.type,
-      code: error.code,
-      message: error.message
+      type: err.type,
+      code: err.code,
+      message: err.message
     });
     
     // Check for MFA requirement using multiple possible error indicators
     if (
-      error.type === "user_more_factors_required" ||
-      error.code === 401 && error.message?.includes("more factors") ||
-      error.message?.includes("More factors are required") ||
-      error.message?.includes("user_more_factors_required")
+      err.type === "user_more_factors_required" ||
+      err.code === 401 && err.message?.includes("more factors") ||
+      err.message?.includes("More factors are required") ||
+      err.message?.includes("user_more_factors_required")
     ) {
       console.log("getMfaAuthenticationStatus: MFA required detected");
       // User is partially authenticated but needs MFA
@@ -825,13 +841,13 @@ export async function getMfaAuthenticationStatus(): Promise<{
         isFullyAuthenticated: false
       };
     }
-    
+
     console.log("getMfaAuthenticationStatus: Not authenticated");
     // For other errors (network, invalid session, etc.)
     return {
       needsMfa: false,
       isFullyAuthenticated: false,
-      error: error.message || "Authentication check failed"
+      error: err.message || "Authentication check failed"
     };
   }
 }
@@ -933,7 +949,7 @@ export async function listFolders(userId: string, queries: string[] = []) {
     return (response.documents ?? response) as unknown as Folders[];
   }
 
-export async function updateFolder(id: string, data: Partial<any>) {
+export async function updateFolder(id: string, data: Partial<Folders>) {
   return await AppwriteService.updateFolder(id, data);
 }
 
@@ -1208,7 +1224,7 @@ export async function getAuthenticationNextRoute(userId: string): Promise<string
  * Redirects authenticated users to /masterpass or /dashboard as appropriate.
  * Updated to use the new MFA-aware authentication flow
  */
-export async function redirectIfAuthenticated(user: any, isVaultUnlocked: () => boolean, router: any) {
+export async function redirectIfAuthenticated(user: { $id: string }, isVaultUnlocked: () => boolean, router: { replace: (path: string) => void }) {
   if (user) {
     try {
       const nextRoute = await getAuthenticationNextRoute(user.$id);
@@ -1314,13 +1330,14 @@ export async function getUnifiedMfaStatus(userId?: string): Promise<{
       requiresSetup,
       needsAuthentication
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     return {
       isEnforced: false,
       factors: { totp: false, email: false, phone: false },
       requiresSetup: false,
       needsAuthentication: false,
-      error: error.message || "Failed to check MFA status"
+      error: err.message || "Failed to check MFA status"
     };
   }
 }
@@ -1347,7 +1364,7 @@ export async function getAppwriteMfaStatus(): Promise<{
       isEnforced,
       factors
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to get Appwrite MFA status:", error);
     return {
       isEnforced: false,
@@ -1421,12 +1438,13 @@ export async function syncAndValidateMfaStatus(userId: string): Promise<{
       wasOutOfSync,
       currentStatus: appwriteStatus.isEnforced
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to sync MFA status:", error);
+    const err = error as { message?: string };
     return {
       wasOutOfSync: false,
       currentStatus: false,
-      error: error.message || "Sync failed"
+      error: err.message || "Sync failed"
     };
   }
 }

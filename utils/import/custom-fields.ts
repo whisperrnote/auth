@@ -1,4 +1,5 @@
-import type { BitwardenCustomField, BITWARDEN_FIELD_TYPES } from './bitwarden-types';
+import type { BitwardenCustomField } from './bitwarden-types';
+import { BITWARDEN_FIELD_TYPES } from './bitwarden-types';
 
 export interface ProcessedCustomField {
   name: string;

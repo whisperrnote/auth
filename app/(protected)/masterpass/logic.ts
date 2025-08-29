@@ -474,7 +474,7 @@ export class MasterPassCrypto {
 
     // Force garbage collection if available
     if (typeof window !== 'undefined' && 'gc' in window) {
-      (window as any).gc();
+      (window as Window & { gc?: () => void }).gc?.();
     }
   }
 
@@ -573,20 +573,26 @@ export const decryptField = async (encryptedValue: string): Promise<string> => {
 };
 
 // Middleware for automatic encryption/decryption of database operations
-export const createSecureDbWrapper = (databases: any, databaseId: string) => {
+export const createSecureDbWrapper = (databases: {
+  createDocument: (...args: unknown[]) => unknown;
+  getDocument: (...args: unknown[]) => unknown;
+  updateDocument: (...args: unknown[]) => unknown;
+  deleteDocument: (...args: unknown[]) => unknown;
+  listDocuments: (...args: unknown[]) => unknown;
+}, databaseId: string) => {
   return {
     // Secure document creation
-    createDocument: async (collectionId: string, documentId: string, data: any, permissions?: string[]) => {
+    createDocument: async (collectionId: string, documentId: string, data: Record<string, unknown>, permissions?: string[]) => {
       const secureData = { ...data };
 
       // Encrypt sensitive fields based on collection
       if (collectionId === 'credentials') {
-        if (secureData.username) secureData.username = await encryptField(secureData.username);
-        if (secureData.password) secureData.password = await encryptField(secureData.password);
-        if (secureData.notes) secureData.notes = await encryptField(secureData.notes);
-        if (secureData.customFields) secureData.customFields = await encryptField(secureData.customFields);
+        if (secureData.username) secureData.username = await encryptField(String(secureData.username));
+        if (secureData.password) secureData.password = await encryptField(String(secureData.password));
+        if (secureData.notes) secureData.notes = await encryptField(String(secureData.notes));
+        if (secureData.customFields) secureData.customFields = await encryptField(String(secureData.customFields));
       } else if (collectionId === 'totpSecrets') {
-        if (secureData.secretKey) secureData.secretKey = await encryptField(secureData.secretKey);
+        if (secureData.secretKey) secureData.secretKey = await encryptField(String(secureData.secretKey));
       }
 
       return databases.createDocument(databaseId, collectionId, documentId, secureData, permissions);
@@ -594,31 +600,31 @@ export const createSecureDbWrapper = (databases: any, databaseId: string) => {
 
     // Secure document retrieval
     getDocument: async (collectionId: string, documentId: string) => {
-      const doc = await databases.getDocument(databaseId, collectionId, documentId);
+      const doc = await databases.getDocument(databaseId, collectionId, documentId) as Record<string, unknown>;
       return await decryptDocument(doc, collectionId);
     },
 
     // Secure document listing
     listDocuments: async (collectionId: string, queries?: string[]) => {
-      const response = await databases.listDocuments(databaseId, collectionId, queries);
+      const response = await databases.listDocuments(databaseId, collectionId, queries) as { documents: Record<string, unknown>[]; [key: string]: unknown };
       const decryptedDocuments = await Promise.all(
-        response.documents.map((doc: any) => decryptDocument(doc, collectionId))
+        response.documents.map((doc: Record<string, unknown>) => decryptDocument(doc, collectionId))
       );
       return { ...response, documents: decryptedDocuments };
     },
 
     // Secure document update
-    updateDocument: async (collectionId: string, documentId: string, data: any, permissions?: string[]) => {
+    updateDocument: async (collectionId: string, documentId: string, data: Record<string, unknown>, permissions?: string[]) => {
       const secureData = { ...data };
 
       // Encrypt sensitive fields based on collection
       if (collectionId === 'credentials') {
-        if (secureData.username) secureData.username = await encryptField(secureData.username);
-        if (secureData.password) secureData.password = await encryptField(secureData.password);
-        if (secureData.notes) secureData.notes = await encryptField(secureData.notes);
-        if (secureData.customFields) secureData.customFields = await encryptField(secureData.customFields);
+        if (secureData.username) secureData.username = await encryptField(String(secureData.username));
+        if (secureData.password) secureData.password = await encryptField(String(secureData.password));
+        if (secureData.notes) secureData.notes = await encryptField(String(secureData.notes));
+        if (secureData.customFields) secureData.customFields = await encryptField(String(secureData.customFields));
       } else if (collectionId === 'totpSecrets') {
-        if (secureData.secretKey) secureData.secretKey = await encryptField(secureData.secretKey);
+        if (secureData.secretKey) secureData.secretKey = await encryptField(String(secureData.secretKey));
       }
 
       return databases.updateDocument(databaseId, collectionId, documentId, secureData, permissions);
@@ -631,17 +637,17 @@ export const createSecureDbWrapper = (databases: any, databaseId: string) => {
 };
 
 // Helper function to decrypt document based on collection type
-const decryptDocument = async (doc: any, collectionId: string) => {
+const decryptDocument = async (doc: Record<string, unknown>, collectionId: string) => {
   const decryptedDoc = { ...doc };
 
   try {
     if (collectionId === 'credentials') {
-      if (decryptedDoc.username) decryptedDoc.username = await decryptField(decryptedDoc.username);
-      if (decryptedDoc.password) decryptedDoc.password = await decryptField(decryptedDoc.password);
-      if (decryptedDoc.notes) decryptedDoc.notes = await decryptField(decryptedDoc.notes);
-      if (decryptedDoc.customFields) decryptedDoc.customFields = await decryptField(decryptedDoc.customFields);
+      if (decryptedDoc.username) decryptedDoc.username = await decryptField(String(decryptedDoc.username));
+      if (decryptedDoc.password) decryptedDoc.password = await decryptField(String(decryptedDoc.password));
+      if (decryptedDoc.notes) decryptedDoc.notes = await decryptField(String(decryptedDoc.notes));
+      if (decryptedDoc.customFields) decryptedDoc.customFields = await decryptField(String(decryptedDoc.customFields));
     } else if (collectionId === 'totpSecrets') {
-      if (decryptedDoc.secretKey) decryptedDoc.secretKey = await decryptField(decryptedDoc.secretKey);
+      if (decryptedDoc.secretKey) decryptedDoc.secretKey = await decryptField(String(decryptedDoc.secretKey));
     }
   } catch (error) {
     console.error('Failed to decrypt document:', error);

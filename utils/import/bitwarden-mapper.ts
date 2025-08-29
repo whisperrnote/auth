@@ -39,6 +39,10 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
       parentFolderId: null, // Bitwarden doesn't support nested folders by default
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      $sequence: 0,
+      $collectionId: "",
+      $databaseId: "",
+      $permissions: [],
     };
     
     mappedFolders.push(mappedFolder);
@@ -105,6 +109,10 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
         faviconUrl: null, // Could be derived from URL later
         createdAt: baseCreatedAt,
         updatedAt: baseUpdatedAt,
+        $sequence: 0,
+        $collectionId: "",
+        $databaseId: "",
+        $permissions: [],
       };
 
       mappedCredentials.push(credential);
@@ -118,13 +126,17 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
           issuer: totpData.issuer,
           accountName: totpData.accountName,
           secretKey: totpData.secretKey,
-          algorithm: totpData.algorithm as any,
-          digits: totpData.digits as any,
-          period: totpData.period as any,
+          algorithm: String(totpData.algorithm || "SHA1"),
+          digits: Number(totpData.digits || 6),
+          period: Number(totpData.period || 30),
           folderId,
           url, // Include URL for future autofilling
           createdAt: baseCreatedAt,
           updatedAt: baseUpdatedAt,
+          $sequence: 0,
+          $collectionId: "",
+          $databaseId: "",
+          $permissions: [],
         };
 
         mappedTotpSecrets.push(totpSecret);
