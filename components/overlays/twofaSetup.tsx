@@ -454,13 +454,13 @@ export default function TwofaSetup({ open, onClose, user, onStatusChange }: {
                 Recovery codes have already been generated and cannot be shown again.<br />
                 If you have saved them, continue to the next step.<br />
                 <span className="text-destructive font-medium">
-                  If you haven't saved them, you'll need to disable and re-enable 2FA to generate new ones.
+                  If you haven&apos;t saved them, you&apos;ll need to disable and re-enable 2FA to generate new ones.
                 </span>
               </div>
             )}
             <p className="text-xs text-muted-foreground mb-4">Save these codes in a secure place. They will not be shown again.</p>
             <Button onClick={handleFactorSelection} disabled={loading}>
-              I've saved my codes, continue
+              I&apos;ve saved my codes, continue
             </Button>
           </>
         )}

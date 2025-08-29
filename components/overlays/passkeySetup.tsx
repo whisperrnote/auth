@@ -272,7 +272,7 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
           <h2 className="text-lg font-semibold mb-4">Disable Passkey</h2>
           <div className="space-y-4">
             <p className="text-gray-600">
-              Are you sure you want to disable passkey authentication? You'll need to use your master password to unlock your vault.
+              Are you sure you want to disable passkey authentication? You&apos;ll need to use your master password to unlock your vault.
             </p>
             <div className="flex gap-3 pt-4">
               <Button variant="outline" onClick={handleClose} disabled={loading}>
@@ -342,7 +342,7 @@ export function PasskeySetup({ isOpen, onClose, userId, isEnabled, onSuccess }: 
               <div className="space-y-3">
                 <h3 className="font-medium">Step 2: Create Passkey</h3>
                 <p className="text-sm text-gray-600">
-                  Click "Create Passkey" and follow your device's prompts to create a new passkey. This might involve:
+                  Click &quot;Create Passkey&quot; and follow your device&apos;s prompts to create a new passkey. This might involve:
                 </p>
                 <ul className="text-sm text-gray-600 space-y-1 ml-4">
                   <li>• Face ID or Touch ID verification</li>

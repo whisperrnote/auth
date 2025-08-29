@@ -456,7 +456,7 @@ export default function DashboardPage() {
             <div className="p-6">
               <h3 className="text-lg font-bold">Delete Credential</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Are you sure you want to delete the credential for "{credentialToDelete?.name}"? This action cannot be undone.
+                Are you sure you want to delete the credential for &quot;{credentialToDelete?.name}&quot;? This action cannot be undone.
               </p>
               <div className="mt-4 flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>

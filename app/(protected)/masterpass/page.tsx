@@ -102,12 +102,6 @@ export default function MasterPassPage() {
         toast.error("Failed to unlock vault");
       }
     }
-      if (err.message?.includes('Vault is locked') || err.message?.includes('master password is incorrect')) {
-        toast.error("Incorrect master password. Please try again.");
-      } else {
-        toast.error("Failed to unlock vault");
-      }
-    }
     
     setLoading(false);
   };

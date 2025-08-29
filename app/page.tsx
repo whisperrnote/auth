@@ -171,7 +171,7 @@ export default function LandingPage() {
           <div className="p-6 space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-1">Dashboard</h2>
-              <p className="text-muted-foreground text-sm">Welcome back! Here's your security overview.</p>
+              <p className="text-muted-foreground text-sm">Welcome back! Here&apos;s your security overview.</p>
             </div>
 
             {/* Stats Grid */}
@@ -345,7 +345,7 @@ export default function LandingPage() {
                   <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
-              <p className="italic mb-6">"{testimonial.quote}"</p>
+              <p className="italic mb-6">&quot;{testimonial.quote}&quot;</p>
               <div>
                 <p className="font-semibold">{testimonial.name}</p>
                 <p className="text-muted-foreground text-sm">{testimonial.role}</p>
