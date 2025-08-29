@@ -149,13 +149,66 @@ export default function DashboardPage() {
     }
   }, [user, selectedFolder, fetchCredentials]);
 
+  const loadAllCredentials = useCallback(async () => {
+    if (!user?.$id) return;
+
+    setLoading(true);
+    try {
+      // Load all credentials by fetching multiple pages
+      const allDocs: Credentials[] = [];
+      let page = 1;
+      const batchSize = 100; // Load in batches to avoid overwhelming the server
+
+      while (true) {
+        const offset = (page - 1) * batchSize;
+        const result = await listCredentials(user.$id, batchSize, offset);
+
+        if (result.documents.length === 0) break;
+
+        let docs = result.documents;
+        if (selectedFolder) {
+          docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
+        }
+
+        allDocs.push(...docs);
+        page++;
+
+        // Safety break to avoid infinite loops
+        if (page > 50) break;
+      }
+
+      setAllCredentials(allDocs);
+      setTotal(allDocs.length);
+    } catch (error) {
+      console.error("Failed to load all credentials:", error);
+      toast.error("Failed to load credentials for search");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.$id, selectedFolder]);
+
   const handleSearch = useCallback(
-    (term: string) => {
-      // client-side instant filtering, keep pagination intact
-      setSearchTerm(term);
+    async (term: string) => {
+      const trimmedTerm = term.trim();
+
+      // If clearing search, reset to server-backed pagination
+      if (!trimmedTerm) {
+        setSearchTerm("");
+        setCurrentPage(1);
+        // Reset to normal pagination by fetching first page
+        fetchCredentials(1, true);
+        return;
+      }
+
+      // If starting a search and we don't have all data loaded, load it first
+      if (allCredentials.length === 0) {
+        await loadAllCredentials();
+      }
+
+      setSearchTerm(trimmedTerm);
       setCurrentPage(1);
     },
-    [setSearchTerm]
+    [setSearchTerm, allCredentials.length, loadAllCredentials, fetchCredentials]
   );
 
   const handlePageChange = (page: number) => {
@@ -164,6 +217,7 @@ export default function DashboardPage() {
       // Server-backed pagination when not searching
       fetchCredentials(page, true);
     }
+    // When searching, pagination is handled client-side on filteredCredentials
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -171,8 +225,10 @@ export default function DashboardPage() {
     setPageSize(size);
     setCurrentPage(1);
     if (!searchTerm.trim()) {
+      // Server-backed pagination when not searching
       fetchCredentials(1, true);
     }
+    // When searching, page size change is handled client-side on filteredCredentials
   };
 
   const handleLoadMore = () => {
@@ -384,7 +440,7 @@ export default function DashboardPage() {
               (searchTerm.trim() ?
                 // Client-side pagination when searching
                 filteredCredentials.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                : filteredCredentials
+                : credentials
               ).map((cred) => (
                 <CredentialItem
                   key={cred.$id}
