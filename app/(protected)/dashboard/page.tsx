@@ -32,9 +32,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 export default function DashboardPage() {
   const { user } = useAppwrite();
-  // Master list of all loaded credentials for client-side search
-  const [allCredentials, setAllCredentials] = useState<Credentials[]>([]);
-  // Currently displayed credentials (derived from allCredentials + search + pagination)
+  // Currently displayed credentials (server-provided page items)
   const [credentials, setCredentials] = useState<Credentials[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,16 +89,13 @@ export default function DashboardPage() {
           docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
         }
 
-        // Note: allCredentials is only populated by loadAllCredentials for search
-        // Regular pagination doesn't update allCredentials to avoid partial data
 
-        // For initial/non-search view, set current page items
-        if (!searchTerm.trim()) {
-          if (resetData || isFirstPage) {
-            setCredentials(docs);
-          } else {
-            setCredentials((prev) => [...prev, ...(docs as Credentials[])]);
-          }
+
+        // Set current page items (always, since filtering happens client-side)
+        if (resetData || isFirstPage) {
+          setCredentials(docs);
+        } else {
+          setCredentials((prev) => [...prev, ...(docs as Credentials[])]);
         }
 
         setTotal(result.total);
@@ -112,14 +107,12 @@ export default function DashboardPage() {
         setLoadingMore(false);
       }
     },
-    [user, pageSize, selectedFolder, searchTerm]
+    [user, pageSize, selectedFolder]
   );
 
   useEffect(() => {
     if (user?.$id) {
       setCurrentPage(1);
-      // Clear allCredentials cache when folder changes to ensure fresh data
-      setAllCredentials([]);
       fetchCredentials(1, true);
 
       listFolders(user.$id)
@@ -137,47 +130,10 @@ export default function DashboardPage() {
     }
   }, [user, selectedFolder, fetchCredentials]);
 
-  const loadAllCredentials = useCallback(async () => {
-    if (!user?.$id) return;
 
-    setLoading(true);
-    try {
-      // Load all credentials by fetching multiple pages
-      const allDocs: Credentials[] = [];
-      let page = 1;
-      const batchSize = 100; // Load in batches to avoid overwhelming the server
-
-      while (true) {
-        const offset = (page - 1) * batchSize;
-        const result = await listCredentials(user.$id, batchSize, offset);
-
-        if (result.documents.length === 0) break;
-
-        let docs = result.documents;
-        // Apply folder filter client-side if selected
-        if (selectedFolder) {
-          docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
-        }
-
-        allDocs.push(...docs);
-        page++;
-
-        // Safety break to avoid infinite loops
-        if (page > 50) break;
-      }
-
-      setAllCredentials(allDocs);
-      setTotal(allDocs.length);
-    } catch (error) {
-      console.error("Failed to load all credentials:", error);
-      toast.error("Failed to load credentials for search");
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.$id, selectedFolder]);
 
   const handleSearch = useCallback(
-    async (term: string) => {
+    (term: string) => {
       const trimmedTerm = term.trim();
 
       // If clearing search, reset to server-backed pagination
@@ -189,35 +145,24 @@ export default function DashboardPage() {
         return;
       }
 
-      // Always load all credentials for search (only once per session)
-      if (allCredentials.length === 0) {
-        await loadAllCredentials();
-      }
-
       setSearchTerm(trimmedTerm);
       setCurrentPage(1);
     },
-    [allCredentials.length, loadAllCredentials, fetchCredentials]
+    [fetchCredentials]
   );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    if (!searchTerm.trim()) {
-      // Server-backed pagination when not searching
-      fetchCredentials(page, true);
-    }
-    // When searching, pagination is handled client-side on filteredCredentials
+    // Always fetch from server for proper pagination
+    fetchCredentials(page, true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-    if (!searchTerm.trim()) {
-      // Server-backed pagination when not searching
-      fetchCredentials(1, true);
-    }
-    // When searching, page size change is handled client-side on filteredCredentials
+    // Always fetch from server for proper pagination
+    fetchCredentials(1, true);
   };
 
   const handleLoadMore = () => {
@@ -269,8 +214,6 @@ export default function DashboardPage() {
   const refreshCredentials = () => {
     if (!user?.$id) return;
     setCurrentPage(1);
-    // Clear allCredentials cache to ensure fresh search results after modifications
-    setAllCredentials([]);
     fetchCredentials(1, true);
 
     listRecentCredentials(user.$id)
@@ -280,18 +223,45 @@ export default function DashboardPage() {
 
   const { isAuthReady } = useAppwrite();
 
-  // Filter across ALL loaded credentials for client-side search
-   const filteredCredentials = useMemo<Credentials[]>(() => {
-    const source = searchTerm.trim() ? allCredentials : credentials;
-    if (!searchTerm.trim()) return source;
-    const term = searchTerm.toLowerCase();
-     return source.filter((c: Credentials) => {
-      const name = (c.name ?? "").toLowerCase();
-      const username = (c.username ?? "").toLowerCase();
-      const url = (c.url ?? "").toLowerCase();
-      return name.includes(term) || username.includes(term) || url.includes(term);
+  // Filter current page credentials for client-side search
+  const filteredCredentials = useMemo<Credentials[]>(() => {
+    if (!searchTerm.trim()) return credentials;
+
+    const normalizedTerm = searchTerm.trim().toLowerCase().normalize('NFC');
+
+    return credentials.filter((c: Credentials) => {
+      // Helper to normalize and check field
+      const matchesField = (value: string | null | undefined) => {
+        if (!value) return false;
+        return value.toLowerCase().normalize('NFC').includes(normalizedTerm);
+      };
+
+      // Check main fields
+      if (matchesField(c.name)) return true;
+      if (matchesField(c.username)) return true;
+      if (matchesField(c.url)) return true;
+      if (matchesField(c.notes)) return true;
+
+      // Check tags
+      if (c.tags && Array.isArray(c.tags)) {
+        if (c.tags.some(tag => matchesField(tag))) return true;
+      }
+
+      // Check custom fields
+      if (c.customFields) {
+        try {
+          const customFields = JSON.parse(c.customFields);
+          for (const field of customFields) {
+            if (matchesField(field.label) || matchesField(field.value)) return true;
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+      }
+
+      return false;
     });
-  }, [allCredentials, credentials, searchTerm]);
+  }, [credentials, searchTerm]);
 
   if (!isAuthReady || !user) {
     return (
@@ -301,9 +271,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Determine totals based on context: when searching, use client-side total
-  const clientTotal = filteredCredentials.length;
-  const effectiveTotal = searchTerm.trim() ? clientTotal : total;
+  // Always use server totals for pagination UI
+  const effectiveTotal = total;
   const totalPages = Math.ceil(effectiveTotal / pageSize) || 1;
   const hasMore = !searchTerm.trim() && currentPage < totalPages;
  
@@ -398,6 +367,11 @@ export default function DashboardPage() {
             <SectionTitle>
                 {searchTerm ? `Search Results for "${searchTerm}"` : "All Items"}
             </SectionTitle>
+            {searchTerm && (
+              <div aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">
+                {filteredCredentials.length} result{filteredCredentials.length !== 1 ? 's' : ''} on this page
+              </div>
+            )}
           </div>
           
           {/* Top Pagination Controls */}
@@ -428,11 +402,7 @@ export default function DashboardPage() {
                 }
               </div>
             ) : (
-              (searchTerm.trim() ?
-                // Client-side pagination when searching
-                filteredCredentials.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                : credentials
-              ).map((cred) => (
+              filteredCredentials.map((cred) => (
                 <CredentialItem
                   key={cred.$id}
                   credential={cred}
