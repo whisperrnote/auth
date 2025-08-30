@@ -230,36 +230,34 @@ export default function DashboardPage() {
     const normalizedTerm = searchTerm.trim().toLowerCase().normalize('NFC');
 
     return credentials.filter((c: Credentials) => {
-      // Helper to normalize and check field
-      const matchesField = (value: string | null | undefined) => {
-        if (!value) return false;
-        return value.toLowerCase().normalize('NFC').includes(normalizedTerm);
-      };
+      const normalized = (v: unknown) =>
+        typeof v === 'string' ? v.toLowerCase().normalize('NFC') : '';
 
-      // Check main fields
-      if (matchesField(c.name)) return true;
-      if (matchesField(c.username)) return true;
-      if (matchesField(c.url)) return true;
-      if (matchesField(c.notes)) return true;
+      // Gather searchable fields into a single string for substring search
+      const parts: string[] = [];
+      parts.push(normalized(c.name));
+      parts.push(normalized(c.username));
+      parts.push(normalized(c.url));
+      parts.push(normalized(c.notes));
 
-      // Check tags
-      if (c.tags && Array.isArray(c.tags)) {
-        if (c.tags.some(tag => matchesField(tag))) return true;
+      if (Array.isArray(c.tags)) {
+        for (const tag of c.tags) parts.push(normalized(tag));
       }
 
-      // Check custom fields
       if (c.customFields) {
         try {
           const customFields = JSON.parse(c.customFields);
           for (const field of customFields) {
-            if (matchesField(field.label) || matchesField(field.value)) return true;
+            parts.push(normalized(field.label));
+            parts.push(normalized(field.value));
           }
         } catch {
-          // Ignore parsing errors
+          // ignore invalid JSON
         }
       }
 
-      return false;
+      const haystack = parts.filter(Boolean).join(' \u0000 ');
+      return haystack.includes(normalizedTerm);
     });
   }, [credentials, searchTerm]);
 
