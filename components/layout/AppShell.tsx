@@ -26,7 +26,8 @@ import { useAppwrite } from "@/app/appwrite-provider";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Overview", href: "/overview", icon: Monitor },
+  // Overview removed from navigation
+  // { name: "Overview", href: "/overview", icon: Monitor },
   { name: "Sharing", href: "/sharing", icon: Share2 },
   { name: "New", href: "/credentials/new", icon: PlusCircle, big: true },
   { name: "TOTP", href: "/totp", icon: Shield },
@@ -226,8 +227,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
        {/* Bottom bar (mobile only) */}
-       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t flex lg:hidden justify-around items-center h-16 shadow-lg safe-area-inset-bottom">
-         {navigation.filter(item => item.name !== "Import").map((item) => {
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/100 border-t flex lg:hidden justify-around items-center h-16 shadow-lg safe-area-inset-bottom">
+          {navigation.filter(item => item.name !== "Import" && item.name !== "Overview").map((item) => {
            const isActive = pathname === item.href;
            const isBig = item.big;
            return (
