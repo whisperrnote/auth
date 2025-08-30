@@ -137,9 +137,11 @@ export default function DashboardPage() {
 
 
 
+  // Build an in-memory cache of ALL credentials once (or when folder changes)
   const fetchAllCredentials = useCallback(async () => {
     if (!user?.$id) return [] as Credentials[];
-    const batch = Math.max(pageSize, 50);
+    // Use existing pagination API to hydrate the cache initially (outside of search interactions)
+    const batch = 200;
     let offset = 0;
     let totalItems = Infinity;
     const acc: Credentials[] = [];
@@ -147,40 +149,40 @@ export default function DashboardPage() {
       const res = await listCredentials(user.$id, batch, offset);
       if (offset === 0) totalItems = res.total;
       let docs: Credentials[] = res.documents as Credentials[];
-      if (selectedFolder) {
-        docs = docs.filter((c) => c.folderId === selectedFolder);
-      }
       acc.push(...docs);
       offset += batch;
-      // Safety break to avoid runaway
-      if (batch <= 0) break;
     }
+    // Apply folder filter at view time rather than fetch-time so cache stays whole
     return acc;
-  }, [user, pageSize, selectedFolder]);
+  }, [user]);
 
   const handleSearch = useCallback(
     async (term: string) => {
-      const trimmedTerm = term.trim();
+      const trimmed = term.trim();
 
-      if (!trimmedTerm) {
+      if (!trimmed) {
         setSearchTerm("");
-        setAllCredentials(null);
         setCurrentPage(1);
-        fetchCredentials(1, true);
+        setSearchLoading(false);
         return;
       }
 
-      setSearchTerm(trimmedTerm);
+      setSearchTerm(trimmed);
       setCurrentPage(1);
-      setSearchLoading(true);
-      try {
-        const all = await fetchAllCredentials();
-        setAllCredentials(all);
-      } finally {
-        setSearchLoading(false);
+
+      // Ensure in-memory cache exists; if not, hydrate ONCE here without tying to input changes
+      if (!allCredentials) {
+        setSearchLoading(true);
+        try {
+          const all = await fetchAllCredentials();
+          setAllCredentials(all);
+          setAllCredsVersion((v) => v + 1);
+        } finally {
+          setSearchLoading(false);
+        }
       }
     },
-    [fetchCredentials, fetchAllCredentials]
+    [allCredentials, fetchAllCredentials]
   );
 
   const handlePageChange = (page: number) => {
@@ -257,7 +259,8 @@ export default function DashboardPage() {
 
   // Filter credentials: search ONLY by name for performance and privacy
   const filteredCredentials = useMemo<Credentials[]>(() => {
-    const source = searchTerm.trim() && allCredentials ? allCredentials : credentials;
+    const base = searchTerm.trim() && allCredentials ? allCredentials : credentials;
+    const source = selectedFolder ? base.filter((c) => c.folderId === selectedFolder) : base;
     if (!searchTerm.trim()) return source;
 
     const normalizedTerm = searchTerm.trim().toLowerCase().normalize('NFC');
@@ -266,7 +269,7 @@ export default function DashboardPage() {
       const name = (c.name || '').toLowerCase().normalize('NFC');
       return name.includes(normalizedTerm);
     });
-  }, [credentials, allCredentials, searchTerm]);
+  }, [credentials, allCredentials, searchTerm, selectedFolder]);
 
 
   if (!isAuthReady || !user) {
@@ -283,8 +286,20 @@ export default function DashboardPage() {
   const effectiveTotal = isSearching ? searchTotal : total;
   const totalPages = Math.ceil(effectiveTotal / pageSize) || 1;
   const hasMore = !isSearching && currentPage < totalPages;
- 
+  
+  // Ensure the cache is hydrated on initial load (not tied to typing)
+  useEffect(() => {
+    (async () => {
+      if (user?.$id && allCredentials === null) {
+        const all = await fetchAllCredentials();
+        setAllCredentials(all);
+        setAllCredsVersion((v) => v + 1);
+      }
+    })();
+  }, [user, allCredentials, fetchAllCredentials]);
+  
   return (
+
 
     <VaultGuard>
       <div className="w-full min-h-screen bg-background flex flex-col pb-20 lg:pb-6">
@@ -375,11 +390,12 @@ export default function DashboardPage() {
             <SectionTitle>
                 {searchTerm ? `Search Results for "${searchTerm}"` : "All Items"}
             </SectionTitle>
-            {searchTerm && (
-              <div aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">
-                {filteredCredentials.length} result{filteredCredentials.length !== 1 ? 's' : ''} on this page
-              </div>
-            )}
+              {searchTerm && (
+                <div aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">
+                  {filteredCredentials.length} result{filteredCredentials.length !== 1 ? 's' : ''}
+                </div>
+              )}
+
           </div>
           
           {/* Top Pagination Controls */}
@@ -417,7 +433,7 @@ export default function DashboardPage() {
                 (isSearching
                   ? filteredCredentials.slice((currentPage - 1) * pageSize, currentPage * pageSize)
                   : filteredCredentials
-                ).map((cred) => (
+                ).map((cred: Credentials) => (
                   <CredentialItem
                     key={cred.$id}
                     credential={cred}
@@ -448,27 +464,29 @@ export default function DashboardPage() {
           {!searchLoading && (!isSearching ? !loading : true) && effectiveTotal > 0 && (
             <div className="mt-6">
               <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={effectiveTotal}
-                pageSize={pageSize}
-                onPageChange={(page) => {
-                  setCurrentPage(page);
-                  if (!isSearching) {
-                    fetchCredentials(page, true);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }
-                }}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setCurrentPage(1);
-                  if (!isSearching) {
-                    fetchCredentials(1, true);
-                  }
-                }}
-                loading={loadingMore}
-                showPageSize={!isSearching}
-              />
+                 currentPage={currentPage}
+                 totalPages={totalPages}
+                 totalItems={effectiveTotal}
+                 pageSize={pageSize}
+                 onPageChange={(page) => {
+                   setCurrentPage(page);
+                   if (!isSearching) {
+                     fetchCredentials(page, true);
+                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                   } else {
+                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                   }
+                 }}
+                 onPageSizeChange={(size) => {
+                   setPageSize(size);
+                   setCurrentPage(1);
+                   if (!isSearching) {
+                     fetchCredentials(1, true);
+                   }
+                 }}
+                 loading={loadingMore && !isSearching}
+                 showPageSize={!isSearching}
+               />
             </div>
           )}
 
