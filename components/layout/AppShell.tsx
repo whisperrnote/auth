@@ -26,6 +26,7 @@ import { useAppwrite } from "@/app/appwrite-provider";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Overview", href: "/overview", icon: Home },
   { name: "Sharing", href: "/sharing", icon: Share2 },
   { name: "New", href: "/credentials/new", icon: PlusCircle, big: true },
   { name: "TOTP", href: "/totp", icon: Shield },
