@@ -48,6 +48,9 @@ export default function DashboardPage() {
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Search across all pages
+  const [allCredentials, setAllCredentials] = useState<Credentials[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Folder state
   const [folders, setFolders] = useState<FolderDoc[]>([]);
@@ -132,23 +135,50 @@ export default function DashboardPage() {
 
 
 
+  const fetchAllCredentials = useCallback(async () => {
+    if (!user?.$id) return [] as Credentials[];
+    const batch = Math.max(pageSize, 50);
+    let offset = 0;
+    let totalItems = Infinity;
+    const acc: Credentials[] = [];
+    while (offset < totalItems) {
+      const res = await listCredentials(user.$id, batch, offset);
+      if (offset === 0) totalItems = res.total;
+      let docs: Credentials[] = res.documents as Credentials[];
+      if (selectedFolder) {
+        docs = docs.filter((c) => c.folderId === selectedFolder);
+      }
+      acc.push(...docs);
+      offset += batch;
+      // Safety break to avoid runaway
+      if (batch <= 0) break;
+    }
+    return acc;
+  }, [user, pageSize, selectedFolder]);
+
   const handleSearch = useCallback(
-    (term: string) => {
+    async (term: string) => {
       const trimmedTerm = term.trim();
 
-      // If clearing search, reset to server-backed pagination
       if (!trimmedTerm) {
         setSearchTerm("");
+        setAllCredentials(null);
         setCurrentPage(1);
-        // Reset to normal pagination by fetching first page
         fetchCredentials(1, true);
         return;
       }
 
       setSearchTerm(trimmedTerm);
       setCurrentPage(1);
+      setSearchLoading(true);
+      try {
+        const all = await fetchAllCredentials();
+        setAllCredentials(all);
+      } finally {
+        setSearchLoading(false);
+      }
     },
-    [fetchCredentials]
+    [fetchCredentials, fetchAllCredentials]
   );
 
   const handlePageChange = (page: number) => {
@@ -225,15 +255,15 @@ export default function DashboardPage() {
 
   // Filter current page credentials for client-side search
   const filteredCredentials = useMemo<Credentials[]>(() => {
-    if (!searchTerm.trim()) return credentials;
+    const source = searchTerm.trim() && allCredentials ? allCredentials : credentials;
+    if (!searchTerm.trim()) return source;
 
     const normalizedTerm = searchTerm.trim().toLowerCase().normalize('NFC');
 
-    return credentials.filter((c: Credentials) => {
+    return source.filter((c: Credentials) => {
       const normalized = (v: unknown) =>
         typeof v === 'string' ? v.toLowerCase().normalize('NFC') : '';
 
-      // Gather searchable fields into a single string for substring search
       const parts: string[] = [];
       parts.push(normalized(c.name));
       parts.push(normalized(c.username));
@@ -259,7 +289,8 @@ export default function DashboardPage() {
       const haystack = parts.filter(Boolean).join(' \u0000 ');
       return haystack.includes(normalizedTerm);
     });
-  }, [credentials, searchTerm]);
+  }, [credentials, allCredentials, searchTerm]);
+
 
   if (!isAuthReady || !user) {
     return (
@@ -269,10 +300,12 @@ export default function DashboardPage() {
     );
   }
 
-  // Always use server totals for pagination UI
-  const effectiveTotal = total;
+  // Use independent pagination when searching across all pages
+  const isSearching = !!searchTerm.trim();
+  const searchTotal = isSearching ? filteredCredentials.length : 0;
+  const effectiveTotal = isSearching ? searchTotal : total;
   const totalPages = Math.ceil(effectiveTotal / pageSize) || 1;
-  const hasMore = !searchTerm.trim() && currentPage < totalPages;
+  const hasMore = !isSearching && currentPage < totalPages;
  
   return (
 
@@ -386,35 +419,43 @@ export default function DashboardPage() {
           )}
 
           
-          {/* Credentials List */}
-          <div className="space-y-2 text-foreground dark:text-foreground">
-            {loading ? (
-              Array.from({ length: pageSize }).map((_, i) => (
-                <CredentialSkeleton key={i} />
-              ))
-            ) : filteredCredentials.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                {searchTerm 
-                  ? `No credentials found matching "${searchTerm}"`
-                  : "No credentials found. Add your first password to get started!"
-                }
-              </div>
-            ) : (
-              filteredCredentials.map((cred) => (
-                <CredentialItem
-                  key={cred.$id}
-                  credential={cred}
-                  onCopy={handleCopy}
-                  isDesktop={isDesktop}
-                  onEdit={() => handleEdit(cred)}
-                  onDelete={() => openDeleteModal(cred)}
-                  onClick={() => {
-                    setSelectedCredential(cred);
-                    setShowDetail(true);
-                  }}
-                />
-              ))
-            )}
+            {/* Credentials List */}
+            <div className="space-y-2 text-foreground dark:text-foreground">
+              {searchLoading ? (
+                Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => (
+                  <CredentialSkeleton key={`skeleton-${i}`} />
+                ))
+              ) : loading && !isSearching ? (
+                Array.from({ length: pageSize }).map((_, i) => (
+                  <CredentialSkeleton key={i} />
+                ))
+              ) : filteredCredentials.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  {searchTerm 
+                    ? `No credentials found matching "${searchTerm}"`
+                    : "No credentials found. Add your first password to get started!"
+                  }
+                </div>
+              ) : (
+                (isSearching
+                  ? filteredCredentials.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                  : filteredCredentials
+                ).map((cred) => (
+                  <CredentialItem
+                    key={cred.$id}
+                    credential={cred}
+                    onCopy={handleCopy}
+                    isDesktop={isDesktop}
+                    onEdit={() => handleEdit(cred)}
+                    onDelete={() => openDeleteModal(cred)}
+                    onClick={() => {
+                      setSelectedCredential(cred);
+                      setShowDetail(true);
+                    }}
+                  />
+                ))
+              )}
+
 
             
             {loadingMore && (
@@ -427,24 +468,36 @@ export default function DashboardPage() {
           </div>
 
           {/* Bottom Pagination Controls */}
-          {!loading && effectiveTotal > 0 && (
+          {!searchLoading && (!isSearching ? !loading : true) && effectiveTotal > 0 && (
             <div className="mt-6">
               <PaginationControls
                 currentPage={currentPage}
                 totalPages={totalPages}
                 totalItems={effectiveTotal}
                 pageSize={pageSize}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
+                onPageChange={(page) => {
+                  setCurrentPage(page);
+                  if (!isSearching) {
+                    fetchCredentials(page, true);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                  if (!isSearching) {
+                    fetchCredentials(1, true);
+                  }
+                }}
                 loading={loadingMore}
-                showPageSize={false}
+                showPageSize={!isSearching}
               />
             </div>
           )}
 
 
-          {/* Load More Button */}
-          {!loading && hasMore && !searchTerm.trim() && (
+          {/* Load More Button (disabled during search) */}
+          {!loading && hasMore && !isSearching && (
             <div className="mt-6 flex justify-center">
               <Button 
                 onClick={handleLoadMore} 
