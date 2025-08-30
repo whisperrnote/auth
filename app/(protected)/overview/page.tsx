@@ -73,7 +73,7 @@ export default function OverviewPage() {
 
            for (const it of items) {
              const sigObj: Record<string, unknown> = {};
-             for (const f of fieldsPresent) sigObj[f] = normalize((it as any)[f]);
+             for (const f of fieldsPresent) sigObj[f] = normalize((it as Record<string, unknown>)[f]);
              // Do not include name in signature, per requirement
              const signature = JSON.stringify(sigObj);
               const entry = groups.get(signature) || { ids: [] };
