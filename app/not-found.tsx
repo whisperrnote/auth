@@ -11,7 +11,7 @@ export default function NotFound() {
           <Link href="/" passHref>
             <Button variant="ghost">Home</Button>
           </Link>
-          <Link href="/app/dashboard" passHref>
+          <Link href="/dashboard" passHref>
             <Button>Go to Dashboard</Button>
           </Link>
         </div>
