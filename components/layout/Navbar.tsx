@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon, Monitor, User, LogOut, Key } from "lucide-react";
+import { Sun, Moon, Monitor, User, LogOut, Key, Shield } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import Link from "next/link";
 import { useAppwrite } from "@/app/appwrite-provider";
@@ -81,6 +81,31 @@ export function Navbar() {
                       Account Settings
                     </button>
                   </Link>
+                  {/* Mobile-only: Lock now in account dropdown */}
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-accent text-sm flex items-center gap-2 sm:hidden"
+                    onClick={() => {
+                      // Lock immediately and redirect to masterpass
+                      import("next/navigation").then(({ usePathname, useRouter }) => {
+                        // Note: cannot use hooks here; fallback to direct masterPassCrypto + location
+                        Promise.resolve().then(async () => {
+                          const { masterPassCrypto } = await import("@/app/(protected)/masterpass/logic");
+                          masterPassCrypto.lockNow();
+                          try {
+                            const path = window.location.pathname;
+                            sessionStorage.setItem('masterpass_return_to', path);
+                            window.location.replace('/masterpass');
+                          } catch {
+                            window.location.href = '/masterpass';
+                          }
+                        });
+                      });
+                      setShowMenu(false);
+                    }}
+                  >
+                    <Shield className="h-4 w-4" />
+                    Lock now
+                  </button>
                   <button
                     className="w-full text-left px-4 py-2 hover:bg-accent text-sm flex items-center gap-2 text-destructive"
                     onClick={async () => {
