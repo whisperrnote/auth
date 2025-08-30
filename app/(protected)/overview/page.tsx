@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Key, Shield, Clock, AlertTriangle } from "lucide-react";
+import { Key, Shield, Clock, AlertTriangle, Files } from "lucide-react";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_CREDENTIALS_ID, APPWRITE_COLLECTION_TOTPSECRETS_ID, Query } from "@/lib/appwrite";
+import { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_TOTPSECRETS_ID, Query, AppwriteService } from "@/lib/appwrite";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
 
 export default function OverviewPage() {
@@ -22,11 +22,12 @@ export default function OverviewPage() {
       // Ensure vault is unlocked; do not decrypt twice – listDocuments is already wrapped to decrypt via masterPassCrypto
       try {
         // Credentials
-        const credsResp = await appwriteDatabases.listDocuments(
-          APPWRITE_DATABASE_ID,
-          APPWRITE_COLLECTION_CREDENTIALS_ID,
-          [Query.equal("userId", user.$id), Query.orderDesc("$updatedAt"), Query.limit(50)]
-        ) as { documents: any[] };
+        const credsResp = await AppwriteService.listCredentials(
+          user.$id,
+          1,
+          0,
+          [Query.orderDesc("$updatedAt")]
+        ) as { total: number; documents: any[] };
 
         // TOTP
         let totpCount = 0;
@@ -34,23 +35,29 @@ export default function OverviewPage() {
           const totpResp = await appwriteDatabases.listDocuments(
             APPWRITE_DATABASE_ID,
             APPWRITE_COLLECTION_TOTPSECRETS_ID,
-            [Query.equal("userId", user.$id)]
-          ) as { documents: any[] };
-          totpCount = totpResp.documents.length;
+            [Query.equal("userId", user.$id), Query.limit(1)]
+          ) as { documents: any[]; total?: number };
+          totpCount = (totpResp as any).total ?? totpResp.documents.length;
         } catch {
           // TOTP collection may not exist in some envs; ignore
         }
 
-        const totalCreds = credsResp.documents.length;
+        const totalCreds = (credsResp as any).total ?? (credsResp.documents?.length ?? 0);
 
         // Recent items (already decrypted by secure wrapper; do not decrypt again)
-        const recentItems = credsResp.documents
-          .slice(0, 5)
-          .map((d) => ({ $id: d.$id, name: d.name ?? d.title ?? "Untitled", username: d.username }));
+        let recentItems: Array<{ $id: string; name: string; username?: string }> = [];
+        try {
+          // Use service that returns decrypted recent credentials
+          const recentDocs = await AppwriteService.listRecentCredentials(user.$id, 5);
+          recentItems = recentDocs.map((d: any) => ({ $id: d.$id, name: d.name ?? d.title ?? "Untitled", username: d.username }));
+        } catch {
+          // Fallback to what's available from credsResp (may be undecrypted if vault locked)
+          recentItems = (credsResp.documents || []).slice(0, 5).map((d: any) => ({ $id: d.$id, name: d.name ?? d.title ?? "Untitled", username: d.username }));
+        }
 
         if (!cancelled) {
           setStats({ totalCreds, totpCount });
-          setRecent(recentItems);
+           setRecent(locked ? [] : recentItems);
           setLoading(false);
         }
       } catch (e) {
@@ -61,7 +68,7 @@ export default function OverviewPage() {
     return () => { cancelled = true; };
   }, [user]);
 
-  const locked = useMemo(() => !masterPassCrypto.isVaultUnlocked(), []);
+  const locked = useMemo(() => !masterPassCrypto.isVaultUnlocked(), [masterPassCrypto.isVaultUnlocked()]);
 
   if (!user) return null;
 
