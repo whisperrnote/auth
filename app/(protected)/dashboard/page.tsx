@@ -49,10 +49,7 @@ export default function DashboardPage() {
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   // Search across all pages
-  const [allCredentials, setAllCredentials] = useState<Credentials[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
-  // Cache version to invalidate when data changes
-  const [allCredsVersion, setAllCredsVersion] = useState(0);
 
   // Folder state
   const [folders, setFolders] = useState<FolderDoc[]>([]);
@@ -93,8 +90,6 @@ export default function DashboardPage() {
         if (selectedFolder) {
           docs = docs.filter((c: Credentials) => c.folderId === selectedFolder);
         }
-
-
 
         // Set current page items (always, since filtering happens client-side)
         if (resetData || isFirstPage) {
@@ -140,49 +135,24 @@ export default function DashboardPage() {
   // Build an in-memory cache of ALL credentials once (or when folder changes)
   const fetchAllCredentials = useCallback(async () => {
     if (!user?.$id) return [] as Credentials[];
-    // Use existing pagination API to hydrate the cache initially (outside of search interactions)
-    const batch = 200;
-    let offset = 0;
-    let totalItems = Infinity;
-    const acc: Credentials[] = [];
-    while (offset < totalItems) {
-      const res = await listCredentials(user.$id, batch, offset);
-      if (offset === 0) totalItems = res.total;
-      let docs: Credentials[] = res.documents as Credentials[];
-      acc.push(...docs);
-      offset += batch;
-    }
-    // Apply folder filter at view time rather than fetch-time so cache stays whole
-    return acc;
-  }, [user]);
+    // Simple search through current page for immediate results
+    return credentials;
+  }, [user, credentials]);
 
   const handleSearch = useCallback(
-    async (term: string) => {
+    (term: string) => {
       const trimmed = term.trim();
 
       if (!trimmed) {
         setSearchTerm("");
         setCurrentPage(1);
-        setSearchLoading(false);
         return;
       }
 
       setSearchTerm(trimmed);
       setCurrentPage(1);
-
-      // Ensure in-memory cache exists; if not, hydrate ONCE here without tying to input changes
-      if (!allCredentials) {
-        setSearchLoading(true);
-        try {
-          const all = await fetchAllCredentials();
-          setAllCredentials(all);
-          setAllCredsVersion((v) => v + 1);
-        } finally {
-          setSearchLoading(false);
-        }
-      }
     },
-    [allCredentials, fetchAllCredentials]
+    []
   );
 
   const handlePageChange = (page: number) => {
@@ -259,7 +229,7 @@ export default function DashboardPage() {
 
   // Filter credentials: search ONLY by name for performance and privacy
   const filteredCredentials = useMemo<Credentials[]>(() => {
-    const base = searchTerm.trim() && allCredentials ? allCredentials : credentials;
+    const base = credentials;
     const source = selectedFolder ? base.filter((c) => c.folderId === selectedFolder) : base;
     if (!searchTerm.trim()) return source;
 
@@ -269,7 +239,7 @@ export default function DashboardPage() {
       const name = (c.name || '').toLowerCase().normalize('NFC');
       return name.includes(normalizedTerm);
     });
-  }, [credentials, allCredentials, searchTerm, selectedFolder]);
+  }, [credentials, searchTerm, selectedFolder]);
 
 
   if (!isAuthReady || !user) {
@@ -286,17 +256,6 @@ export default function DashboardPage() {
   const effectiveTotal = isSearching ? searchTotal : total;
   const totalPages = Math.ceil(effectiveTotal / pageSize) || 1;
   const hasMore = !isSearching && currentPage < totalPages;
-  
-  // Ensure the cache is hydrated on initial load (not tied to typing)
-  useEffect(() => {
-    (async () => {
-      if (user?.$id && allCredentials === null) {
-        const all = await fetchAllCredentials();
-        setAllCredentials(all);
-        setAllCredsVersion((v) => v + 1);
-      }
-    })();
-  }, [user, allCredentials, fetchAllCredentials]);
   
   return (
 
