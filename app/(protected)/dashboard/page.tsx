@@ -51,6 +51,8 @@ export default function DashboardPage() {
   // Search across all pages
   const [allCredentials, setAllCredentials] = useState<Credentials[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  // Cache version to invalidate when data changes
+  const [allCredsVersion, setAllCredsVersion] = useState(0);
 
   // Folder state
   const [folders, setFolders] = useState<FolderDoc[]>([]);
@@ -253,7 +255,7 @@ export default function DashboardPage() {
 
   const { isAuthReady } = useAppwrite();
 
-  // Filter current page credentials for client-side search
+  // Filter credentials: search ONLY by name for performance and privacy
   const filteredCredentials = useMemo<Credentials[]>(() => {
     const source = searchTerm.trim() && allCredentials ? allCredentials : credentials;
     if (!searchTerm.trim()) return source;
@@ -261,33 +263,8 @@ export default function DashboardPage() {
     const normalizedTerm = searchTerm.trim().toLowerCase().normalize('NFC');
 
     return source.filter((c: Credentials) => {
-      const normalized = (v: unknown) =>
-        typeof v === 'string' ? v.toLowerCase().normalize('NFC') : '';
-
-      const parts: string[] = [];
-      parts.push(normalized(c.name));
-      parts.push(normalized(c.username));
-      parts.push(normalized(c.url));
-      parts.push(normalized(c.notes));
-
-      if (Array.isArray(c.tags)) {
-        for (const tag of c.tags) parts.push(normalized(tag));
-      }
-
-      if (c.customFields) {
-        try {
-          const customFields = JSON.parse(c.customFields);
-          for (const field of customFields) {
-            parts.push(normalized(field.label));
-            parts.push(normalized(field.value));
-          }
-        } catch {
-          // ignore invalid JSON
-        }
-      }
-
-      const haystack = parts.filter(Boolean).join(' \u0000 ');
-      return haystack.includes(normalizedTerm);
+      const name = (c.name || '').toLowerCase().normalize('NFC');
+      return name.includes(normalizedTerm);
     });
   }, [credentials, allCredentials, searchTerm]);
 
