@@ -489,44 +489,26 @@ export class MasterPassCrypto {
   // Update activity timestamp
   updateActivity(): void {
     if (this.isUnlocked) {
-      sessionStorage.setItem('vault_unlocked', Date.now().toString());
-
-      // Optional: Add user activity validation
-      this.validateUserActivity();
+      // Throttle updates to once per second to avoid rapid event bursts
+      const last = sessionStorage.getItem('vault_unlocked');
+      const now = Date.now();
+      if (!last || now - parseInt(last) >= 1000) {
+        sessionStorage.setItem('vault_unlocked', now.toString());
+      }
+      // Intentionally skip validateUserActivity to prevent false positives
     }
+  }
+
+  // Explicit lock trigger for UI actions
+  lockNow(): void {
+    this.lockApplication();
   }
 
   // Validate user is still actively using the application
   private validateUserActivity(): void {
-    // Check for suspicious activity patterns
-    const activityPattern = sessionStorage.getItem('activity_pattern') || '[]';
-    const activities = JSON.parse(activityPattern);
-    const now = Date.now();
-
-    // Keep only last 10 activities
-    activities.push(now);
-    if (activities.length > 10) {
-      activities.shift();
-    }
-
-    sessionStorage.setItem('activity_pattern', JSON.stringify(activities));
-
-    // Lock if activities seem automated (too regular)
-    if (activities.length >= 5) {
-      const intervals = activities.slice(1).map((time: number, i: number) =>
-        time - activities[i]
-      );
-      const avgInterval = intervals.reduce((a: number, b: number) => a + b, 0) / intervals.length;
-      const variance = intervals.reduce((acc: number, interval: number) =>
-        acc + Math.pow(interval - avgInterval, 2), 0
-      ) / intervals.length;
-
-      // If activities are too regular (low variance), might be automated
-      if (variance < 1000 && avgInterval < 5000) {
-        console.warn('Suspicious activity pattern detected');
-        this.lockApplication();
-      }
-    }
+    // Suspicious activity detection disabled to prevent false positives from normal UI events
+    // Keeping the method for future enhancements or optional opt-in.
+    return;
   }
 }
 
