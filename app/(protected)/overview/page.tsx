@@ -28,7 +28,7 @@ export default function OverviewPage() {
           1,
           0,
           [Query.orderDesc("$updatedAt")]
-        ) as { total: number; documents: any[] };
+        ) as { total: number; documents: Array<Record<string, unknown>> };
 
         // TOTP
         let totpCount = 0;
@@ -37,29 +37,32 @@ export default function OverviewPage() {
             APPWRITE_DATABASE_ID,
             APPWRITE_COLLECTION_TOTPSECRETS_ID,
             [Query.equal("userId", user.$id), Query.limit(1)]
-          ) as { documents: any[]; total?: number };
-          totpCount = (totpResp as any).total ?? totpResp.documents.length;
+          ) as { documents: Array<Record<string, unknown>>; total?: number };
+          totpCount = (totpResp as { total?: number; documents: Array<Record<string, unknown>> }).total ?? totpResp.documents.length;
         } catch {
           // TOTP collection may not exist in some envs; ignore
         }
 
-         const totalCreds = (credsResp as any).total ?? (credsResp.documents?.length ?? 0);
+         const totalCreds = (credsResp as { total?: number; documents?: Array<Record<string, unknown>> }).total ?? (credsResp.documents?.length ?? 0);
 
          // Duplicate detection using minimal data and service decryption only
          // Strategy: fetch a small window of recent decrypted items and compute signature over stable fields
          let dupGroupsLocal: Array<{ key: string; count: number; fields: string[]; ids: string[] }> = [];
          try {
            const windowSize = Math.min(50, totalCreds);
-           const recentWindow = await AppwriteService.listCredentials(
-             user.$id,
-             windowSize,
-             0,
-             [Query.orderDesc('$updatedAt')]
-           );
-           const items = (recentWindow as any).documents || [];
+            const recentWindow = await AppwriteService.listCredentials(
+              user.$id,
+              windowSize,
+              0,
+              [Query.orderDesc('$updatedAt')]
+            ) as { documents?: Array<Record<string, unknown>> };
+            const items = recentWindow.documents || [];
            // Determine comparable fields: prefer encrypted content fields + url; exclude non-content/meta fields
            const fieldCandidates = ['username','password','url','notes','customFields'];
-           const fieldsPresent = fieldCandidates.filter((f) => items.some((it: any) => it[f] != null && String(it[f]).trim() !== ''));
+            const fieldsPresent = fieldCandidates.filter((f) => items.some((it) => {
+              const val = (it as Record<string, unknown>)[f];
+              return val != null && String(val).trim() !== '';
+            }));
            const groups = new Map<string, { ids: string[] }>();
 
            const normalize = (v: unknown) => {
@@ -73,9 +76,9 @@ export default function OverviewPage() {
              for (const f of fieldsPresent) sigObj[f] = normalize((it as any)[f]);
              // Do not include name in signature, per requirement
              const signature = JSON.stringify(sigObj);
-             const entry = groups.get(signature) || { ids: [] };
-             entry.ids.push(it.$id);
-             groups.set(signature, entry);
+              const entry = groups.get(signature) || { ids: [] };
+              entry.ids.push(String((it as Record<string, unknown>)["$id"])) ;
+              groups.set(signature, entry);
            }
 
            dupGroupsLocal = Array.from(groups.entries())
@@ -88,11 +91,11 @@ export default function OverviewPage() {
         let recentItems: Array<{ $id: string; name: string; username?: string }> = [];
         try {
           // Use service that returns decrypted recent credentials
-          const recentDocs = await AppwriteService.listRecentCredentials(user.$id, 5);
-          recentItems = recentDocs.map((d: any) => ({ $id: d.$id, name: d.name ?? d.title ?? "Untitled", username: d.username }));
+           const recentDocs = await AppwriteService.listRecentCredentials(user.$id, 5) as Array<Record<string, unknown>>;
+          recentItems = recentDocs.map((d) => ({ $id: String(d.$id as unknown as string), name: (d.name as string) ?? (d.title as string) ?? "Untitled", username: d.username as string | undefined }));
         } catch {
           // Fallback to what's available from credsResp (may be undecrypted if vault locked)
-          recentItems = (credsResp.documents || []).slice(0, 5).map((d: any) => ({ $id: d.$id, name: d.name ?? d.title ?? "Untitled", username: d.username }));
+          recentItems = (credsResp.documents || []).slice(0, 5).map((d) => ({ $id: String((d as Record<string, unknown>)["$id"]), name: ((d as Record<string, unknown>)["name"] as string) ?? ((d as Record<string, unknown>)["title"] as string) ?? "Untitled", username: (d as Record<string, unknown>)["username"] as string | undefined }));
         }
 
         if (!cancelled) {
@@ -107,9 +110,9 @@ export default function OverviewPage() {
     };
     run();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, /* keep locked out of deps to avoid unnecessary refetch on timer */]);
 
-  const locked = useMemo(() => !masterPassCrypto.isVaultUnlocked(), [masterPassCrypto.isVaultUnlocked()]);
+  const locked = useMemo(() => !masterPassCrypto.isVaultUnlocked(), []);
 
   if (!user) return null;
 
