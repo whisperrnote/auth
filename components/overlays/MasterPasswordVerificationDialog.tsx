@@ -90,7 +90,7 @@ export default function MasterPasswordVerificationDialog({
             placeholder="Enter your master password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleVerify()}
+            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
           />
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
