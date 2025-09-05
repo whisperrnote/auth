@@ -1468,6 +1468,17 @@ export async function listCredentials(
 }
 
 /**
+ * Fetches ALL credentials for a user, handling pagination automatically.
+ * Use this for operations that require the full dataset, like search or export.
+ */
+export async function listAllCredentials(
+  userId:string,
+  queries: string[] = [],
+): Promise<Credentials[]> {
+  return await AppwriteService.listAllCredentials(userId, queries);
+}
+
+/**
  * Create a new credential (encrypted).
  */
 export async function createCredential(
