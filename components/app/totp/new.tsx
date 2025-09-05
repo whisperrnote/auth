@@ -13,7 +13,24 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { TotpSecrets } from "@/types/appwrite";
 
-export default function NewTotpDialog({ open, onClose, initialData }: { open: boolean; onClose: () => void; initialData?: { $id?: string; issuer?: string | null; accountName?: string | null; secretKey?: string; period?: number | null; digits?: number | null; algorithm?: string | null; folderId?: string | null } }) {
+export default function NewTotpDialog({
+  open,
+  onClose,
+  initialData,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialData?: {
+    $id?: string;
+    issuer?: string | null;
+    accountName?: string | null;
+    secretKey?: string;
+    period?: number | null;
+    digits?: number | null;
+    algorithm?: string | null;
+    folderId?: string | null;
+  };
+}) {
   const { user } = useAppwrite();
   const [form, setForm] = useState({
     issuer: "",
@@ -56,8 +73,8 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
     setLoading(true);
     try {
       if (!user) throw new Error("Not authenticated");
-       if (initialData && initialData.$id) {
-         await updateTotpSecret(initialData.$id, {
+      if (initialData && initialData.$id) {
+        await updateTotpSecret(initialData.$id, {
           ...form,
           updatedAt: new Date().toISOString(),
         });
@@ -79,7 +96,9 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
       onClose();
     } catch (e: unknown) {
       const err = e as { message?: string };
-      toast.error(err.message || `Failed to ${initialData ? 'update' : 'add'} TOTP code.`);
+      toast.error(
+        err.message || `Failed to ${initialData ? "update" : "add"} TOTP code.`,
+      );
     }
     setLoading(false);
   };
@@ -87,12 +106,14 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
   return (
     <Dialog open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <h2 className="text-xl font-bold mb-2">{initialData ? 'Edit' : 'Add'} TOTP Code</h2>
+        <h2 className="text-xl font-bold mb-2">
+          {initialData ? "Edit" : "Add"} TOTP Code
+        </h2>
         <div className="space-y-2">
           <label className="text-sm font-medium">Issuer</label>
           <Input
             value={form.issuer}
-            onChange={e => setForm({ ...form, issuer: e.target.value })}
+            onChange={(e) => setForm({ ...form, issuer: e.target.value })}
             required
           />
         </div>
@@ -100,7 +121,7 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
           <label className="text-sm font-medium">Account Name</label>
           <Input
             value={form.accountName}
-            onChange={e => setForm({ ...form, accountName: e.target.value })}
+            onChange={(e) => setForm({ ...form, accountName: e.target.value })}
             required
           />
         </div>
@@ -108,7 +129,7 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
           <label className="text-sm font-medium">Secret Key</label>
           <Input
             value={form.secretKey}
-            onChange={e => setForm({ ...form, secretKey: e.target.value })}
+            onChange={(e) => setForm({ ...form, secretKey: e.target.value })}
             required
           />
         </div>
@@ -119,7 +140,12 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
             checked={showAdvanced}
             onChange={() => setShowAdvanced(!showAdvanced)}
           />
-          <label htmlFor="show-advanced" className="text-sm select-none cursor-pointer">Advanced</label>
+          <label
+            htmlFor="show-advanced"
+            className="text-sm select-none cursor-pointer"
+          >
+            Advanced
+          </label>
         </div>
         {showAdvanced && (
           <>
@@ -151,9 +177,20 @@ export default function NewTotpDialog({ open, onClose, initialData }: { open: bo
         )}
         <div className="flex gap-2">
           <Button type="submit" className="flex-1" disabled={loading}>
-            {loading ? (initialData ? "Saving..." : "Adding...") : (initialData ? "Save" : "Add")}
+            {loading
+              ? initialData
+                ? "Saving..."
+                : "Adding..."
+              : initialData
+                ? "Save"
+                : "Add"}
           </Button>
-          <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1"
+            onClick={onClose}
+          >
             Cancel
           </Button>
         </div>

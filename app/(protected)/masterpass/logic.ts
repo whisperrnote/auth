@@ -19,27 +19,30 @@ export class MasterPassCrypto {
   private static readonly KEY_SIZE = 256; // Explicit 256-bit key
 
   // Derive key from master password using PBKDF2
-  private async deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  private async deriveKey(
+    password: string,
+    salt: Uint8Array,
+  ): Promise<CryptoKey> {
     const encoder = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey(
-      'raw',
+      "raw",
       encoder.encode(password),
-      { name: 'PBKDF2' },
+      { name: "PBKDF2" },
       false,
-      ['deriveBits', 'deriveKey']
+      ["deriveBits", "deriveKey"],
     );
 
     return crypto.subtle.deriveKey(
       {
-        name: 'PBKDF2',
+        name: "PBKDF2",
         salt: salt,
         iterations: MasterPassCrypto.PBKDF2_ITERATIONS, // 200k iterations
-        hash: 'SHA-256'
+        hash: "SHA-256",
       },
       keyMaterial,
-      { name: 'AES-GCM', length: MasterPassCrypto.KEY_SIZE },
+      { name: "AES-GCM", length: MasterPassCrypto.KEY_SIZE },
       true, // Make extractable for passkey functionality
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"],
     );
   }
 
@@ -51,40 +54,44 @@ export class MasterPassCrypto {
   // Export the raw master key
   async exportKey(): Promise<ArrayBuffer | null> {
     if (!this.masterKey) return null;
-    return crypto.subtle.exportKey('raw', this.masterKey);
+    return crypto.subtle.exportKey("raw", this.masterKey);
   }
 
   // Import a raw key and set it as the master key
   async importKey(keyBytes: ArrayBuffer): Promise<void> {
     this.masterKey = await crypto.subtle.importKey(
-      'raw',
+      "raw",
       keyBytes,
-      { name: 'AES-GCM', length: 256 },
+      { name: "AES-GCM", length: 256 },
       true, // Make it extractable so it can be re-wrapped
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"],
     );
   }
 
   // Unlock the vault after a key has been imported (e.g., from passkey)
   async unlockWithImportedKey(): Promise<boolean> {
     if (!this.masterKey) {
-      console.error('Cannot unlock with imported key: key is not present.');
+      console.error("Cannot unlock with imported key: key is not present.");
       return false;
     }
     this.isUnlocked = true;
-    sessionStorage.setItem('vault_unlocked', Date.now().toString());
+    sessionStorage.setItem("vault_unlocked", Date.now().toString());
     // We don't need to verify a check value here because the key's authenticity
     // is guaranteed by the passkey's cryptographic signature.
     return true;
   }
 
   // Unlock vault with master password
-  async unlock(masterPassword: string, userId: string, isFirstTime: boolean = false): Promise<boolean> {
+  async unlock(
+    masterPassword: string,
+    userId: string,
+    isFirstTime: boolean = false,
+  ): Promise<boolean> {
     try {
       // SALT DERIVED ONLY FROM userId (consistent and unique per user)
       const encoder = new TextEncoder();
       const userBytes = encoder.encode(userId);
-      const userSalt = await crypto.subtle.digest('SHA-256', userBytes);
+      const userSalt = await crypto.subtle.digest("SHA-256", userBytes);
       const combinedSalt = new Uint8Array(userSalt);
       const testKey = await this.deriveKey(masterPassword, combinedSalt);
 
@@ -92,7 +99,7 @@ export class MasterPassCrypto {
       if (isFirstTime) {
         this.masterKey = testKey;
         this.isUnlocked = true;
-        sessionStorage.setItem('vault_unlocked', Date.now().toString());
+        sessionStorage.setItem("vault_unlocked", Date.now().toString());
         return true;
       }
 
@@ -104,21 +111,26 @@ export class MasterPassCrypto {
 
       this.masterKey = testKey;
       this.isUnlocked = true;
-      sessionStorage.setItem('vault_unlocked', Date.now().toString());
+      sessionStorage.setItem("vault_unlocked", Date.now().toString());
       return true;
     } catch (error) {
-      console.error('Failed to unlock vault:', error);
+      console.error("Failed to unlock vault:", error);
       return false;
     }
   }
 
   // Set the check value (for initial master password creation)
   async setMasterpassCheck(userId: string): Promise<void> {
-    const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+    const {
+      appwriteDatabases,
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      Query,
+    } = await import("../../../lib/appwrite");
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
-      [Query.equal('userId', userId)]
+      [Query.equal("userId", userId)],
     );
     const userDoc = response.documents[0];
     if (!userDoc) return;
@@ -127,40 +139,53 @@ export class MasterPassCrypto {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
       userDoc.$id,
-      { check }
+      { check },
     );
   }
 
   // Verify the check value (for unlock)
-  async verifyMasterpassCheck(testKey: CryptoKey, userId: string): Promise<boolean> {
+  async verifyMasterpassCheck(
+    testKey: CryptoKey,
+    userId: string,
+  ): Promise<boolean> {
     try {
-      const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+      const {
+        appwriteDatabases,
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_USER_ID,
+        Query,
+      } = await import("../../../lib/appwrite");
       const response = await appwriteDatabases.listDocuments(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_USER_ID,
-        [Query.equal('userId', userId)]
+        [Query.equal("userId", userId)],
       );
       const userDoc = response.documents[0];
       if (!userDoc || !userDoc.check) {
         // No check value yet, this should not happen for existing users
-        console.log('No check value found for existing user');
+        console.log("No check value found for existing user");
         return false;
       }
       const decrypted = await this.decryptCheckValue(userDoc.check, testKey);
       return decrypted === userId;
     } catch (error) {
-      console.log('Check value verification failed:', error);
+      console.log("Check value verification failed:", error);
       return false;
     }
   }
 
   // Clear the check value (for reset)
   async clearMasterpassCheck(userId: string): Promise<void> {
-    const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+    const {
+      appwriteDatabases,
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_USER_ID,
+      Query,
+    } = await import("../../../lib/appwrite");
     const response = await appwriteDatabases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
-      [Query.equal('userId', userId)]
+      [Query.equal("userId", userId)],
     );
     const userDoc = response.documents[0];
     if (!userDoc) return;
@@ -168,20 +193,20 @@ export class MasterPassCrypto {
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_USER_ID,
       userDoc.$id,
-      { check: null }
+      { check: null },
     );
   }
 
   // Encrypt the check value (userId)
   async encryptCheckValue(userId: string): Promise<string> {
-    if (!this.masterKey) throw new Error('Vault is locked');
+    if (!this.masterKey) throw new Error("Vault is locked");
     const encoder = new TextEncoder();
     const plaintext = encoder.encode(JSON.stringify(userId));
     const iv = crypto.getRandomValues(new Uint8Array(MasterPassCrypto.IV_SIZE));
     const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: iv },
+      { name: "AES-GCM", iv: iv },
       this.masterKey,
-      plaintext
+      plaintext,
     );
     const combined = new Uint8Array(iv.length + encrypted.byteLength);
     combined.set(iv);
@@ -190,17 +215,22 @@ export class MasterPassCrypto {
   }
 
   // Decrypt the check value
-  async decryptCheckValue(encryptedData: string, key: CryptoKey): Promise<string> {
+  async decryptCheckValue(
+    encryptedData: string,
+    key: CryptoKey,
+  ): Promise<string> {
     try {
       const combined = new Uint8Array(
-        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+        atob(encryptedData)
+          .split("")
+          .map((char) => char.charCodeAt(0)),
       );
       const iv = combined.slice(0, MasterPassCrypto.IV_SIZE);
       const encrypted = combined.slice(MasterPassCrypto.IV_SIZE);
       const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: iv },
+        { name: "AES-GCM", iv: iv },
         key,
-        encrypted
+        encrypted,
       );
       const decoder = new TextDecoder();
       // Stored check is JSON.stringify(userId), so decode -> string and compare raw
@@ -212,23 +242,31 @@ export class MasterPassCrypto {
         return decoded;
       }
     } catch {
-      throw new Error('Invalid master password');
+      throw new Error("Invalid master password");
     }
   }
 
   // Validate master password by testing decryption of existing data
-  private async validateMasterPassword(testKey: CryptoKey, userId: string): Promise<boolean> {
+  private async validateMasterPassword(
+    testKey: CryptoKey,
+    userId: string,
+  ): Promise<boolean> {
     try {
       // Import the database modules to test against real encrypted data
-      const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_CREDENTIALS_ID, Query } = await import('../../../lib/appwrite');
-      
+      const {
+        appwriteDatabases,
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_CREDENTIALS_ID,
+        Query,
+      } = await import("../../../lib/appwrite");
+
       // Get raw documents WITHOUT automatic decryption
       const response = await appwriteDatabases.listDocuments(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_CREDENTIALS_ID,
-        [Query.equal('userId', userId), Query.limit(10)] // Get more docs to find encrypted ones
+        [Query.equal("userId", userId), Query.limit(10)], // Get more docs to find encrypted ones
       );
-      
+
       if (response.documents.length === 0) {
         // No existing data to validate against - this is first time setup
         // For first-time setup, we accept any password since there's no existing data to test against
@@ -237,21 +275,24 @@ export class MasterPassCrypto {
 
       // Look for any document with encrypted data to test against
       let foundEncryptedData = false;
-      
+
       for (const doc of response.documents) {
         // Check if this document has encrypted fields that look like base64
-        const hasEncryptedPassword = doc.password && 
-          typeof doc.password === 'string' && 
+        const hasEncryptedPassword =
+          doc.password &&
+          typeof doc.password === "string" &&
           doc.password.length > 50 && // Encrypted data is much longer
           /^[A-Za-z0-9+/]+=*$/.test(doc.password); // Base64 pattern
-          
-        const hasEncryptedUsername = doc.username && 
-          typeof doc.username === 'string' && 
+
+        const hasEncryptedUsername =
+          doc.username &&
+          typeof doc.username === "string" &&
           doc.username.length > 50 &&
           /^[A-Za-z0-9+/]+=*$/.test(doc.username);
 
-        const hasEncryptedNotes = doc.notes && 
-          typeof doc.notes === 'string' && 
+        const hasEncryptedNotes =
+          doc.notes &&
+          typeof doc.notes === "string" &&
           doc.notes.length > 50 &&
           /^[A-Za-z0-9+/]+=*$/.test(doc.notes);
 
@@ -277,26 +318,35 @@ export class MasterPassCrypto {
         // 1. User has credentials but they're not encrypted yet (legacy data)
         // 2. User has no credentials at all (first time)
         // In either case, we should allow the password for now
-        console.log('No encrypted data found to validate against - allowing password (legacy or first-time setup)');
+        console.log(
+          "No encrypted data found to validate against - allowing password (legacy or first-time setup)",
+        );
         return true;
       }
 
       // If we reach here, we successfully decrypted something
       return true;
-
     } catch (error) {
       // If any decryption fails, the password is wrong
-      console.log('Master password validation failed:', error instanceof Error ? error.message : error);
+      console.log(
+        "Master password validation failed:",
+        error instanceof Error ? error.message : error,
+      );
       return false;
     }
   }
 
   // Test decryption with a specific key (without setting it as the master key)
-  private async testDecryption(encryptedData: string, testKey: CryptoKey): Promise<string> {
+  private async testDecryption(
+    encryptedData: string,
+    testKey: CryptoKey,
+  ): Promise<string> {
     try {
       // Decode base64
       const combined = new Uint8Array(
-        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+        atob(encryptedData)
+          .split("")
+          .map((char) => char.charCodeAt(0)),
       );
 
       // Extract IV and encrypted data
@@ -304,16 +354,16 @@ export class MasterPassCrypto {
       const encrypted = combined.slice(MasterPassCrypto.IV_SIZE);
 
       const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: iv },
+        { name: "AES-GCM", iv: iv },
         testKey,
-        encrypted
+        encrypted,
       );
 
       const decoder = new TextDecoder();
       const plaintext = decoder.decode(decrypted);
       return JSON.parse(plaintext);
     } catch (error) {
-      throw new Error('Test decryption failed - invalid master password');
+      throw new Error("Test decryption failed - invalid master password");
     }
   }
 
@@ -321,16 +371,16 @@ export class MasterPassCrypto {
   lock(): void {
     this.masterKey = null;
     this.isUnlocked = false;
-    sessionStorage.removeItem('vault_unlocked');
+    sessionStorage.removeItem("vault_unlocked");
   }
 
   // Reset master password (clear vault and force new setup)
   resetMasterPassword(): void {
     this.lockApplication();
-    
+
     // Clear any setup flags
-    if (typeof window !== 'undefined') {
-      const userId = sessionStorage.getItem('current_user_id');
+    if (typeof window !== "undefined") {
+      const userId = sessionStorage.getItem("current_user_id");
       if (userId) {
         localStorage.removeItem(`masterpass_setup_${userId}`);
       }
@@ -339,18 +389,20 @@ export class MasterPassCrypto {
 
   // Get timeout setting from localStorage or use default
   private getTimeoutSetting(): number {
-    const saved = localStorage.getItem('vault_timeout_minutes');
-    return saved ? parseInt(saved) * 60 * 1000 : MasterPassCrypto.DEFAULT_TIMEOUT;
+    const saved = localStorage.getItem("vault_timeout_minutes");
+    return saved
+      ? parseInt(saved) * 60 * 1000
+      : MasterPassCrypto.DEFAULT_TIMEOUT;
   }
 
   // Set timeout setting
   static setTimeoutMinutes(minutes: number): void {
-    localStorage.setItem('vault_timeout_minutes', minutes.toString());
+    localStorage.setItem("vault_timeout_minutes", minutes.toString());
   }
 
   // Get timeout in minutes for UI
   static getTimeoutMinutes(): number {
-    const saved = localStorage.getItem('vault_timeout_minutes');
+    const saved = localStorage.getItem("vault_timeout_minutes");
     return saved ? parseInt(saved) : 10; // default 10 minutes
   }
 
@@ -358,7 +410,7 @@ export class MasterPassCrypto {
   isVaultUnlocked(): boolean {
     if (!this.isUnlocked || !this.masterKey) return false;
 
-    const unlockTime = sessionStorage.getItem('vault_unlocked');
+    const unlockTime = sessionStorage.getItem("vault_unlocked");
     if (unlockTime) {
       const elapsed = Date.now() - parseInt(unlockTime);
       const timeout = this.getTimeoutSetting();
@@ -372,24 +424,24 @@ export class MasterPassCrypto {
 
   // Encrypt data before sending to database
   async encryptData(data: unknown): Promise<string> {
-    console.log('encryptData called, isVaultUnlocked:', this.isVaultUnlocked());
-    console.log('masterKey exists:', !!this.masterKey);
-    console.log('isUnlocked flag:', this.isUnlocked);
+    console.log("encryptData called, isVaultUnlocked:", this.isVaultUnlocked());
+    console.log("masterKey exists:", !!this.masterKey);
+    console.log("isUnlocked flag:", this.isUnlocked);
 
     if (!this.isVaultUnlocked()) {
-      throw new Error('Vault is locked - cannot encrypt data');
+      throw new Error("Vault is locked - cannot encrypt data");
     }
 
     // Validate input data
     if (data === null || data === undefined) {
-      throw new Error('Cannot encrypt null or undefined data');
+      throw new Error("Cannot encrypt null or undefined data");
     }
 
     // Convert to string if not already
-    const dataToEncrypt = typeof data === 'string' ? data : String(data);
-    
+    const dataToEncrypt = typeof data === "string" ? data : String(data);
+
     if (dataToEncrypt.trim().length === 0) {
-      throw new Error('Cannot encrypt empty string');
+      throw new Error("Cannot encrypt empty string");
     }
 
     try {
@@ -397,12 +449,14 @@ export class MasterPassCrypto {
       const plaintext = encoder.encode(JSON.stringify(dataToEncrypt));
 
       // Generate larger IV for enhanced security
-      const iv = crypto.getRandomValues(new Uint8Array(MasterPassCrypto.IV_SIZE));
+      const iv = crypto.getRandomValues(
+        new Uint8Array(MasterPassCrypto.IV_SIZE),
+      );
 
       const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv },
+        { name: "AES-GCM", iv: iv },
         this.masterKey!,
-        plaintext
+        plaintext,
       );
 
       // Combine IV and encrypted data
@@ -412,33 +466,35 @@ export class MasterPassCrypto {
 
       // Return base64 encoded string
       const result = btoa(String.fromCharCode(...combined));
-      console.log('Encryption successful, result length:', result.length);
+      console.log("Encryption successful, result length:", result.length);
       return result;
     } catch (error) {
-      console.error('Encryption failed:', error);
-      throw new Error('Failed to encrypt data: ' + error);
+      console.error("Encryption failed:", error);
+      throw new Error("Failed to encrypt data: " + error);
     }
   }
 
   // Decrypt data received from database
   async decryptData(encryptedData: string): Promise<unknown> {
     if (!this.isVaultUnlocked()) {
-      throw new Error('Vault is locked');
+      throw new Error("Vault is locked");
     }
 
     // Validate input
-    if (!encryptedData || typeof encryptedData !== 'string') {
-      throw new Error('Invalid encrypted data provided');
+    if (!encryptedData || typeof encryptedData !== "string") {
+      throw new Error("Invalid encrypted data provided");
     }
-    
+
     if (encryptedData.trim().length === 0) {
-      throw new Error('Cannot decrypt empty string');
+      throw new Error("Cannot decrypt empty string");
     }
 
     try {
       // Decode base64
       const combined = new Uint8Array(
-        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+        atob(encryptedData)
+          .split("")
+          .map((char) => char.charCodeAt(0)),
       );
 
       // Extract IV (now 16 bytes) and encrypted data
@@ -446,17 +502,17 @@ export class MasterPassCrypto {
       const encrypted = combined.slice(MasterPassCrypto.IV_SIZE);
 
       const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: iv },
+        { name: "AES-GCM", iv: iv },
         this.masterKey!,
-        encrypted
+        encrypted,
       );
 
       const decoder = new TextDecoder();
       const plaintext = decoder.decode(decrypted);
       return JSON.parse(plaintext);
     } catch (error) {
-      console.error('Decryption failed:', error);
-      throw new Error('Failed to decrypt data');
+      console.error("Decryption failed:", error);
+      throw new Error("Failed to decrypt data");
     }
   }
 
@@ -467,13 +523,13 @@ export class MasterPassCrypto {
     this.isUnlocked = false;
 
     // Clear session storage
-    sessionStorage.removeItem('vault_unlocked');
+    sessionStorage.removeItem("vault_unlocked");
 
     // Clear any cached decrypted data
     this.clearDecryptedCache();
 
     // Force garbage collection if available
-    if (typeof window !== 'undefined' && 'gc' in window) {
+    if (typeof window !== "undefined" && "gc" in window) {
       (window as Window & { gc?: () => void }).gc?.();
     }
   }
@@ -481,8 +537,8 @@ export class MasterPassCrypto {
   // Clear any cached decrypted data from components
   private clearDecryptedCache(): void {
     // Dispatch custom event to notify components to clear their decrypted data
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('vault-locked'));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("vault-locked"));
     }
   }
 
@@ -490,10 +546,10 @@ export class MasterPassCrypto {
   updateActivity(): void {
     if (this.isUnlocked) {
       // Throttle updates to once per second to avoid rapid event bursts
-      const last = sessionStorage.getItem('vault_unlocked');
+      const last = sessionStorage.getItem("vault_unlocked");
       const now = Date.now();
       if (!last || now - parseInt(last) >= 1000) {
-        sessionStorage.setItem('vault_unlocked', now.toString());
+        sessionStorage.setItem("vault_unlocked", now.toString());
       }
       // Intentionally skip validateUserActivity to prevent false positives
     }
@@ -527,89 +583,142 @@ export const getVaultTimeout = () => {
 export const encryptField = async (value: string): Promise<string> => {
   // Validate input before encryption
   if (value === null || value === undefined) {
-    throw new Error('Cannot encrypt null or undefined value');
+    throw new Error("Cannot encrypt null or undefined value");
   }
-  
-  if (typeof value !== 'string') {
-    throw new Error('Can only encrypt string values');
+
+  if (typeof value !== "string") {
+    throw new Error("Can only encrypt string values");
   }
-  
+
   if (value.trim().length === 0) {
-    throw new Error('Cannot encrypt empty string');
+    throw new Error("Cannot encrypt empty string");
   }
-  
+
   return masterPassCrypto.encryptData(value);
 };
 
 export const decryptField = async (encryptedValue: string): Promise<string> => {
   // Validate input before decryption
-  if (!encryptedValue || typeof encryptedValue !== 'string') {
-    throw new Error('Invalid encrypted value provided');
+  if (!encryptedValue || typeof encryptedValue !== "string") {
+    throw new Error("Invalid encrypted value provided");
   }
-  
+
   if (encryptedValue.trim().length === 0) {
-    throw new Error('Cannot decrypt empty string');
+    throw new Error("Cannot decrypt empty string");
   }
-  
+
   return masterPassCrypto.decryptData(encryptedValue) as Promise<string>;
 };
 
 // Middleware for automatic encryption/decryption of database operations
-export const createSecureDbWrapper = (databases: {
-  createDocument: (...args: unknown[]) => unknown;
-  getDocument: (...args: unknown[]) => unknown;
-  updateDocument: (...args: unknown[]) => unknown;
-  deleteDocument: (...args: unknown[]) => unknown;
-  listDocuments: (...args: unknown[]) => unknown;
-}, databaseId: string) => {
+export const createSecureDbWrapper = (
+  databases: {
+    createDocument: (...args: unknown[]) => unknown;
+    getDocument: (...args: unknown[]) => unknown;
+    updateDocument: (...args: unknown[]) => unknown;
+    deleteDocument: (...args: unknown[]) => unknown;
+    listDocuments: (...args: unknown[]) => unknown;
+  },
+  databaseId: string,
+) => {
   return {
     // Secure document creation
-    createDocument: async (collectionId: string, documentId: string, data: Record<string, unknown>, permissions?: string[]) => {
+    createDocument: async (
+      collectionId: string,
+      documentId: string,
+      data: Record<string, unknown>,
+      permissions?: string[],
+    ) => {
       const secureData = { ...data };
 
       // Encrypt sensitive fields based on collection
-      if (collectionId === 'credentials') {
-        if (secureData.username) secureData.username = await encryptField(String(secureData.username));
-        if (secureData.password) secureData.password = await encryptField(String(secureData.password));
-        if (secureData.notes) secureData.notes = await encryptField(String(secureData.notes));
-        if (secureData.customFields) secureData.customFields = await encryptField(String(secureData.customFields));
-      } else if (collectionId === 'totpSecrets') {
-        if (secureData.secretKey) secureData.secretKey = await encryptField(String(secureData.secretKey));
+      if (collectionId === "credentials") {
+        if (secureData.username)
+          secureData.username = await encryptField(String(secureData.username));
+        if (secureData.password)
+          secureData.password = await encryptField(String(secureData.password));
+        if (secureData.notes)
+          secureData.notes = await encryptField(String(secureData.notes));
+        if (secureData.customFields)
+          secureData.customFields = await encryptField(
+            String(secureData.customFields),
+          );
+      } else if (collectionId === "totpSecrets") {
+        if (secureData.secretKey)
+          secureData.secretKey = await encryptField(
+            String(secureData.secretKey),
+          );
       }
 
-      return databases.createDocument(databaseId, collectionId, documentId, secureData, permissions);
+      return databases.createDocument(
+        databaseId,
+        collectionId,
+        documentId,
+        secureData,
+        permissions,
+      );
     },
 
     // Secure document retrieval
     getDocument: async (collectionId: string, documentId: string) => {
-      const doc = await databases.getDocument(databaseId, collectionId, documentId) as Record<string, unknown>;
+      const doc = (await databases.getDocument(
+        databaseId,
+        collectionId,
+        documentId,
+      )) as Record<string, unknown>;
       return await decryptDocument(doc, collectionId);
     },
 
     // Secure document listing
     listDocuments: async (collectionId: string, queries?: string[]) => {
-      const response = await databases.listDocuments(databaseId, collectionId, queries) as { documents: Record<string, unknown>[]; [key: string]: unknown };
+      const response = (await databases.listDocuments(
+        databaseId,
+        collectionId,
+        queries,
+      )) as { documents: Record<string, unknown>[]; [key: string]: unknown };
       const decryptedDocuments = await Promise.all(
-        response.documents.map((doc: Record<string, unknown>) => decryptDocument(doc, collectionId))
+        response.documents.map((doc: Record<string, unknown>) =>
+          decryptDocument(doc, collectionId),
+        ),
       );
       return { ...response, documents: decryptedDocuments };
     },
 
     // Secure document update
-    updateDocument: async (collectionId: string, documentId: string, data: Record<string, unknown>, permissions?: string[]) => {
+    updateDocument: async (
+      collectionId: string,
+      documentId: string,
+      data: Record<string, unknown>,
+      permissions?: string[],
+    ) => {
       const secureData = { ...data };
 
       // Encrypt sensitive fields based on collection
-      if (collectionId === 'credentials') {
-        if (secureData.username) secureData.username = await encryptField(String(secureData.username));
-        if (secureData.password) secureData.password = await encryptField(String(secureData.password));
-        if (secureData.notes) secureData.notes = await encryptField(String(secureData.notes));
-        if (secureData.customFields) secureData.customFields = await encryptField(String(secureData.customFields));
-      } else if (collectionId === 'totpSecrets') {
-        if (secureData.secretKey) secureData.secretKey = await encryptField(String(secureData.secretKey));
+      if (collectionId === "credentials") {
+        if (secureData.username)
+          secureData.username = await encryptField(String(secureData.username));
+        if (secureData.password)
+          secureData.password = await encryptField(String(secureData.password));
+        if (secureData.notes)
+          secureData.notes = await encryptField(String(secureData.notes));
+        if (secureData.customFields)
+          secureData.customFields = await encryptField(
+            String(secureData.customFields),
+          );
+      } else if (collectionId === "totpSecrets") {
+        if (secureData.secretKey)
+          secureData.secretKey = await encryptField(
+            String(secureData.secretKey),
+          );
       }
 
-      return databases.updateDocument(databaseId, collectionId, documentId, secureData, permissions);
+      return databases.updateDocument(
+        databaseId,
+        collectionId,
+        documentId,
+        secureData,
+        permissions,
+      );
     },
 
     // Direct database access (for non-sensitive operations)
@@ -619,20 +728,36 @@ export const createSecureDbWrapper = (databases: {
 };
 
 // Helper function to decrypt document based on collection type
-const decryptDocument = async (doc: Record<string, unknown>, collectionId: string) => {
+const decryptDocument = async (
+  doc: Record<string, unknown>,
+  collectionId: string,
+) => {
   const decryptedDoc = { ...doc };
 
   try {
-    if (collectionId === 'credentials') {
-      if (decryptedDoc.username) decryptedDoc.username = await decryptField(String(decryptedDoc.username));
-      if (decryptedDoc.password) decryptedDoc.password = await decryptField(String(decryptedDoc.password));
-      if (decryptedDoc.notes) decryptedDoc.notes = await decryptField(String(decryptedDoc.notes));
-      if (decryptedDoc.customFields) decryptedDoc.customFields = await decryptField(String(decryptedDoc.customFields));
-    } else if (collectionId === 'totpSecrets') {
-      if (decryptedDoc.secretKey) decryptedDoc.secretKey = await decryptField(String(decryptedDoc.secretKey));
+    if (collectionId === "credentials") {
+      if (decryptedDoc.username)
+        decryptedDoc.username = await decryptField(
+          String(decryptedDoc.username),
+        );
+      if (decryptedDoc.password)
+        decryptedDoc.password = await decryptField(
+          String(decryptedDoc.password),
+        );
+      if (decryptedDoc.notes)
+        decryptedDoc.notes = await decryptField(String(decryptedDoc.notes));
+      if (decryptedDoc.customFields)
+        decryptedDoc.customFields = await decryptField(
+          String(decryptedDoc.customFields),
+        );
+    } else if (collectionId === "totpSecrets") {
+      if (decryptedDoc.secretKey)
+        decryptedDoc.secretKey = await decryptField(
+          String(decryptedDoc.secretKey),
+        );
     }
   } catch (error) {
-    console.error('Failed to decrypt document:', error);
+    console.error("Failed to decrypt document:", error);
     // Return original document if decryption fails (fallback)
     return doc;
   }
@@ -667,11 +792,16 @@ export const resetMasterPasswordVault = () => {
 
 // Add utility to update the check value in the user doc
 export const updateMasterpassCheckValue = async (userId: string) => {
-  const { appwriteDatabases, APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_USER_ID, Query } = await import('../../../lib/appwrite');
+  const {
+    appwriteDatabases,
+    APPWRITE_DATABASE_ID,
+    APPWRITE_COLLECTION_USER_ID,
+    Query,
+  } = await import("../../../lib/appwrite");
   const response = await appwriteDatabases.listDocuments(
     APPWRITE_DATABASE_ID,
     APPWRITE_COLLECTION_USER_ID,
-    [Query.equal('userId', userId)]
+    [Query.equal("userId", userId)],
   );
   const userDoc = response.documents[0];
   if (!userDoc) return;
@@ -680,6 +810,6 @@ export const updateMasterpassCheckValue = async (userId: string) => {
     APPWRITE_DATABASE_ID,
     APPWRITE_COLLECTION_USER_ID,
     userDoc.$id,
-    { check }
+    { check },
   );
 };

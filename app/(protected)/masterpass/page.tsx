@@ -9,7 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
 import { masterPassCrypto } from "./logic";
 import { useFinalizeAuth } from "@/lib/finalizeAuth";
-import { hasMasterpass, setMasterpassFlag, logoutAppwrite, AppwriteService } from "@/lib/appwrite";
+import {
+  hasMasterpass,
+  setMasterpassFlag,
+  logoutAppwrite,
+  AppwriteService,
+} from "@/lib/appwrite";
 import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
 import { unlockWithPasskey } from "../settings/passkey";
@@ -25,7 +30,7 @@ export default function MasterPassPage() {
   const [confirmCapsLock, setConfirmCapsLock] = useState(false);
   const [hasPasskey, setHasPasskey] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
-  
+
   const { user, refresh } = useAppwrite();
   const { finalizeAuth } = useFinalizeAuth();
   const router = useRouter();
@@ -34,18 +39,18 @@ export default function MasterPassPage() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    Promise.all([
-      hasMasterpass(user.$id),
-      AppwriteService.hasPasskey(user.$id)
-    ]).then(([masterpassPresent, passkeyPresent]) => {
-      setIsFirstTime(!masterpassPresent);
-      setHasPasskey(passkeyPresent);
-    }).catch(() => {
-      setIsFirstTime(true);
-      setHasPasskey(false);
-    }).finally(() => {
-      setLoading(false);
-    });
+    Promise.all([hasMasterpass(user.$id), AppwriteService.hasPasskey(user.$id)])
+      .then(([masterpassPresent, passkeyPresent]) => {
+        setIsFirstTime(!masterpassPresent);
+        setHasPasskey(passkeyPresent);
+      })
+      .catch(() => {
+        setIsFirstTime(true);
+        setHasPasskey(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [user]);
 
   // Redirect to login if not logged in
@@ -72,22 +77,30 @@ export default function MasterPassPage() {
           setLoading(false);
           return;
         }
-        
+
         // Unlock vault with first-time flag
-        const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', true);
-        
-          if (success) {
-            if (user) {
-              await setMasterpassFlag(user.$id, user.email);
-            }
-            await finalizeAuth({ redirect: true, fallback: "/login" });
-          } else {
-            toast.error("Failed to set master password");
+        const success = await masterPassCrypto.unlock(
+          masterPassword,
+          user?.$id || "",
+          true,
+        );
+
+        if (success) {
+          if (user) {
+            await setMasterpassFlag(user.$id, user.email);
           }
+          await finalizeAuth({ redirect: true, fallback: "/login" });
+        } else {
+          toast.error("Failed to set master password");
+        }
       } else {
         // Existing user - attempt to unlock vault normally
-        const success = await masterPassCrypto.unlock(masterPassword, user?.$id || '', false);
-        
+        const success = await masterPassCrypto.unlock(
+          masterPassword,
+          user?.$id || "",
+          false,
+        );
+
         if (success) {
           await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
@@ -96,13 +109,16 @@ export default function MasterPassPage() {
       }
     } catch (err: unknown) {
       const e = err as { message?: string };
-      if (e?.message?.includes('Vault is locked') || e?.message?.includes('master password is incorrect')) {
+      if (
+        e?.message?.includes("Vault is locked") ||
+        e?.message?.includes("master password is incorrect")
+      ) {
         toast.error("Incorrect master password. Please try again.");
       } else {
         toast.error("Failed to unlock vault");
       }
     }
-    
+
     setLoading(false);
   };
 
@@ -110,7 +126,7 @@ export default function MasterPassPage() {
     setLoading(true);
     await logoutAppwrite();
     setLoading(false);
-    router.replace('/login');
+    router.replace("/login");
   };
 
   const handlePasskeyUnlock = async () => {
@@ -144,9 +160,13 @@ export default function MasterPassPage() {
           {/* Account name/email for personalization */}
           {user && (
             <div className="mb-2">
-              <span className="font-semibold text-base">{user.name || user.email}</span>
+              <span className="font-semibold text-base">
+                {user.name || user.email}
+              </span>
               {user.email && user.name && (
-                <div className="text-xs text-muted-foreground">{user.email}</div>
+                <div className="text-xs text-muted-foreground">
+                  {user.email}
+                </div>
               )}
             </div>
           )}
@@ -154,10 +174,9 @@ export default function MasterPassPage() {
             {isFirstTime ? "Set Master Password" : "Unlock Vault"}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {isFirstTime 
+            {isFirstTime
               ? "Create a master password to encrypt your data"
-              : "Enter your master password to access encrypted data"
-            }
+              : "Enter your master password to access encrypted data"}
           </p>
         </CardHeader>
         <CardContent>
@@ -169,25 +188,33 @@ export default function MasterPassPage() {
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder={isFirstTime ? "Create a strong master password" : "Enter your master password"}
+                  placeholder={
+                    isFirstTime
+                      ? "Create a strong master password"
+                      : "Enter your master password"
+                  }
                   value={masterPassword}
                   onChange={(e) => setMasterPassword(e.target.value)}
                   required
                   autoFocus
-                  onKeyDown={e => {
+                  onKeyDown={(e) => {
                     if (
                       "getModifierState" in e &&
-                      (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                      (
+                        e as React.KeyboardEvent<HTMLInputElement>
+                      ).getModifierState("CapsLock")
                     ) {
                       setCapsLock(true);
                     } else {
                       setCapsLock(false);
                     }
                   }}
-                  onKeyUp={e => {
+                  onKeyUp={(e) => {
                     if (
                       "getModifierState" in e &&
-                      (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                      (
+                        e as React.KeyboardEvent<HTMLInputElement>
+                      ).getModifierState("CapsLock")
                     ) {
                       setCapsLock(true);
                     } else {
@@ -204,7 +231,11 @@ export default function MasterPassPage() {
                   onClick={() => setShowPassword((v) => !v)}
                   tabIndex={-1}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               {capsLock && (
@@ -216,7 +247,9 @@ export default function MasterPassPage() {
 
             {isFirstTime && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Confirm Master Password</label>
+                <label className="text-sm font-medium">
+                  Confirm Master Password
+                </label>
                 <div className="relative">
                   <Input
                     type={showConfirmPassword ? "text" : "password"}
@@ -224,20 +257,24 @@ export default function MasterPassPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    onKeyDown={e => {
+                    onKeyDown={(e) => {
                       if (
                         "getModifierState" in e &&
-                        (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                        (
+                          e as React.KeyboardEvent<HTMLInputElement>
+                        ).getModifierState("CapsLock")
                       ) {
                         setConfirmCapsLock(true);
                       } else {
                         setConfirmCapsLock(false);
                       }
                     }}
-                    onKeyUp={e => {
+                    onKeyUp={(e) => {
                       if (
                         "getModifierState" in e &&
-                        (e as React.KeyboardEvent<HTMLInputElement>).getModifierState("CapsLock")
+                        (
+                          e as React.KeyboardEvent<HTMLInputElement>
+                        ).getModifierState("CapsLock")
                       ) {
                         setConfirmCapsLock(true);
                       } else {
@@ -254,7 +291,11 @@ export default function MasterPassPage() {
                     onClick={() => setShowConfirmPassword((v) => !v)}
                     tabIndex={-1}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 {confirmCapsLock && (
@@ -267,7 +308,9 @@ export default function MasterPassPage() {
                     {confirmPassword === masterPassword ? (
                       <span className="text-green-700">Passwords match</span>
                     ) : (
-                      <span className="text-red-700">Passwords do not match</span>
+                      <span className="text-red-700">
+                        Passwords do not match
+                      </span>
                     )}
                   </div>
                 )}
@@ -279,21 +322,20 @@ export default function MasterPassPage() {
                 <div className="flex items-start gap-2">
                   <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div>
-                    <strong>Important:</strong> Your master password encrypts all your data locally. 
-                    We cannot recover it if you forget it. Please store it in a safe place.
+                    <strong>Important:</strong> Your master password encrypts
+                    all your data locally. We cannot recover it if you forget
+                    it. Please store it in a safe place.
                   </div>
                 </div>
               </div>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                "Processing..."
-              ) : isFirstTime ? (
-                "Set Master Password"
-              ) : (
-                "Unlock Vault"
-              )}
+              {loading
+                ? "Processing..."
+                : isFirstTime
+                  ? "Set Master Password"
+                  : "Unlock Vault"}
             </Button>
           </form>
 
@@ -311,10 +353,33 @@ export default function MasterPassPage() {
                 disabled={passkeyLoading || loading}
                 className="transform transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0.5 active:scale-95 shadow-[0_8px_16px_rgba(2,6,23,0.08)] dark:shadow-none bg-gradient-to-b from-white/60 to-white/30 dark:from-white/5 dark:to-white/3 border border-muted/30 rounded-lg py-2 px-3 flex items-center justify-center gap-2"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 1v4" strokeLinecap="round" strokeLinejoin="round" />
-                  <rect x="4" y="5" width="16" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8 11a4 4 0 0 1 8 0v2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    d="M12 1v4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <rect
+                    x="4"
+                    y="5"
+                    width="16"
+                    height="14"
+                    rx="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8 11a4 4 0 0 1 8 0v2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 <span className="font-medium">
                   {passkeyLoading ? "Unlocking..." : "Unlock with Passkey"}

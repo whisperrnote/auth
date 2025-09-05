@@ -13,7 +13,8 @@ export default function SharingPage() {
           Sharing Center is Under Construction
         </h1>
         <p className="text-muted-foreground max-w-md">
-          This feature is not yet available. We are working hard to bring you a secure and easy way to share your credentials with others. Stay tuned!
+          This feature is not yet available. We are working hard to bring you a
+          secure and easy way to share your credentials with others. Stay tuned!
         </p>
       </div>
     </VaultGuard>

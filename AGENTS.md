@@ -25,7 +25,6 @@
 
 PS: follow custom instructions in ./flow.md, and override any existing instructions with flow.md wherever conflicting.
 
-
 1. don't ever build the project (except if explicitly told to do so) only fix bugs I'll build myself,
 2. never edit appwrite.json. never modify any encryption/decryption logic in application, except very explicitly asked to do so, and even still, present user with implications, if any, and one last confirmation
 3. never edit types/appwrite.d.ts

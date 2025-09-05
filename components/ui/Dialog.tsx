@@ -16,7 +16,8 @@ export function Dialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div
         className={
-          "relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto text-foreground " + className
+          "relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto text-foreground " +
+          className
         }
       >
         <button

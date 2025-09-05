@@ -23,14 +23,20 @@ export function Navbar() {
             alt="Whisperrauth Logo"
             className="h-8 w-8 rounded-lg object-contain"
           />
-          <span className="font-semibold text-lg hidden sm:inline">Whisperrauth</span>
+          <span className="font-semibold text-lg hidden sm:inline">
+            Whisperrauth
+          </span>
         </Link>
         <div className="flex items-center gap-2">
           <button
             className="p-2 rounded-full hover:bg-accent"
             onClick={() => {
               const nextTheme =
-                theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
+                theme === "light"
+                  ? "dark"
+                  : theme === "dark"
+                    ? "system"
+                    : "light";
               setTheme(nextTheme);
             }}
           >
@@ -39,7 +45,14 @@ export function Navbar() {
             {theme === "system" && <Monitor className="h-5 w-5" />}
           </button>
           <DropdownMenu
-            trigger={<button className="p-2 rounded-full hover:bg-accent" title="Password Generator"><Key className="h-5 w-5" /></button>}
+            trigger={
+              <button
+                className="p-2 rounded-full hover:bg-accent"
+                title="Password Generator"
+              >
+                <Key className="h-5 w-5" />
+              </button>
+            }
             width="400px"
             align="right"
           >
@@ -62,7 +75,9 @@ export function Navbar() {
                 onClick={() => setShowMenu((v) => !v)}
               >
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">{user.name || user.email}</span>
+                <span className="hidden sm:inline">
+                  {user.name || user.email}
+                </span>
               </Button>
               {showMenu && (
                 <div
@@ -71,7 +86,9 @@ export function Navbar() {
                 >
                   <div className="px-4 py-3 border-b">
                     <div className="font-medium">{user.name || user.email}</div>
-                    <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </div>
                   </div>
                   <Link href="/settings">
                     <button
@@ -86,20 +103,27 @@ export function Navbar() {
                     className="w-full text-left px-4 py-2 hover:bg-accent text-sm flex items-center gap-2 sm:hidden"
                     onClick={() => {
                       // Lock immediately and redirect to masterpass
-                      import("next/navigation").then(({ usePathname, useRouter }) => {
-                        // Note: cannot use hooks here; fallback to direct masterPassCrypto + location
-                        Promise.resolve().then(async () => {
-                          const { masterPassCrypto } = await import("@/app/(protected)/masterpass/logic");
-                          masterPassCrypto.lockNow();
-                          try {
-                            const path = window.location.pathname;
-                            sessionStorage.setItem('masterpass_return_to', path);
-                            window.location.replace('/masterpass');
-                          } catch {
-                            window.location.href = '/masterpass';
-                          }
-                        });
-                      });
+                      import("next/navigation").then(
+                        ({ usePathname, useRouter }) => {
+                          // Note: cannot use hooks here; fallback to direct masterPassCrypto + location
+                          Promise.resolve().then(async () => {
+                            const { masterPassCrypto } = await import(
+                              "@/app/(protected)/masterpass/logic"
+                            );
+                            masterPassCrypto.lockNow();
+                            try {
+                              const path = window.location.pathname;
+                              sessionStorage.setItem(
+                                "masterpass_return_to",
+                                path,
+                              );
+                              window.location.replace("/masterpass");
+                            } catch {
+                              window.location.href = "/masterpass";
+                            }
+                          });
+                        },
+                      );
                       setShowMenu(false);
                     }}
                   >

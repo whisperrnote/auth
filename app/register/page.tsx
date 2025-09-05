@@ -116,35 +116,48 @@ export default function RegisterPage() {
       }
       try {
         // 1. Create the account
-        await registerWithEmailPassword(formData.email, formData.password, formData.name);
+        await registerWithEmailPassword(
+          formData.email,
+          formData.password,
+          formData.name,
+        );
 
         // 2. Immediately create a session (login)
         await loginWithEmailPassword(formData.email, formData.password);
 
         // 3. Continue with MFA/masterpass logic
         const mfaStatus = await getMfaAuthenticationStatus();
-        
+
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
           // Finalize auth after full authentication
-          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          const { finalizeAuth } = (
+            await import("@/lib/finalizeAuth")
+          ).useFinalizeAuth();
           await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
       } catch (err: unknown) {
         const error = err as { type?: string; code?: number; message?: string };
-        console.log("Registration error caught:", { err, type: error.type, code: error.code, message: error.message });
-        
+        console.log("Registration error caught:", {
+          err,
+          type: error.type,
+          code: error.code,
+          message: error.message,
+        });
+
         // Check if this is an MFA requirement error (can happen during the login step)
         if (
           error.type === "user_more_factors_required" ||
-          error.code === 401 && error.message?.includes("more factors") ||
+          (error.code === 401 && error.message?.includes("more factors")) ||
           error.message?.includes("More factors are required") ||
           error.message?.includes("user_more_factors_required")
         ) {
-          console.log("MFA required during registration login, redirecting to /twofa/access");
+          console.log(
+            "MFA required during registration login, redirecting to /twofa/access",
+          );
           router.replace("/twofa/access");
         } else {
           // If error is "user already exists", show a friendly message
@@ -158,30 +171,39 @@ export default function RegisterPage() {
     } else if (mode === "otp") {
       try {
         await completeEmailOtp(formData.userId, formData.otp);
-        
+
         const mfaStatus = await getMfaAuthenticationStatus();
-        
+
         if (mfaStatus.needsMfa) {
           router.replace("/twofa/access");
         } else if (mfaStatus.isFullyAuthenticated) {
           // Finalize auth after full authentication
-          const { finalizeAuth } = (await import("@/lib/finalizeAuth")).useFinalizeAuth();
+          const { finalizeAuth } = (
+            await import("@/lib/finalizeAuth")
+          ).useFinalizeAuth();
           await finalizeAuth({ redirect: true, fallback: "/login" });
         } else {
           toast.error(mfaStatus.error || "Registration verification failed");
         }
       } catch (err: unknown) {
         const error = err as { type?: string; code?: number; message?: string };
-        console.log("Registration OTP error caught:", { err, type: error.type, code: error.code, message: error.message });
-        
+        console.log("Registration OTP error caught:", {
+          err,
+          type: error.type,
+          code: error.code,
+          message: error.message,
+        });
+
         // Check if this is an MFA requirement error
         if (
           error.type === "user_more_factors_required" ||
-          error.code === 401 && error.message?.includes("more factors") ||
+          (error.code === 401 && error.message?.includes("more factors")) ||
           error.message?.includes("More factors are required") ||
           error.message?.includes("user_more_factors_required")
         ) {
-          console.log("MFA required during registration OTP, redirecting to /twofa/access");
+          console.log(
+            "MFA required during registration OTP, redirecting to /twofa/access",
+          );
           router.replace("/twofa/access");
         } else {
           toast.error(error?.message || "Invalid OTP.");
@@ -197,7 +219,10 @@ export default function RegisterPage() {
       setOtpSent(true);
       setSecurityPhrase(resp.phrase || "");
       setFormData((f) => ({ ...f, userId: resp.userId }));
-      localStorage.setItem("register_otp_last_" + formData.email, Date.now().toString());
+      localStorage.setItem(
+        "register_otp_last_" + formData.email,
+        Date.now().toString(),
+      );
       setOtpCooldown(OTP_COOLDOWN);
     } catch (e: unknown) {
       const err = e as { message?: string };
@@ -238,14 +263,16 @@ export default function RegisterPage() {
                 <button
                   key={btn.value}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-md transition-all duration-150
-                    ${mode === btn.value
-                      ? "bg-primary text-white scale-105"
-                      : "bg-white/60 text-[rgb(141,103,72)] hover:bg-primary/20"
+                    ${
+                      mode === btn.value
+                        ? "bg-primary text-white scale-105"
+                        : "bg-white/60 text-[rgb(141,103,72)] hover:bg-primary/20"
                     }`}
                   style={{
-                    boxShadow: mode === btn.value
-                      ? "0 4px 16px 0 rgba(141,103,72,0.13)"
-                      : "0 2px 8px 0 rgba(191,174,153,0.10)"
+                    boxShadow:
+                      mode === btn.value
+                        ? "0 4px 16px 0 rgba(141,103,72,0.13)"
+                        : "0 2px 8px 0 rgba(191,174,153,0.10)",
                   }}
                   onClick={() => {
                     setMode(btn.value as Mode);
@@ -262,24 +289,26 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Full Name</label>
                 <Input
-                  
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   required
                 />
               </div>
               {/* Email always visible */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
-                 <Input
-                   type="email"
-                   value={formData.email}
-                    onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      setOtpSent(false);
-                    }}
-                   required
-                 />              </div>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setOtpSent(false);
+                  }}
+                  required
+                />{" "}
+              </div>
               {/* Password registration */}
               {mode === "password" && (
                 <>
@@ -290,7 +319,9 @@ export default function RegisterPage() {
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a strong password"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
                         required
                       />
                       <Button
@@ -300,18 +331,29 @@ export default function RegisterPage() {
                         className="absolute right-0 top-0 h-full px-3"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Confirm Password</label>
+                    <label className="text-sm font-medium">
+                      Confirm Password
+                    </label>
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
                         value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
                         required
                       />
                       <Button
@@ -319,9 +361,15 @@ export default function RegisterPage() {
                         variant="ghost"
                         size="sm"
                         className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                       >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -335,7 +383,9 @@ export default function RegisterPage() {
                       type="text"
                       placeholder="Enter OTP"
                       value={formData.otp}
-                      onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, otp: e.target.value })
+                      }
                       disabled={!otpSent}
                       className={`transition-all duration-200 ${!otpSent ? "blur-[2px] opacity-60" : ""}`}
                     />
@@ -343,11 +393,7 @@ export default function RegisterPage() {
                       type="button"
                       variant="outline"
                       className="glass"
-                      disabled={
-                        !formData.email ||
-                        otpCooldown > 0 ||
-                        loading
-                      }
+                      disabled={!formData.email || otpCooldown > 0 || loading}
                       onClick={handleSendOTP}
                     >
                       {otpSent ? (
@@ -360,7 +406,8 @@ export default function RegisterPage() {
                   {/* Security phrase */}
                   {securityPhrase && otpSent && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      <span className="font-semibold">Security Phrase:</span> {securityPhrase}
+                      <span className="font-semibold">Security Phrase:</span>{" "}
+                      {securityPhrase}
                     </div>
                   )}
                   {/* Countdown */}
@@ -392,4 +439,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-  

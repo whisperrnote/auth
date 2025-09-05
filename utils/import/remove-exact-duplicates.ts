@@ -1,11 +1,13 @@
-import type { BitwardenItem } from './bitwarden-types';
+import type { BitwardenItem } from "./bitwarden-types";
 
 /**
  * Removes exact (deep-equal) duplicates from an array of BitwardenItem objects.
  * @param items Array of BitwardenItem objects
  * @returns { deduped: BitwardenItem[], removed: BitwardenItem[] }
  */
-export function removeExactDuplicates<T extends object>(items: T[]): { deduped: T[]; removed: T[] } {
+export function removeExactDuplicates<T extends object>(
+  items: T[],
+): { deduped: T[]; removed: T[] } {
   const seen = new Set<string>();
   const deduped: T[] = [];
   const removed: T[] = [];
@@ -27,9 +29,11 @@ export function removeExactDuplicates<T extends object>(items: T[]): { deduped: 
  * Utility to log removed duplicates for user feedback.
  * @param removed Array of removed duplicate items
  */
-export function logRemovedDuplicates<T extends { name?: string; id?: string }>(removed: T[]): void {
+export function logRemovedDuplicates<T extends { name?: string; id?: string }>(
+  removed: T[],
+): void {
   if (removed.length === 0) {
-    console.info('No exact duplicates found.');
+    console.info("No exact duplicates found.");
     return;
   }
   console.warn(`Removed ${removed.length} exact duplicate(s):`);

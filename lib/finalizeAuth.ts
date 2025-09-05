@@ -15,7 +15,10 @@ export function useFinalizeAuth() {
   const router = useRouter();
   const { refresh, user, isVaultUnlocked, isAuthReady } = useAppwrite();
 
-  const finalize = async (options?: { redirect?: boolean; fallback?: string }) => {
+  const finalize = async (options?: {
+    redirect?: boolean;
+    fallback?: string;
+  }) => {
     // 1) Touch account to ensure cookies/session are applied
     try {
       await getMfaAuthenticationStatus();
@@ -29,7 +32,12 @@ export function useFinalizeAuth() {
 
     if (options?.redirect) {
       // Decide next route
-      const u = user || (await (async () => { await refresh(); return null; })());
+      const u =
+        user ||
+        (await (async () => {
+          await refresh();
+          return null;
+        })());
       // If no user after refresh, go to fallback/login
       if (!u) {
         router.replace(options.fallback || "/login");

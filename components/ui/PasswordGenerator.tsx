@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Copy, RefreshCw, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import {
+  Copy,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+} from "lucide-react";
 import { generateRandomPassword } from "@/utils/password";
 
 export default function PasswordGenerator() {
@@ -61,7 +67,7 @@ export default function PasswordGenerator() {
     setLength(val);
   };
 
-   return (
+  return (
     <div className="w-full sm:max-w-[380px] max-w-xs p-2 bg-card rounded-md shadow-md">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between mb-1">
@@ -71,7 +77,7 @@ export default function PasswordGenerator() {
             <input
               type="checkbox"
               checked={showHistory}
-              onChange={e => setShowHistory(e.target.checked)}
+              onChange={(e) => setShowHistory(e.target.checked)}
               className="accent-primary"
             />
             <span className="sm:inline hidden">Show history</span>
@@ -83,7 +89,7 @@ export default function PasswordGenerator() {
             <input
               type="checkbox"
               checked={showHistory}
-              onChange={e => setShowHistory(e.target.checked)}
+              onChange={(e) => setShowHistory(e.target.checked)}
               className="accent-primary"
             />
             <span>Show history</span>
@@ -99,14 +105,28 @@ export default function PasswordGenerator() {
                 readOnly
                 rows={2}
                 aria-label="Generated password"
-                style={{ wordBreak: 'break-word' }}
+                style={{ wordBreak: "break-word" }}
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-8 w-8 flex-shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                title="Copy password"
+                className="p-1 h-8 w-8 flex-shrink-0"
+              >
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={handleGenerate} title="Rotate password" className="p-1 h-8 w-8">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerate}
+                title="Rotate password"
+                className="p-1 h-8 w-8"
+              >
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -123,13 +143,26 @@ export default function PasswordGenerator() {
                 aria-label="Generated password"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                <Button type="button" variant="outline" size="sm" onClick={handleCopy} title="Copy password" className="p-1 h-7 w-7">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  title="Copy password"
+                  className="p-1 h-7 w-7"
+                >
                   <Copy className="h-4 w-4" />
                   {copied && <span className="ml-1 text-xs">Copied!</span>}
                 </Button>
               </div>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={handleGenerate} title="Generate new password">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGenerate}
+              title="Generate new password"
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -137,7 +170,14 @@ export default function PasswordGenerator() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs">Length</span>
-            <Button type="button" size="sm" variant="ghost" onClick={() => handleLengthChange(length - 1)} disabled={length <= 8} className="px-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => handleLengthChange(length - 1)}
+              disabled={length <= 8}
+              className="px-2"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Input
@@ -145,11 +185,18 @@ export default function PasswordGenerator() {
               min={8}
               max={64}
               value={length}
-              onChange={e => handleLengthChange(Number(e.target.value))}
+              onChange={(e) => handleLengthChange(Number(e.target.value))}
               className="w-16 text-center font-mono text-base px-1 py-1 h-8"
               style={{ minWidth: 0 }}
             />
-            <Button type="button" size="sm" variant="ghost" onClick={() => handleLengthChange(length + 1)} disabled={length >= 64} className="px-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => handleLengthChange(length + 1)}
+              disabled={length >= 64}
+              className="px-2"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -159,10 +206,14 @@ export default function PasswordGenerator() {
             min={8}
             max={64}
             value={length}
-            onChange={e => handleLengthChange(Number(e.target.value))}
+            onChange={(e) => handleLengthChange(Number(e.target.value))}
             className="w-full accent-primary"
           />
-          <Button type="button" onClick={handleGenerate} className="w-full mt-1">
+          <Button
+            type="button"
+            onClick={handleGenerate}
+            className="w-full mt-1"
+          >
             Generate
           </Button>
         </div>
@@ -172,18 +223,37 @@ export default function PasswordGenerator() {
               <Clock className="h-3 w-3" /> Last 20 passwords
             </div>
             {history.length === 0 ? (
-              <div className="text-xs text-muted-foreground">No history yet.</div>
+              <div className="text-xs text-muted-foreground">
+                No history yet.
+              </div>
             ) : (
               <ul className="space-y-1">
-                {history.map((item: { value: string; ts: number }, i: number) => (
-                  <li key={i} className="flex items-center gap-2 text-xs font-mono bg-muted/30 rounded px-2 py-1">
-                    <span className="truncate flex-1" title={item.value}>{item.value}</span>
-                    <span className="text-[10px] text-muted-foreground">{new Date(item.ts).toLocaleTimeString()}</span>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(item.value) }} title="Copy">
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </li>
-                ))}
+                {history.map(
+                  (item: { value: string; ts: number }, i: number) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-2 text-xs font-mono bg-muted/30 rounded px-2 py-1"
+                    >
+                      <span className="truncate flex-1" title={item.value}>
+                        {item.value}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(item.ts).toLocaleTimeString()}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.value);
+                        }}
+                        title="Copy"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </li>
+                  ),
+                )}
               </ul>
             )}
           </div>

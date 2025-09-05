@@ -6,14 +6,25 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { listMfaFactors, createMfaChallenge, completeMfaChallenge, getMfaAuthenticationStatus } from "@/lib/appwrite";
+import {
+  listMfaFactors,
+  createMfaChallenge,
+  completeMfaChallenge,
+  getMfaAuthenticationStatus,
+} from "@/lib/appwrite";
 
 import toast from "react-hot-toast";
 
 export default function TwofaAccessPage() {
   const router = useRouter();
-  const [factors, setFactors] = useState<{ totp: boolean; email: boolean; phone: boolean } | null>(null);
-  const [selectedFactor, setSelectedFactor] = useState<"totp" | "email" | "phone" | "recoverycode" | null>(null);
+  const [factors, setFactors] = useState<{
+    totp: boolean;
+    email: boolean;
+    phone: boolean;
+  } | null>(null);
+  const [selectedFactor, setSelectedFactor] = useState<
+    "totp" | "email" | "phone" | "recoverycode" | null
+  >(null);
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,7 +52,10 @@ export default function TwofaAccessPage() {
         const err = error as { message?: string; type?: string };
         const msg = err?.message || "";
         const type = err?.type || "";
-        if (type === "user_more_factors_required" || msg.includes("More factors are required")) {
+        if (
+          type === "user_more_factors_required" ||
+          msg.includes("More factors are required")
+        ) {
           return;
         }
         // Otherwise, redirect to login
@@ -55,7 +69,7 @@ export default function TwofaAccessPage() {
     try {
       const mfaFactors = await listMfaFactors();
       setFactors(mfaFactors);
-      
+
       // Auto-select the first available factor
       if (mfaFactors.totp) setSelectedFactor("totp");
       else if (mfaFactors.email) setSelectedFactor("email");
@@ -65,7 +79,9 @@ export default function TwofaAccessPage() {
     }
   };
 
-  const handleCreateChallenge = async (factor: "totp" | "email" | "phone" | "recoverycode") => {
+  const handleCreateChallenge = async (
+    factor: "totp" | "email" | "phone" | "recoverycode",
+  ) => {
     setLoading(true);
     try {
       // Use the correct AuthenticationFactor mapping for createMfaChallenge
@@ -89,7 +105,7 @@ export default function TwofaAccessPage() {
 
   const handleCompleteChallenge = async () => {
     if (!challengeId || !code) return;
-    
+
     setLoading(true);
     try {
       await completeMfaChallenge(challengeId, code);
@@ -103,16 +119,21 @@ export default function TwofaAccessPage() {
   };
 
   if (!factors) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Two-Factor Authentication</CardTitle>
+            <CardTitle className="text-2xl">
+              Two-Factor Authentication
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
               Additional verification required
             </p>
@@ -122,7 +143,7 @@ export default function TwofaAccessPage() {
               // Factor selection
               <div className="space-y-4">
                 <p className="text-sm">Choose your verification method:</p>
-                
+
                 {factors.totp && (
                   <Button
                     variant="outline"
@@ -133,7 +154,7 @@ export default function TwofaAccessPage() {
                     📱 Authenticator App
                   </Button>
                 )}
-                
+
                 {factors.email && (
                   <Button
                     variant="outline"
@@ -144,7 +165,7 @@ export default function TwofaAccessPage() {
                     ✉️ Email Code
                   </Button>
                 )}
-                
+
                 {factors.phone && (
                   <Button
                     variant="outline"
@@ -155,7 +176,7 @@ export default function TwofaAccessPage() {
                     📞 SMS Code
                   </Button>
                 )}
-                
+
                 <div className="pt-4 border-t">
                   <Button
                     variant="ghost"
@@ -165,7 +186,7 @@ export default function TwofaAccessPage() {
                   >
                     Use recovery code instead
                   </Button>
-                  
+
                   {showRecovery && (
                     <div className="mt-2">
                       <Button
@@ -185,19 +206,27 @@ export default function TwofaAccessPage() {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm mb-2">
-                    {selectedFactor === "totp" && "Enter the code from your authenticator app:"}
-                    {selectedFactor === "email" && "Enter the code sent to your email:"}
-                    {selectedFactor === "phone" && "Enter the code sent to your phone:"}
-                    {selectedFactor === "recoverycode" && "Enter your recovery code:"}
+                    {selectedFactor === "totp" &&
+                      "Enter the code from your authenticator app:"}
+                    {selectedFactor === "email" &&
+                      "Enter the code sent to your email:"}
+                    {selectedFactor === "phone" &&
+                      "Enter the code sent to your phone:"}
+                    {selectedFactor === "recoverycode" &&
+                      "Enter your recovery code:"}
                   </p>
                   <Input
-                    placeholder={selectedFactor === "recoverycode" ? "Recovery code" : "6-digit code"}
+                    placeholder={
+                      selectedFactor === "recoverycode"
+                        ? "Recovery code"
+                        : "6-digit code"
+                    }
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     maxLength={selectedFactor === "recoverycode" ? 10 : 6}
                   />
                 </div>
-                
+
                 <Button
                   onClick={handleCompleteChallenge}
                   disabled={loading || !code}
@@ -205,25 +234,23 @@ export default function TwofaAccessPage() {
                 >
                   {loading ? "Verifying..." : "Verify"}
                 </Button>
-                
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => {
-                      setChallengeId(null);
-                      setCode("");
-                    }}
-                  >
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setChallengeId(null);
+                    setCode("");
+                  }}
+                >
                   Choose different method
                 </Button>
               </div>
             )}
-            
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-

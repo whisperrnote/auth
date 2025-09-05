@@ -25,7 +25,10 @@ export default function ResetPasswordPage() {
     setLoading(true);
     try {
       // Use current origin as redirect URL
-      await createPasswordRecovery(email, window.location.origin + "/reset-password");
+      await createPasswordRecovery(
+        email,
+        window.location.origin + "/reset-password",
+      );
       toast.success("Password reset email sent! Check your inbox.");
     } catch (e: unknown) {
       const err = e as { message?: string };
@@ -65,7 +68,7 @@ export default function ResetPasswordPage() {
                   type="password"
                   placeholder="New password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <input
@@ -73,7 +76,7 @@ export default function ResetPasswordPage() {
                   type="password"
                   placeholder="Repeat new password"
                   value={passwordAgain}
-                  onChange={e => setPasswordAgain(e.target.value)}
+                  onChange={(e) => setPasswordAgain(e.target.value)}
                   required
                 />
                 <Button className="w-full" type="submit" disabled={loading}>
@@ -82,7 +85,10 @@ export default function ResetPasswordPage() {
               </form>
             ) : (
               <form onSubmit={handleRequest} className="space-y-3">
-                <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="reset-email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email address
                 </label>
                 <input
@@ -91,7 +97,7 @@ export default function ResetPasswordPage() {
                   type="email"
                   placeholder="Your email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
                 <Button className="w-full" type="submit" disabled={loading}>
