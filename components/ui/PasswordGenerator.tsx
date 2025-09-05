@@ -18,17 +18,9 @@ export default function PasswordGenerator() {
   const [password, setPassword] = useState(() => generateRandomPassword(16));
   const [copied, setCopied] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return JSON.parse(localStorage.getItem("password_history") || "[]");
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+  const [history, setHistory] = useState<{ value: string; ts: number }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [cryptoKey, setCryptoKey] = useState<CryptoKey | null>(null);
 
   // Live update password as length changes
   useEffect(() => {
@@ -39,16 +31,33 @@ export default function PasswordGenerator() {
 
   // Store history in localStorage whenever it changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("password_history", JSON.stringify(history));
+    async function saveHistory() {
+      if (typeof window !== "undefined" && cryptoKey) {
+        // Encrypt history before saving
+        const encryptedHistory = await Promise.all(history.map(async (item) => {
+          // Only encrypt if item.value appears to be plaintext (not already encrypted)
+          if (item.value.includes(":")) {
+            return { value: item.value, ts: item.ts };
+          } else {
+            try {
+              const val = await encrypt(item.value);
+              return { value: val, ts: item.ts };
+            } catch {
+              return { value: "", ts: item.ts };
+            }
+          }
+        }));
+        localStorage.setItem("password_history", JSON.stringify(encryptedHistory));
+      }
     }
-  }, [history]);
+    saveHistory();
+  }, [history, cryptoKey]);
 
   const handleGenerate = () => {
     const newPassword = generateRandomPassword(length);
     setPassword(newPassword);
     setCopied(false);
-    // Add to history
+    // Add to history (store plaintext, encrypt during save)
     setHistory((prev: { value: string; ts: number }[]) => {
       const next = [{ value: newPassword, ts: Date.now() }, ...prev];
       return next.slice(0, 20);
