@@ -42,9 +42,15 @@ import {
   listMfaFactors,
   Query,
 } from "@/lib/appwrite";
-import { updateUserProfile, AppwriteService } from "@/lib/appwrite";
+import {
+  updateUserProfile,
+  AppwriteService,
+  exportAllUserData,
+  deleteUserAccount,
+  resetMasterpassAndWipe,
+} from "@/lib/appwrite";
 import toast from "react-hot-toast";
-
+import MasterPasswordVerificationDialog from "@/components/overlays/MasterPasswordVerificationDialog";
 import VaultGuard from "@/components/layout/VaultGuard";
 
 // Hook to detect if sidebar is visible (desktop) or not (mobile)
@@ -75,6 +81,9 @@ export default function SettingsPage() {
   const [twofaEnabled, setTwofaEnabled] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
     useState(false);
+  const [deleteStep, setDeleteStep] = useState<
+    "initial" | "confirm" | "verify"
+  >("initial");
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
     useState(false);
   const [passwords, setPasswords] = useState({
@@ -85,6 +94,8 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passkeyEnabled, setPasskeyEnabled] = useState(false);
   const [passkeySetupOpen, setPasskeySetupOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isResetVerificationOpen, setIsResetVerificationOpen] = useState(false);
 
   // Folder Management State
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -229,23 +240,24 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  const handleExportData = async () => {
+  const handleExportData = async (forDelete: boolean = false) => {
     const toastId = toast.loading("Exporting data...");
     try {
-      if (!user) throw new Error("Not authenticated");
-      // For now, just export basic user info (implement full export later)
-      const data = { user: user, message: "Export functionality coming soon" };
-      // Download as JSON file
+      if (!user?.$id) throw new Error("Not authenticated");
+      const data = await exportAllUserData(user.$id);
       const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: "application/json",
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "whisperrauth-export.json";
+      a.download = `whisperrauth-export-${new Date().toISOString()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Data exported!", { id: toastId });
+      toast.success("Data exported successfully!", { id: toastId });
+      if (forDelete) {
+        setDeleteStep("confirm");
+      }
     } catch (e: unknown) {
       const err = e as { message?: string };
       toast.error(err.message || "Failed to export data.", { id: toastId });
@@ -255,22 +267,45 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     setDangerLoading(true);
     try {
-      if (!user) throw new Error("Not authenticated");
-      // For now, just logout (implement full deletion later)
-      toast.success(
-        "Account deletion not implemented yet. Logging out instead.",
-      );
+      if (!user?.$id) throw new Error("Not authenticated");
+      await deleteUserAccount(user.$id);
+      toast.success("Account deleted successfully. Logging out...");
       setTimeout(() => {
-        setDangerLoading(false);
         logout();
-      }, 1500);
+      }, 2000);
     } catch (e: unknown) {
-      setDangerLoading(false);
       const err = e as { message?: string };
       toast.error(err.message || "Failed to delete account.");
     } finally {
+      setDangerLoading(false);
       setIsDeleteAccountModalOpen(false);
     }
+  };
+
+  const handleResetMasterPassword = async () => {
+    setDangerLoading(true);
+    try {
+      if (!user?.$id) throw new Error("Not authenticated");
+      await resetMasterpassAndWipe(user.$id);
+      toast.success(
+        "Master password reset successfully. All data has been wiped. Logging out...",
+      );
+      setTimeout(() => {
+        logout();
+      }, 2000);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || "Failed to reset master password.");
+    } finally {
+      setDangerLoading(false);
+      setIsResetModalOpen(false);
+      setIsResetVerificationOpen(false);
+    }
+  };
+
+  const resetDeleteFlow = () => {
+    setIsDeleteAccountModalOpen(false);
+    setDeleteStep("initial");
   };
 
   const handleVaultTimeoutChange = (minutes: number) => {
@@ -689,6 +724,29 @@ export default function SettingsPage() {
                       "Delete Account"
                     )}
                   </Button>
+                  <div className="border-t border-destructive/50 pt-4">
+                    <h4 className="font-medium">Reset Master Password</h4>
+                    <p className="text-sm text-muted-foreground">
+                      This will wipe all your encrypted data (credentials, TOTP
+                      secrets) but keep your account. You will be logged out and
+                      prompted to set a new master password.
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setIsResetModalOpen(true)}
+                    disabled={dangerLoading}
+                    className="transition-all"
+                  >
+                    {dangerLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="animate-spin h-4 w-4 border-2 border-t-transparent border-white rounded-full" />
+                        Resetting...
+                      </span>
+                    ) : (
+                      "Reset Master Password"
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -722,36 +780,103 @@ export default function SettingsPage() {
             }}
           />
         )}
-        {isDeleteAccountModalOpen && (
-          <Dialog
-            open={isDeleteAccountModalOpen}
-            onClose={() => setIsDeleteAccountModalOpen(false)}
-          >
+        {isDeleteAccountModalOpen && deleteStep === "initial" && (
+          <Dialog open={isDeleteAccountModalOpen} onClose={resetDeleteFlow}>
             <div className="p-6">
               <h3 className="text-lg font-bold">Delete Account</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Are you sure you want to permanently delete your account and all
-                of your data? This action cannot be undone.
+                This is a permanent action. To prevent data loss, you must
+                export your data first.
               </p>
               <div className="mt-4 flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDeleteAccountModalOpen(false)}
-                  disabled={dangerLoading}
-                >
+                <Button variant="outline" onClick={resetDeleteFlow}>
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={handleDeleteAccount}
-                  disabled={dangerLoading}
+                  onClick={() => handleExportData(true)}
                 >
-                  {dangerLoading ? "Deleting..." : "Delete Account"}
+                  Export Data & Continue
                 </Button>
               </div>
             </div>
           </Dialog>
         )}
+
+        {isDeleteAccountModalOpen && deleteStep === "confirm" && (
+          <Dialog open={isDeleteAccountModalOpen} onClose={resetDeleteFlow}>
+            <div className="p-6">
+              <h3 className="text-lg font-bold">Are you absolutely sure?</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Your data has been exported. Do you want to permanently delete
+                your account? This action cannot be undone.
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="outline" onClick={resetDeleteFlow}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setDeleteStep("verify")}
+                >
+                  Delete Forever
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )}
+
+        {isDeleteAccountModalOpen && deleteStep === "verify" && (
+          <MasterPasswordVerificationDialog
+            open={isDeleteAccountModalOpen}
+            onClose={resetDeleteFlow}
+            onSuccess={handleDeleteAccount}
+          />
+        )}
+
+        {isResetModalOpen && (
+          <Dialog
+            open={isResetModalOpen}
+            onClose={() => setIsResetModalOpen(false)}
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-bold">
+                Reset Master Password?
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Are you sure you want to reset your master password? All your
+                encrypted data will be permanently deleted. This action cannot
+                be undone.
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsResetModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsResetModalOpen(false);
+                    setIsResetVerificationOpen(true);
+                  }}
+                >
+                  Reset and Wipe Data
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )}
+
+        {isResetVerificationOpen && (
+          <MasterPasswordVerificationDialog
+            open={isResetVerificationOpen}
+            onClose={() => setIsResetVerificationOpen(false)}
+            onSuccess={handleResetMasterPassword}
+          />
+        )}
+
         {isChangePasswordModalOpen && (
           <Dialog
             open={isChangePasswordModalOpen}

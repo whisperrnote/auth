@@ -21,6 +21,7 @@ import CredentialDialog from "@/components/app/dashboard/CredentialDialog";
 import VaultGuard from "@/components/layout/VaultGuard";
 import { Dialog } from "@/components/ui/Dialog";
 import CredentialDetail from "@/components/app/dashboard/CredentialDetail";
+import MasterPasswordVerificationDialog from "@/components/overlays/MasterPasswordVerificationDialog";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -62,6 +63,7 @@ export default function DashboardPage() {
   const [credentialToDelete, setCredentialToDelete] =
     useState<Credentials | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -138,7 +140,7 @@ export default function DashboardPage() {
 
   const openDeleteModal = (cred: Credentials) => {
     setCredentialToDelete(cred);
-    setIsDeleteModalOpen(true);
+    setIsVerificationOpen(true);
   };
 
   const handleDelete = async () => {
@@ -392,6 +394,17 @@ export default function DashboardPage() {
           initial={editCredential}
           onSaved={refreshCredentials}
         />
+
+        {isVerificationOpen && (
+          <MasterPasswordVerificationDialog
+            open={isVerificationOpen}
+            onClose={() => setIsVerificationOpen(false)}
+            onSuccess={() => {
+              setIsVerificationOpen(false);
+              setIsDeleteModalOpen(true);
+            }}
+          />
+        )}
 
         {/* Delete Confirmation Dialog */}
         {isDeleteModalOpen && (

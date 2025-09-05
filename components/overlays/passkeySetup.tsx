@@ -8,6 +8,7 @@ import { startRegistration } from "@simplewebauthn/browser";
 import { AppwriteService } from "@/lib/appwrite";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
+import MasterPasswordVerificationDialog from "./MasterPasswordVerificationDialog";
 
 interface PasskeySetupProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export function PasskeySetup({
   const [masterPassword, setMasterPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   const verifyMasterPassword = async () => {
     if (!masterPassword.trim()) {
@@ -286,33 +288,46 @@ export function PasskeySetup({
   if (isEnabled) {
     // Disable passkey flow
     return (
-      <Dialog open={isOpen} onClose={handleClose}>
-        <div className="p-6 w-96">
-          <h2 className="text-lg font-semibold mb-4">Disable Passkey</h2>
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Are you sure you want to disable passkey authentication?
-              You&apos;ll need to use your master password to unlock your vault.
-            </p>
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDisable}
-                disabled={loading}
-              >
-                {loading ? "Disabling..." : "Disable Passkey"}
-              </Button>
+      <>
+        <Dialog open={isOpen && !isVerificationOpen} onClose={handleClose}>
+          <div className="p-6 w-96">
+            <h2 className="text-lg font-semibold mb-4">Disable Passkey</h2>
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Are you sure you want to disable passkey authentication?
+                You&apos;ll need to use your master password to unlock your
+                vault.
+              </p>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsVerificationOpen(true)}
+                  disabled={loading}
+                >
+                  {loading ? "Disabling..." : "Disable Passkey"}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </Dialog>
+        </Dialog>
+        {isVerificationOpen && (
+          <MasterPasswordVerificationDialog
+            open={isVerificationOpen}
+            onClose={() => setIsVerificationOpen(false)}
+            onSuccess={() => {
+              setIsVerificationOpen(false);
+              handleDisable();
+            }}
+          />
+        )}
+      </>
     );
   }
 

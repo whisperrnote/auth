@@ -17,7 +17,7 @@ import {
   APPWRITE_COLLECTION_USER_ID,
   appwriteAccount,
 } from "@/lib/appwrite";
-
+import MasterPasswordVerificationDialog from "@/components/overlays/MasterPasswordVerificationDialog";
 import type { Models } from "appwrite";
 
 export default function TwofaSetup({
@@ -63,6 +63,7 @@ export default function TwofaSetup({
   const [disableOption, setDisableOption] = useState<
     "disable_only" | "remove_factors"
   >("disable_only");
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -701,6 +702,17 @@ export default function TwofaSetup({
         {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
 
         {/* Disable 2FA Confirmation Dialog */}
+        {isVerificationOpen && (
+          <MasterPasswordVerificationDialog
+            open={isVerificationOpen}
+            onClose={() => setIsVerificationOpen(false)}
+            onSuccess={() => {
+              setIsVerificationOpen(false);
+              executeDisable();
+            }}
+          />
+        )}
+
         {showDisableConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-background border rounded-lg p-6 max-w-md w-full">
@@ -773,7 +785,10 @@ export default function TwofaSetup({
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={executeDisable}
+                  onClick={() => {
+                    setShowDisableConfirm(false);
+                    setIsVerificationOpen(true);
+                  }}
                   disabled={loading}
                 >
                   {loading ? "Processing..." : "Disable MFA"}

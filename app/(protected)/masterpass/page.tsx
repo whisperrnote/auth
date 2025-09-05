@@ -387,13 +387,6 @@ export default function MasterPassPage() {
               </Button>
             )}
 
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => router.push("/masterpass/reset")}
-            >
-              Reset Master Password
-            </Button>
           </div>
         </CardContent>
       </Card>
