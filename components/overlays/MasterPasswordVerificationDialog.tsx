@@ -64,7 +64,7 @@ export default function MasterPasswordVerificationDialog({
 
       if (isValid) {
         toast.success("Master password verified.");
-        onSuccess();
+        await onSuccess();
         onClose();
       } else {
         setError("Incorrect master password.");
