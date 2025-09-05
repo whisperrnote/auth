@@ -21,7 +21,9 @@ export default function CredentialDialog({
 }) {
   const { user } = useAppwrite();
   const [showPassword, setShowPassword] = useState(false);
-  const [customFields, setCustomFields] = useState<Array<{id: string, label: string, value: string}>>([]);
+  const [customFields, setCustomFields] = useState<
+    Array<{ id: string; label: string; value: string }>
+  >([]);
   const [form, setForm] = useState({
     name: "",
     username: "",
@@ -43,9 +45,18 @@ export default function CredentialDialog({
         notes: initial.notes || "",
         tags: initial.tags ? initial.tags.join(", ") : "",
       });
-      setCustomFields(initial.customFields ? JSON.parse(initial.customFields) : []);
+      setCustomFields(
+        initial.customFields ? JSON.parse(initial.customFields) : [],
+      );
     } else {
-      setForm({ name: "", username: "", password: "", url: "", notes: "", tags: "" });
+      setForm({
+        name: "",
+        username: "",
+        password: "",
+        url: "",
+        notes: "",
+        tags: "",
+      });
       setCustomFields([]);
     }
   }, [initial, open]);
@@ -55,17 +66,24 @@ export default function CredentialDialog({
   };
 
   const addCustomField = () => {
-    setCustomFields([...customFields, { id: Date.now().toString(), label: "", value: "" }]);
+    setCustomFields([
+      ...customFields,
+      { id: Date.now().toString(), label: "", value: "" },
+    ]);
   };
 
-  const updateCustomField = (id: string, field: "label" | "value", value: string) => {
-    setCustomFields(customFields.map(cf => 
-      cf.id === id ? { ...cf, [field]: value } : cf
-    ));
+  const updateCustomField = (
+    id: string,
+    field: "label" | "value",
+    value: string,
+  ) => {
+    setCustomFields(
+      customFields.map((cf) => (cf.id === id ? { ...cf, [field]: value } : cf)),
+    );
   };
 
   const removeCustomField = (id: string) => {
-    setCustomFields(customFields.filter(cf => cf.id !== id));
+    setCustomFields(customFields.filter((cf) => cf.id !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +94,10 @@ export default function CredentialDialog({
       if (!user) throw new Error("Not authenticated");
 
       // Clean and prepare credential data with proper null handling
-      const credentialData: Omit<Credentials, "$id" | "$createdAt" | "$updatedAt"> = {
+      const credentialData: Omit<
+        Credentials,
+        "$id" | "$createdAt" | "$updatedAt"
+      > = {
         userId: user.$id,
         name: form.name.trim(),
         url: null,
@@ -87,7 +108,10 @@ export default function CredentialDialog({
         customFields: null,
         faviconUrl: null,
         password: form.password.trim(),
-        createdAt: initial && initial.createdAt ? initial.createdAt : new Date().toISOString(),
+        createdAt:
+          initial && initial.createdAt
+            ? initial.createdAt
+            : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         $sequence: 0,
         $collectionId: "",
@@ -95,12 +119,17 @@ export default function CredentialDialog({
         $permissions: [],
       };
       if (form.url && form.url.trim()) credentialData.url = form.url.trim();
-      if (form.notes && form.notes.trim()) credentialData.notes = form.notes.trim();
+      if (form.notes && form.notes.trim())
+        credentialData.notes = form.notes.trim();
       if (form.tags && form.tags.trim()) {
-        const tagsArr = form.tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+        const tagsArr = form.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
         if (tagsArr.length > 0) credentialData.tags = tagsArr;
       }
-      if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields) as string;
+      if (customFields.length > 0)
+        credentialData.customFields = JSON.stringify(customFields) as string;
 
       if (initial && initial.$id) {
         await updateCredential(initial.$id, credentialData);
@@ -119,25 +148,27 @@ export default function CredentialDialog({
   return (
     <Dialog open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="p-6 space-y-4 max-w-md w-full">
-        <h2 className="text-xl font-bold mb-2">{initial ? "Edit" : "Add"} Credential</h2>
-        
+        <h2 className="text-xl font-bold mb-2">
+          {initial ? "Edit" : "Add"} Credential
+        </h2>
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Name *</label>
-          <Input 
+          <Input
             placeholder="e.g., GitHub, Gmail"
-            value={form.name} 
-            onChange={e => setForm({ ...form, name: e.target.value })} 
-            required 
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
           />
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Username/Email *</label>
-          <Input 
+          <Input
             placeholder="john@example.com"
-            value={form.username} 
-            onChange={e => setForm({ ...form, username: e.target.value })} 
-            required 
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            required
           />
         </div>
 
@@ -149,7 +180,7 @@ export default function CredentialDialog({
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter or generate password"
                 value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
               />
               <Button
@@ -159,10 +190,18 @@ export default function CredentialDialog({
                 className="absolute right-0 top-0 h-full px-3"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </Button>
             </div>
-            <Button type="button" variant="outline" onClick={handleGeneratePassword}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGeneratePassword}
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -170,20 +209,20 @@ export default function CredentialDialog({
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Website URL</label>
-          <Input 
+          <Input
             type="url"
             placeholder="https://example.com"
-            value={form.url} 
-            onChange={e => setForm({ ...form, url: e.target.value })} 
+            value={form.url}
+            onChange={(e) => setForm({ ...form, url: e.target.value })}
           />
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Tags</label>
-          <Input 
+          <Input
             placeholder="Comma separated: work, email, important"
-            value={form.tags} 
-            onChange={e => setForm({ ...form, tags: e.target.value })} 
+            value={form.tags}
+            onChange={(e) => setForm({ ...form, tags: e.target.value })}
           />
         </div>
 
@@ -193,7 +232,7 @@ export default function CredentialDialog({
             className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
             placeholder="Additional notes"
             value={form.notes}
-            onChange={e => setForm({ ...form, notes: e.target.value })}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
         </div>
 
@@ -201,7 +240,12 @@ export default function CredentialDialog({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Custom Fields</label>
-            <Button type="button" variant="outline" size="sm" onClick={addCustomField}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addCustomField}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Field
             </Button>
@@ -211,12 +255,16 @@ export default function CredentialDialog({
               <Input
                 placeholder="Field name"
                 value={field.label}
-                onChange={(e) => updateCustomField(field.id, "label", e.target.value)}
+                onChange={(e) =>
+                  updateCustomField(field.id, "label", e.target.value)
+                }
               />
               <Input
                 placeholder="Field value"
                 value={field.value}
-                onChange={(e) => updateCustomField(field.id, "value", e.target.value)}
+                onChange={(e) =>
+                  updateCustomField(field.id, "value", e.target.value)
+                }
               />
               <Button
                 type="button"
@@ -231,12 +279,17 @@ export default function CredentialDialog({
         </div>
 
         {error && <div className="text-red-600 text-sm">{error}</div>}
-        
+
         <div className="flex gap-2">
           <Button type="submit" className="flex-1" disabled={loading}>
             {loading ? "Saving..." : initial ? "Update" : "Add"}
           </Button>
-          <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1"
+            onClick={onClose}
+          >
             Cancel
           </Button>
         </div>

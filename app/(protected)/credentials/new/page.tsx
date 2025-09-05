@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { createCredential, createFolder, createTotpSecret, listFolders } from "@/lib/appwrite";
+import {
+  createCredential,
+  createFolder,
+  createTotpSecret,
+  listFolders,
+} from "@/lib/appwrite";
 import type { Folders, Credentials, TotpSecrets } from "@/types/appwrite.d";
 import { generateRandomPassword } from "@/utils/password";
 import { masterPassCrypto } from "@/app/(protected)/masterpass/logic";
@@ -15,12 +20,13 @@ import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
 import { useEffect } from "react";
 
-
 export default function NewCredentialPage() {
   const router = useRouter();
   const { user } = useAppwrite();
   const [showPassword, setShowPassword] = useState(false);
-  const [customFields, setCustomFields] = useState<Array<{id: string, label: string, value: string}>>([]);
+  const [customFields, setCustomFields] = useState<
+    Array<{ id: string; label: string; value: string }>
+  >([]);
   const [folders, setFolders] = useState<Folders[]>([]);
   const [formData, setFormData] = useState({
     type: "credential" as "credential" | "folder" | "totp",
@@ -36,9 +42,11 @@ export default function NewCredentialPage() {
 
   useEffect(() => {
     if (user?.$id) {
-      listFolders(user.$id).then(setFolders).catch(() => {
-        toast.error("Could not load folders.");
-      });
+      listFolders(user.$id)
+        .then(setFolders)
+        .catch(() => {
+          toast.error("Could not load folders.");
+        });
     }
   }, [user]);
 
@@ -47,23 +55,30 @@ export default function NewCredentialPage() {
   };
 
   const addCustomField = () => {
-    setCustomFields([...customFields, { id: Date.now().toString(), label: "", value: "" }]);
+    setCustomFields([
+      ...customFields,
+      { id: Date.now().toString(), label: "", value: "" },
+    ]);
   };
 
-  const updateCustomField = (id: string, field: "label" | "value", value: string) => {
-    setCustomFields(customFields.map(cf => 
-      cf.id === id ? { ...cf, [field]: value } : cf
-    ));
+  const updateCustomField = (
+    id: string,
+    field: "label" | "value",
+    value: string,
+  ) => {
+    setCustomFields(
+      customFields.map((cf) => (cf.id === id ? { ...cf, [field]: value } : cf)),
+    );
   };
 
   const removeCustomField = (id: string) => {
-    setCustomFields(customFields.filter(cf => cf.id !== id));
+    setCustomFields(customFields.filter((cf) => cf.id !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       if (!user?.$id) {
         throw new Error("Not authenticated");
@@ -76,7 +91,21 @@ export default function NewCredentialPage() {
 
       if (formData.type === "credential") {
         // Clean and prepare credential data with proper null handling
-         const credentialData: Pick<Credentials, 'userId'|'name'|'url'|'username'|'notes'|'folderId'|'tags'|'customFields'|'faviconUrl'|'createdAt'|'updatedAt'|'password'> = {
+        const credentialData: Pick<
+          Credentials,
+          | "userId"
+          | "name"
+          | "url"
+          | "username"
+          | "notes"
+          | "folderId"
+          | "tags"
+          | "customFields"
+          | "faviconUrl"
+          | "createdAt"
+          | "updatedAt"
+          | "password"
+        > = {
           userId: user.$id,
           name: formData.name.trim(),
           url: null,
@@ -90,16 +119,28 @@ export default function NewCredentialPage() {
           updatedAt: new Date().toISOString(),
           password: formData.password.trim(),
         };
-        if (formData.url && formData.url.trim()) credentialData.url = formData.url.trim();
-        if (formData.notes && formData.notes.trim()) credentialData.notes = formData.notes.trim();
-        if (formData.folder && formData.folder.trim()) credentialData.folderId = formData.folder.trim();
+        if (formData.url && formData.url.trim())
+          credentialData.url = formData.url.trim();
+        if (formData.notes && formData.notes.trim())
+          credentialData.notes = formData.notes.trim();
+        if (formData.folder && formData.folder.trim())
+          credentialData.folderId = formData.folder.trim();
         if (formData.tags && formData.tags.trim()) {
-          const tagsArr = formData.tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+          const tagsArr = formData.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0);
           if (tagsArr.length > 0) credentialData.tags = tagsArr;
         }
-        if (customFields.length > 0) credentialData.customFields = JSON.stringify(customFields);
+        if (customFields.length > 0)
+          credentialData.customFields = JSON.stringify(customFields);
 
-        await createCredential(credentialData as Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>);
+        await createCredential(
+          credentialData as Omit<
+            Credentials,
+            "$id" | "$createdAt" | "$updatedAt"
+          >,
+        );
         toast.success("Credential created!");
         router.push("/dashboard");
       } else if (formData.type === "folder") {
@@ -108,7 +149,7 @@ export default function NewCredentialPage() {
           name: formData.name,
           parentFolderId: null,
           // createdAt/updatedAt are server-managed; omit to avoid type clashes
-        } as unknown as Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>);
+        } as unknown as Omit<Folders, "$id" | "$createdAt" | "$updatedAt">);
         toast.success("Folder created!");
         router.push("/dashboard");
       } else if (formData.type === "totp") {
@@ -116,7 +157,7 @@ export default function NewCredentialPage() {
         if (!masterPassCrypto.isVaultUnlocked()) {
           throw new Error("Vault is locked. Please unlock your vault first.");
         }
-        
+
         await createTotpSecret({
           userId: user.$id,
           issuer: formData.name,
@@ -129,12 +170,15 @@ export default function NewCredentialPage() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           url: null,
-        } as Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>);
+        } as Omit<TotpSecrets, "$id" | "$createdAt" | "$updatedAt">);
         toast.success("TOTP code added!");
         router.push("/totp");
       }
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Failed to save. Please check if your vault is unlocked.";
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Failed to save. Please check if your vault is unlocked.";
       toast.error(message);
     }
     setLoading(false);
@@ -142,12 +186,15 @@ export default function NewCredentialPage() {
 
   // Don't render if user is not available
   if (!user) {
-   return (
-    <VaultGuard>
-      <div className="space-y-6">        <div className="text-lg text-muted-foreground">Loading...</div>
-    </div>
-    </VaultGuard>
-   );  }
+    return (
+      <VaultGuard>
+        <div className="space-y-6">
+          {" "}
+          <div className="text-lg text-muted-foreground">Loading...</div>
+        </div>
+      </VaultGuard>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -170,7 +217,9 @@ export default function NewCredentialPage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {formData.type === "credential" ? "Credential Details" : "Folder Details"}
+            {formData.type === "credential"
+              ? "Credential Details"
+              : "Folder Details"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -180,14 +229,16 @@ export default function NewCredentialPage() {
               <Button
                 type="button"
                 variant={formData.type === "credential" ? "default" : "outline"}
-                onClick={() => setFormData(f => ({ ...f, type: "credential" }))}
+                onClick={() =>
+                  setFormData((f) => ({ ...f, type: "credential" }))
+                }
               >
                 Password
               </Button>
               <Button
                 type="button"
                 variant={formData.type === "folder" ? "default" : "outline"}
-                onClick={() => setFormData(f => ({ ...f, type: "folder" }))}
+                onClick={() => setFormData((f) => ({ ...f, type: "folder" }))}
               >
                 Folder
               </Button>
@@ -202,7 +253,9 @@ export default function NewCredentialPage() {
                     <Input
                       placeholder="e.g., GitHub, Gmail"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -212,17 +265,23 @@ export default function NewCredentialPage() {
                       type="url"
                       placeholder="https://example.com"
                       value={formData.url}
-                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, url: e.target.value })
+                      }
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Username/Email *</label>
+                  <label className="text-sm font-medium">
+                    Username/Email *
+                  </label>
                   <Input
                     placeholder="john@example.com"
                     value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -235,7 +294,9 @@ export default function NewCredentialPage() {
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter or generate password"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
                         required
                       />
                       <Button
@@ -245,10 +306,18 @@ export default function NewCredentialPage() {
                         className="absolute right-0 top-0 h-full px-3"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
-                    <Button type="button" variant="outline" onClick={handleGeneratePassword}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGeneratePassword}
+                    >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
@@ -260,11 +329,15 @@ export default function NewCredentialPage() {
                     <select
                       className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.folder}
-                      onChange={(e) => setFormData({ ...formData, folder: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, folder: e.target.value })
+                      }
                     >
                       <option value="">No Folder</option>
-                      {folders.map(folder => (
-                        <option key={folder.$id} value={folder.$id}>{folder.name}</option>
+                      {folders.map((folder) => (
+                        <option key={folder.$id} value={folder.$id}>
+                          {folder.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -273,7 +346,9 @@ export default function NewCredentialPage() {
                     <Input
                       placeholder="Comma separated: work, email, important"
                       value={formData.tags}
-                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, tags: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -284,7 +359,9 @@ export default function NewCredentialPage() {
                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     placeholder="Additional notes or information"
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
                   />
                 </div>
 
@@ -292,7 +369,12 @@ export default function NewCredentialPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium">Custom Fields</label>
-                    <Button type="button" variant="outline" size="sm" onClick={addCustomField}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addCustomField}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Field
                     </Button>
@@ -302,12 +384,16 @@ export default function NewCredentialPage() {
                       <Input
                         placeholder="Field name"
                         value={field.label}
-                        onChange={(e) => updateCustomField(field.id, "label", e.target.value)}
+                        onChange={(e) =>
+                          updateCustomField(field.id, "label", e.target.value)
+                        }
                       />
                       <Input
                         placeholder="Field value"
                         value={field.value}
-                        onChange={(e) => updateCustomField(field.id, "value", e.target.value)}
+                        onChange={(e) =>
+                          updateCustomField(field.id, "value", e.target.value)
+                        }
                       />
                       <Button
                         type="button"
@@ -328,22 +414,28 @@ export default function NewCredentialPage() {
                 <Input
                   placeholder="e.g., Work, Personal"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   required
                 />
               </div>
             )}
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading
                   ? "Saving..."
                   : formData.type === "credential"
-                  ? "Save Credential"
-                  : "Save Folder"}
+                    ? "Save Credential"
+                    : "Save Folder"}
               </Button>
             </div>
           </form>

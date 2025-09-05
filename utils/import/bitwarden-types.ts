@@ -50,12 +50,12 @@ export const BITWARDEN_ITEM_TYPES = {
   LOGIN: 1,
   SECURE_NOTE: 2,
   CARD: 3,
-  IDENTITY: 4
+  IDENTITY: 4,
 } as const;
 
 export const BITWARDEN_FIELD_TYPES = {
   TEXT: 0,
   HIDDEN: 1,
   BOOLEAN: 2,
-  LINKED: 3
+  LINKED: 3,
 } as const;

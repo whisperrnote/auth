@@ -1,7 +1,11 @@
-import type { Credentials, TotpSecrets, Folders } from '@/types/appwrite.d';
-import type { BitwardenExport, BitwardenItem, BitwardenFolder } from './bitwarden-types';
-import { BITWARDEN_ITEM_TYPES } from './bitwarden-types';
-import { extractTotpFromBitwardenLogin } from './totp-parser';
+import type { Credentials, TotpSecrets, Folders } from "@/types/appwrite.d";
+import type {
+  BitwardenExport,
+  BitwardenItem,
+  BitwardenFolder,
+} from "./bitwarden-types";
+import { BITWARDEN_ITEM_TYPES } from "./bitwarden-types";
+import { extractTotpFromBitwardenLogin } from "./totp-parser";
 
 export interface ImportMapping {
   folders: Map<string, string>; // Bitwarden folder ID -> Our folder ID
@@ -15,25 +19,35 @@ export interface ImportMapping {
 }
 
 export interface MappedImportData {
-  folders: Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>[];
-  credentials: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>[];
-  totpSecrets: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>[];
+  folders: Omit<Folders, "$id" | "$createdAt" | "$updatedAt">[];
+  credentials: Omit<Credentials, "$id" | "$createdAt" | "$updatedAt">[];
+  totpSecrets: Omit<TotpSecrets, "$id" | "$createdAt" | "$updatedAt">[];
   mapping: ImportMapping;
 }
 
-export function analyzeBitwardenExport(data: BitwardenExport, userId: string): MappedImportData {
+export function analyzeBitwardenExport(
+  data: BitwardenExport,
+  userId: string,
+): MappedImportData {
   const folderMap = new Map<string, string>();
-  const mappedFolders: Omit<Folders, '$id' | '$createdAt' | '$updatedAt'>[] = [];
-  const mappedCredentials: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'>[] = [];
-  const mappedTotpSecrets: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'>[] = [];
-  
+  const mappedFolders: Omit<Folders, "$id" | "$createdAt" | "$updatedAt">[] =
+    [];
+  const mappedCredentials: Omit<
+    Credentials,
+    "$id" | "$createdAt" | "$updatedAt"
+  >[] = [];
+  const mappedTotpSecrets: Omit<
+    TotpSecrets,
+    "$id" | "$createdAt" | "$updatedAt"
+  >[] = [];
+
   let credentialsCount = 0;
   let totpCount = 0;
   let skippedItems = 0;
 
   // Map folders first
   data.folders.forEach((folder: BitwardenFolder) => {
-    const mappedFolder: Omit<Folders, '$id' | '$createdAt' | '$updatedAt'> = {
+    const mappedFolder: Omit<Folders, "$id" | "$createdAt" | "$updatedAt"> = {
       userId,
       name: folder.name,
       parentFolderId: null, // Bitwarden doesn't support nested folders by default
@@ -44,7 +58,7 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
       $databaseId: "",
       $permissions: [],
     };
-    
+
     mappedFolders.push(mappedFolder);
     // We'll need to generate IDs when creating, store index for now
     folderMap.set(folder.id, `folder_${mappedFolders.length - 1}`);
@@ -61,7 +75,7 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
 
       const baseCreatedAt = item.creationDate || new Date().toISOString();
       const baseUpdatedAt = item.revisionDate || new Date().toISOString();
-      
+
       // Map folder ID
       let folderId: string | null = null;
       if (item.folderId && folderMap.has(item.folderId)) {
@@ -77,43 +91,49 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
       // Handle custom fields
       let customFields: string | null = null;
       if (item.fields && item.fields.length > 0) {
-        const fieldsObject = item.fields.reduce((acc, field) => {
-          acc[field.name] = field.value;
-          return acc;
-        }, {} as Record<string, string>);
+        const fieldsObject = item.fields.reduce(
+          (acc, field) => {
+            acc[field.name] = field.value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
         customFields = JSON.stringify(fieldsObject);
       }
 
       // Validate required fields for credential
-      const username = item.login.username ? item.login.username.trim() : '';
-      const password = item.login.password ? item.login.password.trim() : '';
-      const name = item.name ? item.name.trim() : '';
+      const username = item.login.username ? item.login.username.trim() : "";
+      const password = item.login.password ? item.login.password.trim() : "";
+      const name = item.name ? item.name.trim() : "";
       if (!username || !password || !name) {
         // Skip if any required field is missing or empty
         skippedItems++;
-        console.warn(`Skipped item "${item.name}" due to missing required field(s):${!name ? ' name' : ''}${!username ? ' username' : ''}${!password ? ' password' : ''}`);
+        console.warn(
+          `Skipped item "${item.name}" due to missing required field(s):${!name ? " name" : ""}${!username ? " username" : ""}${!password ? " password" : ""}`,
+        );
         return;
       }
 
       // Create credential entry
-      const credential: Omit<Credentials, '$id' | '$createdAt' | '$updatedAt'> = {
-        userId,
-        name,
-        url,
-        username,
-        password,
-        notes: item.notes,
-        folderId,
-        tags: null, // Bitwarden doesn't have tags in this structure
-        customFields,
-        faviconUrl: null, // Could be derived from URL later
-        createdAt: baseCreatedAt,
-        updatedAt: baseUpdatedAt,
-        $sequence: 0,
-        $collectionId: "",
-        $databaseId: "",
-        $permissions: [],
-      };
+      const credential: Omit<Credentials, "$id" | "$createdAt" | "$updatedAt"> =
+        {
+          userId,
+          name,
+          url,
+          username,
+          password,
+          notes: item.notes,
+          folderId,
+          tags: null, // Bitwarden doesn't have tags in this structure
+          customFields,
+          faviconUrl: null, // Could be derived from URL later
+          createdAt: baseCreatedAt,
+          updatedAt: baseUpdatedAt,
+          $sequence: 0,
+          $collectionId: "",
+          $databaseId: "",
+          $permissions: [],
+        };
 
       mappedCredentials.push(credential);
       credentialsCount++;
@@ -121,7 +141,10 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
       // Extract TOTP if present
       const totpData = extractTotpFromBitwardenLogin(item.login, item.name);
       if (totpData) {
-        const totpSecret: Omit<TotpSecrets, '$id' | '$createdAt' | '$updatedAt'> = {
+        const totpSecret: Omit<
+          TotpSecrets,
+          "$id" | "$createdAt" | "$updatedAt"
+        > = {
           userId,
           issuer: totpData.issuer,
           accountName: totpData.accountName,
@@ -143,7 +166,7 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
         totpCount++;
       }
     } catch (error) {
-      console.error('Error mapping item:', item.name, error);
+      console.error("Error mapping item:", item.name, error);
       skippedItems++;
     }
   });
@@ -170,15 +193,15 @@ export function analyzeBitwardenExport(data: BitwardenExport, userId: string): M
 function extractIssuerFromName(name: string): string {
   // Try to extract a reasonable issuer name from the item name
   // Common patterns: "Google", "GitHub - Personal", "Amazon AWS", etc.
-  const cleanName = name.replace(/\s*-\s*.*/g, '').trim(); // Remove everything after " - "
+  const cleanName = name.replace(/\s*-\s*.*/g, "").trim(); // Remove everything after " - "
   return cleanName || name;
 }
 
 export function validateBitwardenExport(data: any): data is BitwardenExport {
   return (
-    typeof data === 'object' &&
+    typeof data === "object" &&
     data !== null &&
-    typeof data.encrypted === 'boolean' &&
+    typeof data.encrypted === "boolean" &&
     Array.isArray(data.folders) &&
     Array.isArray(data.items)
   );

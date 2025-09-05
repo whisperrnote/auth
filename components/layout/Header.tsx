@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 
 // Pages that should use the simplified layout (no sidebar/header)
-const SIMPLIFIED_LAYOUT_PATHS = ['/', '/login', '/register', '/reset-password'];
+const SIMPLIFIED_LAYOUT_PATHS = ["/", "/login", "/register", "/reset-password"];
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -20,7 +20,7 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAppwrite();
   const pathname = usePathname();
-  
+
   // Don't render the header on simplified layout pages
   if (SIMPLIFIED_LAYOUT_PATHS.includes(pathname)) {
     return null;
@@ -44,7 +44,7 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          
+
           <div className="flex items-center gap-2">
             {/* Replace PM with logo */}
             <img
@@ -52,7 +52,9 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
               alt="Whisperrauth Logo"
               className="h-8 w-8 rounded-lg object-contain"
             />
-            <h1 className="font-semibold text-lg hidden sm:block">Whisperrauth</h1>
+            <h1 className="font-semibold text-lg hidden sm:block">
+              Whisperrauth
+            </h1>
           </div>
         </div>
 
@@ -65,8 +67,8 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
                 theme === "light"
                   ? "dark"
                   : theme === "dark"
-                  ? "system"
-                  : "light";
+                    ? "system"
+                    : "light";
               setTheme(nextTheme);
             }}
           >
@@ -84,7 +86,9 @@ export function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
           >
             <div className="flex flex-col px-3 py-2 bg-background shadow-lg rounded-md border border-border">
               <span className="font-medium">{user?.name || user?.email}</span>
-              <span className="text-xs text-muted-foreground">{user?.email}</span>
+              <span className="text-xs text-muted-foreground">
+                {user?.email}
+              </span>
             </div>
             <hr className="my-1 border-border" />
             <Link href="/settings">
