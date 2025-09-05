@@ -1,10 +1,10 @@
-import type { BitwardenCustomField } from './bitwarden-types';
-import { BITWARDEN_FIELD_TYPES } from './bitwarden-types';
+import type { BitwardenCustomField } from "./bitwarden-types";
+import { BITWARDEN_FIELD_TYPES } from "./bitwarden-types";
 
 export interface ProcessedCustomField {
   name: string;
   value: string;
-  type: 'text' | 'hidden' | 'boolean' | 'linked';
+  type: "text" | "hidden" | "boolean" | "linked";
   sensitive: boolean;
 }
 
@@ -14,11 +14,13 @@ export interface CustomFieldsResult {
   hasSecureFields: boolean;
 }
 
-export function processCustomFields(fields: BitwardenCustomField[] | null): CustomFieldsResult {
+export function processCustomFields(
+  fields: BitwardenCustomField[] | null,
+): CustomFieldsResult {
   if (!fields || fields.length === 0) {
     return {
       fields: [],
-      serialized: '',
+      serialized: "",
       hasSecureFields: false,
     };
   }
@@ -48,7 +50,7 @@ export function processCustomFields(fields: BitwardenCustomField[] | null): Cust
       value: field.value,
       type: field.type,
       sensitive: field.sensitive,
-    }))
+    })),
   );
 
   return {
@@ -58,18 +60,20 @@ export function processCustomFields(fields: BitwardenCustomField[] | null): Cust
   };
 }
 
-function mapFieldType(bitwardenType: number): 'text' | 'hidden' | 'boolean' | 'linked' {
+function mapFieldType(
+  bitwardenType: number,
+): "text" | "hidden" | "boolean" | "linked" {
   switch (bitwardenType) {
     case BITWARDEN_FIELD_TYPES.TEXT:
-      return 'text';
+      return "text";
     case BITWARDEN_FIELD_TYPES.HIDDEN:
-      return 'hidden';
+      return "hidden";
     case BITWARDEN_FIELD_TYPES.BOOLEAN:
-      return 'boolean';
+      return "boolean";
     case BITWARDEN_FIELD_TYPES.LINKED:
-      return 'linked';
+      return "linked";
     default:
-      return 'text';
+      return "text";
   }
 }
 
@@ -96,62 +100,75 @@ function isSensitiveField(field: BitwardenCustomField): boolean {
   return sensitivePatterns.some((pattern) => pattern.test(field.name));
 }
 
-export function extractFieldValue(fields: ProcessedCustomField[], fieldName: string): string | null {
-  const field = fields.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
+export function extractFieldValue(
+  fields: ProcessedCustomField[],
+  fieldName: string,
+): string | null {
+  const field = fields.find(
+    (f) => f.name.toLowerCase() === fieldName.toLowerCase(),
+  );
   return field ? field.value : null;
 }
 
-export function getFieldsByType(fields: ProcessedCustomField[], type: 'text' | 'hidden' | 'boolean' | 'linked'): ProcessedCustomField[] {
+export function getFieldsByType(
+  fields: ProcessedCustomField[],
+  type: "text" | "hidden" | "boolean" | "linked",
+): ProcessedCustomField[] {
   return fields.filter((field) => field.type === type);
 }
 
-export function getSensitiveFields(fields: ProcessedCustomField[]): ProcessedCustomField[] {
+export function getSensitiveFields(
+  fields: ProcessedCustomField[],
+): ProcessedCustomField[] {
   return fields.filter((field) => field.sensitive);
 }
 
-export function getNonSensitiveFields(fields: ProcessedCustomField[]): ProcessedCustomField[] {
+export function getNonSensitiveFields(
+  fields: ProcessedCustomField[],
+): ProcessedCustomField[] {
   return fields.filter((field) => !field.sensitive);
 }
 
 // Common field name mappings for better organization
 export const COMMON_FIELD_MAPPINGS = {
   // Security-related
-  'Security Question': 'security_question',
-  'Security Answer': 'security_answer',
-  'Recovery Code': 'recovery_code',
-  'Backup Code': 'backup_code',
-  
+  "Security Question": "security_question",
+  "Security Answer": "security_answer",
+  "Recovery Code": "recovery_code",
+  "Backup Code": "backup_code",
+
   // Personal info
-  'Phone Number': 'phone',
-  'Mobile': 'phone',
-  'Email': 'email',
-  'Address': 'address',
-  
+  "Phone Number": "phone",
+  Mobile: "phone",
+  Email: "email",
+  Address: "address",
+
   // Financial
-  'Account Number': 'account_number',
-  'Routing Number': 'routing_number',
-  'Card Number': 'card_number',
-  'CVV': 'cvv',
-  'Expiry': 'expiry',
-  
+  "Account Number": "account_number",
+  "Routing Number": "routing_number",
+  "Card Number": "card_number",
+  CVV: "cvv",
+  Expiry: "expiry",
+
   // Common variations
-  'URL': 'url',
-  'Website': 'url',
-  'Server': 'server',
-  'Host': 'host',
+  URL: "url",
+  Website: "url",
+  Server: "server",
+  Host: "host",
 } as const;
 
 export function normalizeFieldName(name: string): string {
   // Check if it matches a common mapping
-  const mapping = COMMON_FIELD_MAPPINGS[name as keyof typeof COMMON_FIELD_MAPPINGS];
+  const mapping =
+    COMMON_FIELD_MAPPINGS[name as keyof typeof COMMON_FIELD_MAPPINGS];
   if (mapping) {
     return mapping;
   }
-  
+
   // Otherwise, normalize the name
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
+    .replace(/[^a-z0-9]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
 }

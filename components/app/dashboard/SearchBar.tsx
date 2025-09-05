@@ -36,7 +36,7 @@ export default function SearchBar({
         placeholder="Search passwords, usernames..."
         type="search"
         value={value}
-        onChange={e => handleChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         aria-label="Search credentials"
       />
       {value && (

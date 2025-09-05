@@ -42,61 +42,71 @@ export default function MasterpassResetPage() {
   return (
     <VaultGuard>
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          {/* Account name/email for personalization */}
-          {user && (
-            <div className="mb-2">
-              <span className="font-semibold text-base">{user.name || user.email}</span>
-              {user.email && user.name && (
-                <div className="text-xs text-muted-foreground">{user.email}</div>
-              )}
-            </div>
-          )}
-          <CardTitle className="text-2xl">Reset Master Password</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {step === "reset"
-              ? "This will wipe all your encrypted data. Are you sure?"
-              : "Master password and all data have been wiped."}
-          </p>
-        </CardHeader>
-        <CardContent>
-          {step === "reset" && (
-            <div className="space-y-4">
-              <p className="text-red-600 text-sm">
-                This will permanently delete all your encrypted data and cannot be undone.
-              </p>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={handleReset}
-                disabled={loading}
-              >
-                {loading ? "Resetting..." : "Reset Master Password & Wipe Data"}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => router.back()}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
-          {step === "done" && (
-            <div className="space-y-4 text-center">
-              <p className="text-green-700 text-sm">
-                Your master password and all encrypted data have been wiped.
-              </p>
-              <Button className="w-full" onClick={() => router.replace("/masterpass")}>
-                Set New Master Password
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            {/* Account name/email for personalization */}
+            {user && (
+              <div className="mb-2">
+                <span className="font-semibold text-base">
+                  {user.name || user.email}
+                </span>
+                {user.email && user.name && (
+                  <div className="text-xs text-muted-foreground">
+                    {user.email}
+                  </div>
+                )}
+              </div>
+            )}
+            <CardTitle className="text-2xl">Reset Master Password</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {step === "reset"
+                ? "This will wipe all your encrypted data. Are you sure?"
+                : "Master password and all data have been wiped."}
+            </p>
+          </CardHeader>
+          <CardContent>
+            {step === "reset" && (
+              <div className="space-y-4">
+                <p className="text-red-600 text-sm">
+                  This will permanently delete all your encrypted data and
+                  cannot be undone.
+                </p>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={handleReset}
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Resetting..."
+                    : "Reset Master Password & Wipe Data"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => router.back()}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+            {step === "done" && (
+              <div className="space-y-4 text-center">
+                <p className="text-green-700 text-sm">
+                  Your master password and all encrypted data have been wiped.
+                </p>
+                <Button
+                  className="w-full"
+                  onClick={() => router.replace("/masterpass")}
+                >
+                  Set New Master Password
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </VaultGuard>
   );
 }

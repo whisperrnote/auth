@@ -114,6 +114,7 @@ If you discover a security vulnerability, please open an issue or contact the ma
 ---
 
 ## Security Summary
+
 Current Grade: 🏆 Top-tier (NSA Suite B compatible)
 
 AES-256-GCM: Approved for TOP SECRET data

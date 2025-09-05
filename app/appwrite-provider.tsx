@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import {
   appwriteAccount,
   loginWithEmailPassword,
@@ -26,27 +32,50 @@ interface AppwriteContextType {
   logout: () => Promise<void>;
   resetMasterpass: () => Promise<void>;
   refresh: () => Promise<void>;
-  loginWithEmailPassword: (email: string, password: string) => Promise<Models.Session>;
-  registerWithEmailPassword: (email: string, password: string, name?: string) => Promise<Models.User<Models.Preferences>>;
-  sendEmailOtp: (email: string, enablePhrase?: boolean) => Promise<Models.Token>;
+  loginWithEmailPassword: (
+    email: string,
+    password: string,
+  ) => Promise<Models.Session>;
+  registerWithEmailPassword: (
+    email: string,
+    password: string,
+    name?: string,
+  ) => Promise<Models.User<Models.Preferences>>;
+  sendEmailOtp: (
+    email: string,
+    enablePhrase?: boolean,
+  ) => Promise<Models.Token>;
   completeEmailOtp: (userId: string, otp: string) => Promise<Models.Session>;
   forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (userId: string, secret: string, password: string, passwordAgain: string) => Promise<void>;
+  resetPassword: (
+    userId: string,
+    secret: string,
+    password: string,
+    passwordAgain: string,
+  ) => Promise<void>;
 }
 
-const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
+const AppwriteContext = createContext<AppwriteContextType | undefined>(
+  undefined,
+);
 
 export function AppwriteProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [needsMasterPassword, setNeedsMasterPassword] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const verbose =
-    typeof window !== "undefined" && (window as unknown as Record<string, unknown>).NEXT_PUBLIC_LOGGING_VERBOSE
-      ? String((window as unknown as Record<string, unknown>).NEXT_PUBLIC_LOGGING_VERBOSE).toLowerCase() === "true"
+    typeof window !== "undefined" &&
+    (window as unknown as Record<string, unknown>).NEXT_PUBLIC_LOGGING_VERBOSE
+      ? String(
+          (window as unknown as Record<string, unknown>)
+            .NEXT_PUBLIC_LOGGING_VERBOSE,
+        ).toLowerCase() === "true"
       : typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_LOGGING_VERBOSE === "true"
-      : false;
+        ? process.env.NEXT_PUBLIC_LOGGING_VERBOSE === "true"
+        : false;
 
   // Fetch current user and check master password status
   const fetchUser = async () => {
@@ -55,19 +84,20 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
       const account = await appwriteAccount.get();
       setUser(account);
 
-      if (verbose) console.log('[auth] account.get ->', !!account);
+      if (verbose) console.log("[auth] account.get ->", !!account);
 
       // Check if user needs master password
       if (account) {
         const hasMp = await hasMasterpass(account.$id);
         const unlocked = masterPassCrypto.isVaultUnlocked();
-        if (verbose) console.log('[auth] hasMasterpass', hasMp, 'unlocked', unlocked);
+        if (verbose)
+          console.log("[auth] hasMasterpass", hasMp, "unlocked", unlocked);
         setNeedsMasterPassword(!hasMp || !unlocked);
       } else {
         setNeedsMasterPassword(false);
       }
     } catch (e) {
-      if (verbose) console.warn('[auth] account.get error', e);
+      if (verbose) console.warn("[auth] account.get error", e);
       setUser(null);
       setNeedsMasterPassword(false);
     }
@@ -82,14 +112,14 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     const handleVaultLocked = () => {
       setTimeout(() => setNeedsMasterPassword(true), 0);
     };
-    window.addEventListener('vault-locked', handleVaultLocked);
+    window.addEventListener("vault-locked", handleVaultLocked);
 
     // Listen for storage changes (multi-tab logout)
     const handleStorageChange = () => fetchUser();
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
-      window.removeEventListener('vault-locked', handleVaultLocked);
+      window.removeEventListener("vault-locked", handleVaultLocked);
       window.removeEventListener("storage", handleStorageChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,24 +145,34 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
 
   const isVaultUnlocked = () => {
     const unlocked = masterPassCrypto.isVaultUnlocked();
-    if (verbose) console.log('[auth] vault unlock status:', unlocked);
+    if (verbose) console.log("[auth] vault unlock status:", unlocked);
     return unlocked;
   };
 
   // AUTH FUNCTIONS
-  const loginWithEmailPasswordFn = async (email: string, password: string): Promise<Models.Session> => {
+  const loginWithEmailPasswordFn = async (
+    email: string,
+    password: string,
+  ): Promise<Models.Session> => {
     const result = await loginWithEmailPassword(email, password);
     await refresh();
     return result;
   };
 
-  const registerWithEmailPasswordFn = async (email: string, password: string, name?: string): Promise<Models.User<Models.Preferences>> => {
+  const registerWithEmailPasswordFn = async (
+    email: string,
+    password: string,
+    name?: string,
+  ): Promise<Models.User<Models.Preferences>> => {
     const result = await registerWithEmailPassword(email, password, name);
     await refresh();
     return result;
   };
 
-  const completeEmailOtpFn = async (userId: string, otp: string): Promise<Models.Session> => {
+  const completeEmailOtpFn = async (
+    userId: string,
+    otp: string,
+  ): Promise<Models.Session> => {
     const result = await completeEmailOtp(userId, otp);
     await refresh();
     return result;
@@ -145,7 +185,12 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
     await appwriteAccount.createRecovery(email, getRedirectUrl());
   };
 
-  const resetPassword = async (userId: string, secret: string, password: string, _passwordAgain: string) => {
+  const resetPassword = async (
+    userId: string,
+    secret: string,
+    password: string,
+    _passwordAgain: string,
+  ) => {
     await appwriteAccount.updateRecovery(userId, secret, password);
     await fetchUser();
   };

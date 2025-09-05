@@ -5,12 +5,12 @@ export default function CredentialSkeleton() {
         <div className="flex-shrink-0">
           <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
         </div>
-        
+
         <div className="flex-1 ml-4 min-w-0">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2"></div>
           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-2">
             <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
@@ -18,7 +18,7 @@ export default function CredentialSkeleton() {
             <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
             <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
           </div>
-          
+
           <div className="flex sm:hidden items-center gap-2">
             <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
             <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
@@ -26,5 +26,5 @@ export default function CredentialSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }

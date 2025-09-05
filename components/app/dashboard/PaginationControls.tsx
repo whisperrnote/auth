@@ -1,15 +1,15 @@
-import { Button } from '@/components/ui/Button'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from "@/components/ui/Button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationControlsProps {
-  currentPage: number
-  totalPages: number
-  totalItems: number
-  pageSize: number
-  onPageChange: (page: number) => void
-  onPageSizeChange: (size: number) => void
-  loading?: boolean
-  showPageSize?: boolean
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  loading?: boolean;
+  showPageSize?: boolean;
 }
 
 export default function PaginationControls({
@@ -20,34 +20,49 @@ export default function PaginationControls({
   onPageChange,
   onPageSizeChange,
   loading = false,
-  showPageSize = true
+  showPageSize = true,
 }: PaginationControlsProps) {
-  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1
-  const endItem = Math.min(currentPage * pageSize, totalItems)
-  
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
   const getPageNumbers = () => {
-    const pages = []
-    const maxVisible = 5
-    
+    const pages = [];
+    const maxVisible = 5;
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
+        pages.push(i);
       }
     } else {
       if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, '...', totalPages)
+        pages.push(1, 2, 3, 4, "...", totalPages);
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages,
+        );
       } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages,
+        );
       }
     }
-    
-    return pages
-  }
+
+    return pages;
+  };
 
   if (totalItems === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -58,7 +73,9 @@ export default function PaginationControls({
         </span>
         {showPageSize && (
           <div className="flex items-center gap-2">
-            <label htmlFor="page-size" className="text-sm">Per page:</label>
+            <label htmlFor="page-size" className="text-sm">
+              Per page:
+            </label>
             <select
               id="page-size"
               value={pageSize}
@@ -74,7 +91,7 @@ export default function PaginationControls({
           </div>
         )}
       </div>
-      
+
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
@@ -85,20 +102,23 @@ export default function PaginationControls({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        
+
         <div className="flex items-center gap-1">
           {getPageNumbers().map((page, index) => {
-            if (page === '...') {
+            if (page === "...") {
               return (
-                <span key={`ellipsis-${index}`} className="px-2 py-1 text-muted-foreground">
+                <span
+                  key={`ellipsis-${index}`}
+                  className="px-2 py-1 text-muted-foreground"
+                >
                   ...
                 </span>
-              )
+              );
             }
-            
-            const pageNum = page as number
-            const isActive = pageNum === currentPage
-            
+
+            const pageNum = page as number;
+            const isActive = pageNum === currentPage;
+
             return (
               <Button
                 key={pageNum}
@@ -110,10 +130,10 @@ export default function PaginationControls({
               >
                 {pageNum}
               </Button>
-            )
+            );
           })}
         </div>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -125,5 +145,5 @@ export default function PaginationControls({
         </Button>
       </div>
     </div>
-  )
+  );
 }

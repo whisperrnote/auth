@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { Copy, Eye, EyeOff, ArrowLeft, X, Globe, Calendar, Tag } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  X,
+  Globe,
+  Calendar,
+  Tag,
+} from "lucide-react";
 import { Credentials } from "@/types/appwrite";
 
-export default function CredentialDetail({ 
-  credential, 
-  onClose, 
-  isMobile 
+export default function CredentialDetail({
+  credential,
+  onClose,
+  isMobile,
 }: {
   credential: Credentials;
   onClose: () => void;
@@ -33,7 +42,7 @@ export default function CredentialDetail({
       }
     };
 
-    document.addEventListener('pointerdown', onDocumentPointerDown);
+    document.addEventListener("pointerdown", onDocumentPointerDown);
 
     // Mobile: swipe to close (pointer gesture)
     if (isMobile) {
@@ -44,7 +53,7 @@ export default function CredentialDetail({
       let startTime = 0;
 
       const onPointerDown = (e: PointerEvent) => {
-        if (e.pointerType === 'mouse') return;
+        if (e.pointerType === "mouse") return;
         isTouching = true;
         startX = e.clientX;
         startY = e.clientY;
@@ -61,7 +70,7 @@ export default function CredentialDetail({
         // Ignore mostly-vertical moves
         if (Math.abs(deltaY) > Math.abs(deltaX)) return;
         // update transform
-        rootRef.current.style.transition = 'none';
+        rootRef.current.style.transition = "none";
         rootRef.current.style.transform = `translateX(${Math.max(0, deltaX)}px)`;
       };
 
@@ -72,32 +81,32 @@ export default function CredentialDetail({
         const deltaX = endX - startX;
         const elapsed = Date.now() - startTime;
         const velocity = deltaX / (elapsed || 1);
-        rootRef.current.style.transition = 'transform 200ms ease-out';
+        rootRef.current.style.transition = "transform 200ms ease-out";
         if (deltaX > 80 || velocity > 0.5) {
           // animate off and close
           rootRef.current.style.transform = `translateX(100%)`;
           setTimeout(() => closeWithAnimation(), 190);
         } else {
           // snap back
-          rootRef.current.style.transform = '';
+          rootRef.current.style.transform = "";
         }
       };
 
       const node = rootRef.current;
-      node.addEventListener('pointerdown', onPointerDown);
-      window.addEventListener('pointermove', onPointerMove);
-      window.addEventListener('pointerup', onPointerUp);
+      node.addEventListener("pointerdown", onPointerDown);
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
 
       return () => {
-        document.removeEventListener('pointerdown', onDocumentPointerDown);
-        node.removeEventListener('pointerdown', onPointerDown);
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
+        document.removeEventListener("pointerdown", onDocumentPointerDown);
+        node.removeEventListener("pointerdown", onPointerDown);
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
       };
     }
 
     return () => {
-      document.removeEventListener('pointerdown', onDocumentPointerDown);
+      document.removeEventListener("pointerdown", onDocumentPointerDown);
     };
   }, [isMobile]);
   useEffect(() => {
@@ -120,8 +129,8 @@ export default function CredentialDetail({
     setIsVisible(false);
     // if we have ref, also set transform to ensure swipe-out look
     if (rootRef.current) {
-      rootRef.current.style.transition = 'transform 300ms ease-out';
-      rootRef.current.style.transform = 'translateX(100%)';
+      rootRef.current.style.transition = "transform 300ms ease-out";
+      rootRef.current.style.transform = "translateX(100%)";
     }
     setTimeout(onClose, 300); // Wait for animation
   };
@@ -140,12 +149,12 @@ export default function CredentialDetail({
   const formatDate = (dateString: string) => {
     if (!dateString) return null;
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch {
       return dateString;
@@ -166,32 +175,49 @@ export default function CredentialDetail({
   const faviconUrl = getFaviconUrl(credential.url || "");
 
   return (
-    <div ref={rootRef}
+    <div
+      ref={rootRef}
       className={`
-        ${isMobile 
-          ? 'fixed inset-0 z-50 bg-background' 
-          : 'fixed top-0 right-0 h-full w-[400px] z-40 bg-background border-l border-border'
+        ${
+          isMobile
+            ? "fixed inset-0 z-50 bg-background"
+            : "fixed top-0 right-0 h-full w-[400px] z-40 bg-background border-l border-border"
         }
         shadow-2xl flex flex-col transition-transform duration-300 ease-out
-        ${isVisible 
-          ? 'translate-x-0' 
-          : isMobile ? 'translate-x-full' : 'translate-x-full'
+        ${
+          isVisible
+            ? "translate-x-0"
+            : isMobile
+              ? "translate-x-full"
+              : "translate-x-full"
         }
       `}
     >
       {/* Header */}
       <div className="flex items-center p-4 border-b border-border bg-card/50 backdrop-blur-sm">
         {isMobile ? (
-          <Button variant="ghost" size="sm" onClick={closeWithAnimation} className="mr-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={closeWithAnimation}
+            className="mr-3"
+          >
             <ArrowLeft className="h-4 w-4" />
             <span className="ml-1">Back</span>
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" onClick={closeWithAnimation} className="ml-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={closeWithAnimation}
+            className="ml-auto"
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
-        {!isMobile && <span className="font-semibold text-lg">Credential Details</span>}
+        {!isMobile && (
+          <span className="font-semibold text-lg">Credential Details</span>
+        )}
       </div>
 
       {/* Content */}
@@ -209,12 +235,14 @@ export default function CredentialDetail({
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">{credential.name}</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-1">
+                {credential.name}
+              </h1>
               {credential.url && (
-                <a 
-                  href={credential.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={credential.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700 text-sm inline-flex items-center"
                 >
                   <Globe className="h-3 w-3 mr-1" />
@@ -236,26 +264,36 @@ export default function CredentialDetail({
           {/* Username */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-muted-foreground">Username / Email</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Username / Email
+              </label>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleCopy(credential.username, 'username')}
+                onClick={() => handleCopy(credential.username, "username")}
                 className="h-6 px-2"
               >
                 <Copy className="h-3 w-3" />
-                {copied === 'username' && <span className="ml-1 text-xs">Copied!</span>}
+                {copied === "username" && (
+                  <span className="ml-1 text-xs">Copied!</span>
+                )}
               </Button>
             </div>
             <div className="bg-muted rounded-lg px-3 py-2 font-mono text-sm select-all break-all">
-              {credential.username || <span className="text-muted-foreground italic">No username</span>}
+              {credential.username || (
+                <span className="text-muted-foreground italic">
+                  No username
+                </span>
+              )}
             </div>
           </div>
 
           {/* Password */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-muted-foreground">Password</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Password
+              </label>
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
@@ -263,24 +301,36 @@ export default function CredentialDetail({
                   onClick={() => setShowPassword(!showPassword)}
                   className="h-6 px-2"
                 >
-                  {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {showPassword ? (
+                    <EyeOff className="h-3 w-3" />
+                  ) : (
+                    <Eye className="h-3 w-3" />
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleCopy(credential.password, 'password')}
+                  onClick={() => handleCopy(credential.password, "password")}
                   className="h-6 px-2"
                 >
                   <Copy className="h-3 w-3" />
-                  {copied === 'password' && <span className="ml-1 text-xs">Copied!</span>}
+                  {copied === "password" && (
+                    <span className="ml-1 text-xs">Copied!</span>
+                  )}
                 </Button>
               </div>
             </div>
             <div className="bg-muted rounded-lg px-3 py-2 font-mono text-sm select-all">
               {credential.password ? (
-                showPassword ? credential.password : "•".repeat(Math.min(credential.password.length, 20))
+                showPassword ? (
+                  credential.password
+                ) : (
+                  "•".repeat(Math.min(credential.password.length, 20))
+                )
               ) : (
-                <span className="text-muted-foreground italic">No password</span>
+                <span className="text-muted-foreground italic">
+                  No password
+                </span>
               )}
             </div>
           </div>
@@ -289,22 +339,26 @@ export default function CredentialDetail({
           {credential.url && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-muted-foreground">Website</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Website
+                </label>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleCopy(credential.url || "", 'url')}
+                  onClick={() => handleCopy(credential.url || "", "url")}
                   className="h-6 px-2"
                 >
                   <Copy className="h-3 w-3" />
-                  {copied === 'url' && <span className="ml-1 text-xs">Copied!</span>}
+                  {copied === "url" && (
+                    <span className="ml-1 text-xs">Copied!</span>
+                  )}
                 </Button>
               </div>
               <div className="bg-muted rounded-lg px-3 py-2 text-sm">
-                <a 
-                  href={credential.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={credential.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700 break-all"
                 >
                   {credential.url}
@@ -317,15 +371,19 @@ export default function CredentialDetail({
           {credential.notes && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Notes
+                </label>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleCopy(credential.notes || "", 'notes')}
+                  onClick={() => handleCopy(credential.notes || "", "notes")}
                   className="h-6 px-2"
                 >
                   <Copy className="h-3 w-3" />
-                  {copied === 'notes' && <span className="ml-1 text-xs">Copied!</span>}
+                  {copied === "notes" && (
+                    <span className="ml-1 text-xs">Copied!</span>
+                  )}
                 </Button>
               </div>
               <div className="bg-muted rounded-lg px-3 py-2 text-sm whitespace-pre-wrap">
@@ -343,8 +401,8 @@ export default function CredentialDetail({
               </label>
               <div className="flex flex-wrap gap-2">
                 {credential.tags.map((tag: string, index: number) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium"
                   >
                     {tag}
@@ -357,29 +415,44 @@ export default function CredentialDetail({
           {/* Custom Fields */}
           {customFields.length > 0 && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-3 block">Custom Fields</label>
+              <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                Custom Fields
+              </label>
               <div className="space-y-3">
-                {customFields.map((field: { id?: string; label?: string; value?: string }, index: number) => (
-                  <div key={field.id || index}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {field.label || `Field ${index + 1}`}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopy(field.value || "", `custom-${index}`)}
-                        className="h-5 px-1"
-                      >
-                        <Copy className="h-3 w-3" />
-                        {copied === `custom-${index}` && <span className="ml-1 text-xs">Copied!</span>}
-                      </Button>
+                {customFields.map(
+                  (
+                    field: { id?: string; label?: string; value?: string },
+                    index: number,
+                  ) => (
+                    <div key={field.id || index}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {field.label || `Field ${index + 1}`}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleCopy(field.value || "", `custom-${index}`)
+                          }
+                          className="h-5 px-1"
+                        >
+                          <Copy className="h-3 w-3" />
+                          {copied === `custom-${index}` && (
+                            <span className="ml-1 text-xs">Copied!</span>
+                          )}
+                        </Button>
+                      </div>
+                      <div className="bg-muted rounded px-2 py-1 font-mono text-xs select-all">
+                        {field.value || (
+                          <span className="text-muted-foreground italic">
+                            Empty
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="bg-muted rounded px-2 py-1 font-mono text-xs select-all">
-                      {field.value || <span className="text-muted-foreground italic">Empty</span>}
-                    </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
           )}
