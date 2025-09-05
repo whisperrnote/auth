@@ -12,6 +12,7 @@ import { authenticator } from "otplib";
 import { Dialog } from "@/components/ui/Dialog";
 import toast from "react-hot-toast";
 import VaultGuard from "@/components/layout/VaultGuard";
+import MasterPasswordVerificationDialog from "@/components/overlays/MasterPasswordVerificationDialog";
 
 export default function TOTPPage() {
   const [search, setSearch] = useState("");
@@ -36,6 +37,8 @@ export default function TOTPPage() {
     id: string | null;
   }>({ open: false, id: null });
   const [editingTotp, setEditingTotp] = useState<TotpItem | null>(null);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [totpToDelete, setTotpToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.$id) return;
@@ -69,7 +72,14 @@ export default function TOTPPage() {
     } catch (e: unknown) {
       const err = e as { message?: string };
       toast.error(err.message || "Failed to delete TOTP code.");
+    } finally {
+      setDeleteDialog({ open: false, id: null });
     }
+  };
+
+  const openDeleteDialog = (id: string) => {
+    setTotpToDelete(id);
+    setIsVerificationOpen(true);
   };
 
   const generateTOTP = (
@@ -144,7 +154,7 @@ export default function TOTPPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setDeleteDialog({ open: true, id: totp.$id })}
+              onClick={() => openDeleteDialog(totp.$id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -265,6 +275,16 @@ export default function TOTPPage() {
           }}
           initialData={editingTotp || undefined}
         />
+        {isVerificationOpen && (
+          <MasterPasswordVerificationDialog
+            open={isVerificationOpen}
+            onClose={() => setIsVerificationOpen(false)}
+            onSuccess={() => {
+              setIsVerificationOpen(false);
+              setDeleteDialog({ open: true, id: totpToDelete });
+            }}
+          />
+        )}
         {/* Delete Confirmation Dialog */}
         <Dialog
           open={deleteDialog.open}
