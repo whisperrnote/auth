@@ -620,7 +620,7 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2"
-                  onClick={handleExportData}
+                  onClick={() => handleExportData()}
                 >
                   <Download className="h-4 w-4" />
                   Export All Data
