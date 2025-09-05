@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Navbar } from "@/components/layout/Navbar";
+
 import { completeEmailVerification } from "@/lib/appwrite";
 
 export default function VerifyEmailPage() {

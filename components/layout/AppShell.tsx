@@ -39,6 +39,7 @@ const SIMPLIFIED_LAYOUT_PATHS = [
   "/login",
   "/register",
   "/reset-password",
+  "/verify-email",
   "/masterpass",
   "/masterpass/reset",
   "/twofa/access",
