@@ -22,8 +22,18 @@ import {
 } from "@/app/(protected)/masterpass/logic";
 
 // --- Appwrite Client Setup ---
+function normalizeEndpoint(ep?: string): string {
+  const raw = (ep || "").trim();
+  if (!raw) return "";
+  // Remove trailing slashes
+  const cleaned = raw.replace(/\/+$/, "");
+  // Ensure it ends with /v1 exactly once
+  if (/\/v1$/.test(cleaned)) return cleaned;
+  return `${cleaned}/v1`;
+}
+
 export const appwriteClient = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+  .setEndpoint(normalizeEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT))
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
 
 export const appwriteAccount = new Account(appwriteClient);
@@ -31,6 +41,54 @@ export const appwriteDatabases = new Databases(appwriteClient);
 export const appwriteAvatars = new Avatars(appwriteClient);
 
 export { ID, Query };
+
+function isFetchNetworkError(error: unknown): boolean {
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("network error") ||
+    msg.includes("load failed")
+  );
+}
+
+async function listDocumentsWithRetry(
+  collectionId: string,
+  queries: string[] = [],
+): Promise<Models.DocumentList<Models.Document>> {
+  try {
+    return await appwriteDatabases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      collectionId,
+      queries,
+    );
+  } catch (err) {
+    if (!isFetchNetworkError(err)) throw err as Error;
+
+    // Try to normalize endpoint then retry once
+    try {
+      const envEp = normalizeEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT);
+      if (envEp) {
+        appwriteClient.setEndpoint(envEp);
+      } else if (typeof window !== "undefined") {
+        // Fallback to same-origin /v1 in dev if env missing
+        appwriteClient.setEndpoint(normalizeEndpoint(window.location.origin));
+      }
+      return await appwriteDatabases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        collectionId,
+        queries,
+      );
+    } catch (err2) {
+      // Surface a clearer error with guidance
+      const note =
+        "Network request to Appwrite failed. Check NEXT_PUBLIC_APPWRITE_ENDPOINT, CORS, and /v1 suffix.";
+      const e = err2 as Error & { cause?: unknown };
+      e.cause = err;
+      throw new Error(`${note} Original: ${e.message}`);
+    }
+  }
+}
 
 // --- Database & Collection IDs (from database.md & .env) ---
 export const APPWRITE_DATABASE_ID =
@@ -499,8 +557,7 @@ export class AppwriteService {
     let response;
 
     do {
-      response = await appwriteDatabases.listDocuments(
-        APPWRITE_DATABASE_ID,
+      response = await listDocumentsWithRetry(
         APPWRITE_COLLECTION_CREDENTIALS_ID,
         [
           Query.equal("userId", userId),
@@ -534,8 +591,7 @@ export class AppwriteService {
     userId: string,
     limit: number = 5,
   ): Promise<Credentials[]> {
-    const response = await appwriteDatabases.listDocuments(
-      APPWRITE_DATABASE_ID,
+    const response = await listDocumentsWithRetry(
       APPWRITE_COLLECTION_CREDENTIALS_ID,
       [
         Query.equal("userId", userId),
