@@ -29,29 +29,11 @@ export default function PasswordGenerator() {
     // Don't add to history on slider move, only on explicit generate
   }, [length]);
 
-  // Store history in localStorage whenever it changes
+  // Do not persist history to storage to avoid leaking plaintext
+  // If persistence is needed, implement secure, per-session encryption.
   useEffect(() => {
-    async function saveHistory() {
-      if (typeof window !== "undefined" && cryptoKey) {
-        // Encrypt history before saving
-        const encryptedHistory = await Promise.all(history.map(async (item) => {
-          // Only encrypt if item.value appears to be plaintext (not already encrypted)
-          if (item.value.includes(":")) {
-            return { value: item.value, ts: item.ts };
-          } else {
-            try {
-              const val = await encrypt(item.value);
-              return { value: val, ts: item.ts };
-            } catch {
-              return { value: "", ts: item.ts };
-            }
-          }
-        }));
-        localStorage.setItem("password_history", JSON.stringify(encryptedHistory));
-      }
-    }
-    saveHistory();
-  }, [history, cryptoKey]);
+    // Intentionally left blank
+  }, [history]);
 
   const handleGenerate = () => {
     const newPassword = generateRandomPassword(length);
