@@ -25,7 +25,7 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased bg-[rgb(245,239,230)] text-[rgb(23,23,23)]`}
       >
         <Providers>
-          <div className="min-h-screen w-full">
+          <div className="min-h-screen w-full animate-fadeIn">
             <AppShell>{children}</AppShell>
           </div>
         </Providers>

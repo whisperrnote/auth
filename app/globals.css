@@ -26,6 +26,8 @@
   --glass-border: rgba(255, 255, 255, 0.3);
   --shadow:
     0 4px 24px 0 rgba(141, 103, 72, 0.08), 0 1.5px 6px 0 rgba(0, 0, 0, 0.04);
+  --shadow-lg:
+    0 8px 32px 0 rgba(141, 103, 72, 0.12), 0 3px 12px 0 rgba(0, 0, 0, 0.06);
 }
 
 .dark {
@@ -48,6 +50,8 @@
   --border: 55 65 81;
   --input: 55 65 81;
   --ring: 141 103 72;
+  --shadow-lg:
+    0 8px 32px 0 rgba(0, 0, 0, 0.2), 0 3px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 @theme inline {
@@ -90,6 +94,11 @@ body {
     rgba(191, 174, 153, 0.04) 0%,
     rgba(141, 103, 72, 0.03) 100%
   );
+}
+
+/* Custom transition for interactive elements */
+.interactive-transition {
+  transition: all 200ms ease-in-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -155,6 +164,12 @@ body {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Mobile viewport and layout fixes */
@@ -202,4 +217,19 @@ body {
 
 .animate-fade-in-out {
   animation: fade-in-out 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
 }
