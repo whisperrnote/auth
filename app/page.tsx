@@ -179,7 +179,7 @@ export default function LandingPage() {
         {/* Dashboard Preview */}
         <div
           ref={demoRef}
-          className="w-full max-w-5xl rounded-lg overflow-hidden shadow-2xl border dark:border-gray-800 bg-background relative"
+          className="w-full max-w-5xl overflow-hidden relative card"
         >
           {/* Dashboard Header */}
           <div className="border-b px-6 py-4 flex items-center justify-between">
@@ -223,7 +223,7 @@ export default function LandingPage() {
                     </p>
                     <p className="text-xl font-bold">24</p>
                   </div>
-                  <Key className="h-6 w-6 text-blue-500" />
+                  <Key className="h-6 w-6 text-primary" />
                 </div>
               </Card>
               <Card className="p-4">
@@ -234,7 +234,7 @@ export default function LandingPage() {
                     </p>
                     <p className="text-xl font-bold">8</p>
                   </div>
-                  <Shield className="h-6 w-6 text-green-500" />
+                  <Shield className="h-6 w-6 text-muted-foreground" />
                 </div>
               </Card>
               <Card className="p-4">
@@ -245,7 +245,7 @@ export default function LandingPage() {
                     </p>
                     <p className="text-xl font-bold">3</p>
                   </div>
-                  <Clock className="h-6 w-6 text-orange-500" />
+                  <Clock className="h-6 w-6 text-muted-foreground" />
                 </div>
               </Card>
               <Card className="p-4">
@@ -256,7 +256,7 @@ export default function LandingPage() {
                     </p>
                     <p className="text-xl font-bold">1</p>
                   </div>
-                  <AlertTriangle className="h-6 w-6 text-red-500" />
+                  <AlertTriangle className="h-6 w-6 text-destructive" />
                 </div>
               </Card>
             </div>
@@ -349,16 +349,16 @@ export default function LandingPage() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {features.map((feature) => (
-            <div
+            <Card
               key={feature.title}
-              className="bg-card p-6 rounded-lg border transition-all duration-200 hover:shadow-md"
+              className="p-6 transition-all duration-200 hover:shadow-lg"
             >
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-5">
                 <feature.icon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
               <p className="text-muted-foreground">{feature.description}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -377,8 +377,8 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center text-center p-6">
-              <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mb-5">
-                <Shield className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                <Shield className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">AES-256 Encryption</h3>
               <p className="text-muted-foreground">
@@ -388,8 +388,8 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col items-center text-center p-6">
-              <div className="h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mb-5">
-                <Lock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                <Lock className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">SOC 2 Certified</h3>
               <p className="text-muted-foreground">
@@ -399,8 +399,8 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col items-center text-center p-6">
-              <div className="h-16 w-16 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center mb-5">
-                <Fingerprint className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                <Fingerprint className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Zero Knowledge</h3>
               <p className="text-muted-foreground">
@@ -458,10 +458,12 @@ export default function LandingPage() {
 
           <div className="space-y-6">
             {faqs.map((faq, i) => (
-              <div key={i} className="border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">{faq.question}</h3>
-                <p className="text-muted-foreground">{faq.answer}</p>
-              </div>
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-2">{faq.question}</h3>
+                  <p className="text-muted-foreground">{faq.answer}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>

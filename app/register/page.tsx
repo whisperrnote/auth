@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { getMfaAuthenticationStatus, hasMasterpass } from "@/lib/appwrite";
 import { redirectIfAuthenticated } from "@/lib/appwrite";
 import { Navbar } from "@/components/layout/Navbar";
+import { cn } from "@/lib/utils";
 
 const OTP_COOLDOWN = 120; // seconds
 
@@ -242,7 +243,7 @@ export default function RegisterPage() {
       <Navbar />
 
       <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md glass shadow-2xl">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <img
@@ -262,18 +263,15 @@ export default function RegisterPage() {
               {modeButtons.map((btn) => (
                 <button
                   key={btn.value}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-md transition-all duration-150
-                    ${
-                      mode === btn.value
-                        ? "bg-primary text-white scale-105"
-                        : "bg-white/60 text-[rgb(141,103,72)] hover:bg-primary/20"
-                    }`}
-                  style={{
-                    boxShadow:
-                      mode === btn.value
-                        ? "0 4px 16px 0 rgba(141,103,72,0.13)"
-                        : "0 2px 8px 0 rgba(191,174,153,0.10)",
-                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition-all duration-150",
+                    {
+                      "bg-primary text-primary-foreground scale-105":
+                        mode === btn.value,
+                      "bg-secondary text-secondary-foreground hover:bg-secondary/80":
+                        mode !== btn.value,
+                    },
+                  )}
                   onClick={() => {
                     setMode(btn.value as Mode);
                   }}
@@ -392,12 +390,11 @@ export default function RegisterPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="glass"
                       disabled={!formData.email || otpCooldown > 0 || loading}
                       onClick={handleSendOTP}
                     >
                       {otpSent ? (
-                        <Check className="h-5 w-5 text-green-600" />
+                        <Check className="h-5 w-5 text-primary" />
                       ) : (
                         "Get OTP"
                       )}
