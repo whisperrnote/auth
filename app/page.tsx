@@ -24,9 +24,10 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import PasswordGenerator from "@/components/ui/PasswordGenerator";
+import { AuthModal } from "@/components/overlays/AuthModal";
 
 // Copy icon component - used in dashboard preview
 function Copy(props: React.SVGProps<SVGSVGElement>) {
@@ -51,6 +52,8 @@ function Copy(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LandingPage() {
   const { theme, setTheme } = useTheme();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalType, setAuthModalType] = useState<"login" | "register">("register");
 
   // Add a ref for the demo section
   const demoRef = useRef<HTMLDivElement>(null);
@@ -166,11 +169,16 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-16">
-          <Link href="/register">
-            <Button size="lg" className="gap-2">
-              Get Started Free <ChevronRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button 
+            size="lg" 
+            className="gap-2"
+            onClick={() => {
+              setAuthModalType("register");
+              setShowAuthModal(true);
+            }}
+          >
+            Get Started Free <ChevronRight className="h-4 w-4" />
+          </Button>
           <Button size="lg" variant="outline" onClick={handleViewDemo}>
             View Demo
           </Button>
@@ -476,16 +484,27 @@ export default function LandingPage() {
           <p className="text-xl text-muted-foreground mb-8">
             Join thousands of users who trust Whisperrauth with their passwords.
           </p>
-          <Link href="/register">
-            <Button size="lg" className="gap-2">
-              Get Started Free <ChevronRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button 
+            size="lg" 
+            className="gap-2"
+            onClick={() => {
+              setAuthModalType("register");
+              setShowAuthModal(true);
+            }}
+          >
+            Get Started Free <ChevronRight className="h-4 w-4" />
+          </Button>
           <p className="mt-4 text-sm text-muted-foreground">
             No credit card required. Free forever with premium options.
           </p>
         </div>
       </div>
+      
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        initialType={authModalType}
+      />
     </div>
   );
 }
