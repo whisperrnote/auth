@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Eye, EyeOff, Lock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -34,10 +35,15 @@ export function MasterPassModal({ isOpen, onClose }: MasterPassModalProps) {
   const [confirmCapsLock, setConfirmCapsLock] = useState(false);
   const [hasPasskey, setHasPasskey] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const { user, refresh } = useAppwrite();
   const { finalizeAuth } = useFinalizeAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check masterpass and passkey status from database
   useEffect(() => {
@@ -140,11 +146,11 @@ export function MasterPassModal({ isOpen, onClose }: MasterPassModalProps) {
     setPasskeyLoading(false);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   // Loading state for DB check
   if (isFirstTime === null || loading) {
-    return (
+    const loadingContent = (
       <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
@@ -153,9 +159,10 @@ export function MasterPassModal({ isOpen, onClose }: MasterPassModalProps) {
         </div>
       </div>
     );
+    return createPortal(loadingContent, document.body);
   }
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
@@ -402,4 +409,6 @@ export function MasterPassModal({ isOpen, onClose }: MasterPassModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useFinalizeAuth } from "@/lib/finalizeAuth";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -21,6 +22,7 @@ interface TwoFAModalProps {
 
 export function TwoFAModal({ isOpen, onClose }: TwoFAModalProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [factors, setFactors] = useState<{
     totp: boolean;
     email: boolean;
@@ -33,6 +35,10 @@ export function TwoFAModal({ isOpen, onClose }: TwoFAModalProps) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -91,10 +97,10 @@ export function TwoFAModal({ isOpen, onClose }: TwoFAModalProps) {
     setLoading(false);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   if (!factors) {
-    return (
+    const loadingContent = (
       <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
@@ -103,9 +109,10 @@ export function TwoFAModal({ isOpen, onClose }: TwoFAModalProps) {
         </div>
       </div>
     );
+    return createPortal(loadingContent, document.body);
   }
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
@@ -234,4 +241,6 @@ export function TwoFAModal({ isOpen, onClose }: TwoFAModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

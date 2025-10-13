@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { completeEmailVerification } from "@/lib/appwrite";
@@ -14,11 +15,16 @@ interface VerifyEmailModalProps {
 export function VerifyEmailModal({ isOpen, onClose }: VerifyEmailModalProps) {
   const params = useSearchParams();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   const [status, setStatus] = useState<
     "idle" | "verifying" | "success" | "error" | "missing"
   >("idle");
   const [message, setMessage] = useState<string>("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,9 +67,9 @@ export function VerifyEmailModal({ isOpen, onClose }: VerifyEmailModalProps) {
     router.replace("/");
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
@@ -124,4 +130,6 @@ export function VerifyEmailModal({ isOpen, onClose }: VerifyEmailModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

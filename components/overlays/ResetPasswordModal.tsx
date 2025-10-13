@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -15,10 +16,15 @@ interface ResetPasswordModalProps {
 
 export function ResetPasswordModal({ isOpen, onClose }: ResetPasswordModalProps) {
   const params = useSearchParams();
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordAgain, setPasswordAgain] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const userId = params.get("userId") || "";
   const secret = params.get("secret") || "";
@@ -61,9 +67,9 @@ export function ResetPasswordModal({ isOpen, onClose }: ResetPasswordModalProps)
     setLoading(false);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
@@ -137,4 +143,6 @@ export function ResetPasswordModal({ isOpen, onClose }: ResetPasswordModalProps)
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
