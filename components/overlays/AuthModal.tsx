@@ -288,9 +288,10 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="min-h-screen w-full flex items-center justify-center py-8">
-        <Card className="w-full max-w-md shadow-2xl relative bg-background">
+    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl relative bg-background">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-accent"
@@ -541,6 +542,7 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
           </div>
         </CardContent>
       </Card>
+        </div>
       </div>
     </div>
   );
