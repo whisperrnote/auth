@@ -1,103 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, Shield } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAppwrite } from "@/app/appwrite-provider";
-import { masterPassCrypto } from "./logic";
-import { useFinalizeAuth } from "@/lib/finalizeAuth";
-import {
-  hasMasterpass,
-  setMasterpassFlag,
-  logoutAppwrite,
-  AppwriteService,
-} from "@/lib/appwrite";
-import toast from "react-hot-toast";
-import VaultGuard from "@/components/layout/VaultGuard";
-import { unlockWithPasskey } from "../settings/passkey";
+import { MasterPassModal } from "@/components/overlays/MasterPassModal";
 
 export default function MasterPassPage() {
-  const [masterPassword, setMasterPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [capsLock, setCapsLock] = useState(false);
-  const [confirmCapsLock, setConfirmCapsLock] = useState(false);
-  const [hasPasskey, setHasPasskey] = useState(false);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
-
-  const { user, refresh } = useAppwrite();
-  const { finalizeAuth } = useFinalizeAuth();
+  const [showModal, setShowModal] = useState(false);
+  const { user } = useAppwrite();
   const router = useRouter();
 
-  // Check masterpass and passkey status from database
+  // Redirect to home if not logged in
   useEffect(() => {
-    if (!user) return;
-    setLoading(true);
-    Promise.all([hasMasterpass(user.$id), AppwriteService.hasPasskey(user.$id)])
-      .then(([masterpassPresent, passkeyPresent]) => {
-        setIsFirstTime(!masterpassPresent);
-        setHasPasskey(passkeyPresent);
-      })
-      .catch(() => {
-        setIsFirstTime(true);
-        setHasPasskey(false);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [user]);
-
-  // Redirect to login if not logged in
-  useEffect(() => {
-    if (user === null && !loading) {
-      router.replace("/login");
+    if (user === null) {
+      router.replace("/");
+    } else if (user) {
+      setShowModal(true);
     }
-  }, [user, loading, router]);
+  }, [user, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  return <MasterPassModal isOpen={showModal} onClose={() => router.replace("/dashboard")} />;
+}
 
-    try {
-      if (isFirstTime) {
-        // First time setup - validate confirmation
-        if (masterPassword !== confirmPassword) {
-          toast.error("Passwords don't match");
-          setLoading(false);
-          return;
-        }
-        if (masterPassword.length < 8) {
-          toast.error("Master password must be at least 8 characters");
-          setLoading(false);
-          return;
-        }
-
-        // Unlock vault with first-time flag
-        const success = await masterPassCrypto.unlock(
-          masterPassword,
-          user?.$id || "",
-          true,
-        );
-
-        if (success) {
-          if (user) {
-            await setMasterpassFlag(user.$id, user.email);
-          }
-          await finalizeAuth({ redirect: true, fallback: "/login" });
-        } else {
-          toast.error("Failed to set master password");
-        }
-      } else {
-        // Existing user - attempt to unlock vault normally
-        const success = await masterPassCrypto.unlock(
-          masterPassword,
-          user?.$id || "",
           false,
         );
 
