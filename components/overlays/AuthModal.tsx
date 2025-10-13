@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Eye, EyeOff, Check, Mail, KeyRound, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -27,6 +28,7 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
   const [mode, setMode] = useState<Mode>("password");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -36,6 +38,10 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
     userId: "",
   });
   const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -285,9 +291,9 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
     { label: "OTP", value: "otp", icon: Mail },
   ] as const;
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm">
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
@@ -546,4 +552,6 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
