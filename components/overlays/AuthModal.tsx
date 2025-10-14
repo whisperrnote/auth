@@ -515,12 +515,19 @@ export function AuthModal({ isOpen, onClose, initialType = "login" }: AuthModalP
           
           <div className="mt-6 text-center space-y-2">
             {authType === "login" && (
-              <a
-                href="/reset-password"
+              <button
+                onClick={() => {
+                  onClose();
+                  // Trigger reset password modal by adding query param
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("modal", "reset-password");
+                  window.history.pushState({}, "", url);
+                  window.dispatchEvent(new Event("popstate"));
+                }}
                 className="text-sm text-primary hover:underline block"
               >
                 Forgot your password?
-              </a>
+              </button>
             )}
             <p className="text-sm text-muted-foreground">
               {authType === "login" ? (

@@ -24,10 +24,12 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useTheme } from "@/app/providers";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import PasswordGenerator from "@/components/ui/PasswordGenerator";
 import { AuthModal } from "@/components/overlays/AuthModal";
+import { ResetPasswordModal } from "@/components/overlays/ResetPasswordModal";
 
 // Copy icon component - used in dashboard preview
 function Copy(props: React.SVGProps<SVGSVGElement>) {
@@ -54,9 +56,39 @@ export default function LandingPage() {
   const { theme, setTheme } = useTheme();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalType, setAuthModalType] = useState<"login" | "register">("register");
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const searchParams = useSearchParams();
 
   // Add a ref for the demo section
   const demoRef = useRef<HTMLDivElement>(null);
+
+  // Check for reset-password modal trigger
+  useEffect(() => {
+    const modal = searchParams.get("modal");
+    const userId = searchParams.get("userId");
+    const secret = searchParams.get("secret");
+    
+    if (modal === "reset-password" || (userId && secret)) {
+      setShowResetPasswordModal(true);
+    }
+  }, [searchParams]);
+
+  // Listen for popstate events to handle modal opening
+  useEffect(() => {
+    const handlePopState = () => {
+      const url = new URL(window.location.href);
+      const modal = url.searchParams.get("modal");
+      const userId = url.searchParams.get("userId");
+      const secret = url.searchParams.get("secret");
+      
+      if (modal === "reset-password" || (userId && secret)) {
+        setShowResetPasswordModal(true);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const handleViewDemo = () => {
     if (demoRef.current) {
@@ -504,6 +536,19 @@ export default function LandingPage() {
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)}
         initialType={authModalType}
+      />
+      
+      <ResetPasswordModal 
+        isOpen={showResetPasswordModal} 
+        onClose={() => {
+          setShowResetPasswordModal(false);
+          // Clean up URL params
+          const url = new URL(window.location.href);
+          url.searchParams.delete("modal");
+          url.searchParams.delete("userId");
+          url.searchParams.delete("secret");
+          window.history.replaceState({}, "", url);
+        }}
       />
     </div>
   );

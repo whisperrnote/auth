@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -74,6 +75,13 @@ export function ResetPasswordModal({ isOpen, onClose }: ResetPasswordModalProps)
       <div className="fixed inset-0 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-4">
           <Card className="w-full max-w-md shadow-2xl relative bg-background">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Reset Password</CardTitle>
           </CardHeader>

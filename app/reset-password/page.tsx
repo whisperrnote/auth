@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { ResetPasswordModal } from "@/components/overlays/ResetPasswordModal";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const params = useSearchParams();
-  const [showModal, setShowModal] = useState(false);
-
+  
   useEffect(() => {
-    // Always show the modal when this page is accessed
-    setShowModal(true);
-  }, []);
+    // Preserve userId and secret query params when redirecting
+    const userId = params.get("userId");
+    const secret = params.get("secret");
+    const queryParams = userId && secret ? `?userId=${userId}&secret=${secret}` : "";
+    router.replace(`/${queryParams}`);
+  }, [router, params]);
 
-  return <ResetPasswordModal isOpen={showModal} onClose={() => setShowModal(false)} />;
+  return null;
 }
