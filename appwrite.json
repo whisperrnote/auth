@@ -38,22 +38,22 @@
       }
     }
   },
-  "databases": [
+  "tablesDB": [
     {
       "$id": "passwordManagerDb",
       "name": "PasswordManagerDB",
       "enabled": true
     }
   ],
-  "collections": [
+  "tables": [
     {
       "$id": "credentials",
       "$permissions": ["create(\"users\")"],
       "databaseId": "passwordManagerDb",
       "name": "Credentials",
       "enabled": true,
-      "documentSecurity": true,
-      "attributes": [
+      "rowSecurity": true,
+      "columns": [
         {
           "key": "userId",
           "type": "string",
@@ -166,21 +166,21 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "attributes": ["userId"],
+          "columns": ["userId"],
           "orders": []
         },
         {
           "key": "idx_folderId",
           "type": "key",
           "status": "available",
-          "attributes": ["folderId"],
+          "columns": ["folderId"],
           "orders": []
         },
         {
           "key": "idx_tags",
           "type": "key",
           "status": "available",
-          "attributes": ["tags"],
+          "columns": ["tags"],
           "orders": [null]
         }
       ]
@@ -191,8 +191,8 @@
       "databaseId": "passwordManagerDb",
       "name": "TOTP Secrets",
       "enabled": true,
-      "documentSecurity": true,
-      "attributes": [
+      "rowSecurity": true,
+      "columns": [
         {
           "key": "userId",
           "type": "string",
@@ -295,14 +295,14 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "attributes": ["userId"],
+          "columns": ["userId"],
           "orders": []
         },
         {
           "key": "idx_folderId",
           "type": "key",
           "status": "available",
-          "attributes": ["folderId"],
+          "columns": ["folderId"],
           "orders": []
         }
       ]
@@ -313,8 +313,8 @@
       "databaseId": "passwordManagerDb",
       "name": "Folders",
       "enabled": true,
-      "documentSecurity": true,
-      "attributes": [
+      "rowSecurity": true,
+      "columns": [
         {
           "key": "userId",
           "type": "string",
@@ -364,14 +364,14 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "attributes": ["userId"],
+          "columns": ["userId"],
           "orders": []
         },
         {
           "key": "idx_parentFolderId",
           "type": "key",
           "status": "available",
-          "attributes": ["parentFolderId"],
+          "columns": ["parentFolderId"],
           "orders": []
         }
       ]
@@ -382,8 +382,8 @@
       "databaseId": "passwordManagerDb",
       "name": "Security Logs",
       "enabled": true,
-      "documentSecurity": true,
-      "attributes": [
+      "rowSecurity": true,
+      "columns": [
         {
           "key": "userId",
           "type": "string",
@@ -443,21 +443,21 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "attributes": ["userId"],
+          "columns": ["userId"],
           "orders": []
         },
         {
           "key": "idx_eventType",
           "type": "key",
           "status": "available",
-          "attributes": ["eventType"],
+          "columns": ["eventType"],
           "orders": []
         },
         {
           "key": "idx_timestamp",
           "type": "key",
           "status": "available",
-          "attributes": ["timestamp"],
+          "columns": ["timestamp"],
           "orders": ["DESC"]
         }
       ]
@@ -468,8 +468,8 @@
       "databaseId": "passwordManagerDb",
       "name": "user",
       "enabled": true,
-      "documentSecurity": true,
-      "attributes": [
+      "rowSecurity": true,
+      "columns": [
         {
           "key": "masterpass",
           "type": "boolean",
