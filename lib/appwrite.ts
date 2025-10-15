@@ -115,6 +115,7 @@ const ENCRYPTED_FIELDS = {
     "password",       // Password
     "notes",          // Notes
     "customFields",   // Custom fields JSON
+    "tags",           // Tags array (organizational info)
     "cardNumber",     // Credit card number
     "cardholderName", // Cardholder name
     "cardExpiry",     // Card expiry date
@@ -126,6 +127,9 @@ const ENCRYPTED_FIELDS = {
     "accountName",    // TOTP account name
     "secretKey",      // TOTP secret key
     "url",            // TOTP URL for autofill
+    "algorithm",      // TOTP algorithm setting
+    "digits",         // TOTP digits
+    "period",         // TOTP period
   ],
   folders: [
     "name",           // Folder name (sensitive organization info)
@@ -144,6 +148,7 @@ const ENCRYPTED_FIELDS = {
     "passkeyBlob",    // Wrapped master key
     "credentialId",   // WebAuthn credential ID
     "publicKey",      // WebAuthn public key
+    "counter",        // WebAuthn counter (security critical)
     "sessionFingerprint", // Session fingerprint
   ],
 } as const;
