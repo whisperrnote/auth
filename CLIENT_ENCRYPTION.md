@@ -35,73 +35,84 @@ This document describes the comprehensive client-side end-to-end encryption (E2E
 
 ## Client-Side Encrypted Fields (Updated)
 
-### Before (Insufficient Coverage)
-```typescript
-const ENCRYPTED_FIELDS = {
-  credentials: ["username", "password", "notes", "customFields"],
-  totpSecrets: ["secretKey"],
-  folders: [],
-  securityLogs: [],
-  user: [],
-};
-```
-**Coverage: Only 5 fields encrypted = ~15% of sensitive data**
-
-### After (Maximum Coverage)
+### Current Implementation (Maximum Security Coverage)
 ```typescript
 const ENCRYPTED_FIELDS = {
   credentials: [
-    "name",           // ✅ NEW: Credential name (site/service)
-    "url",            // ✅ NEW: URL/website
+    "name",           // ✅ Credential name (site/service)
+    "url",            // ✅ URL/website
     "username",       // ✅ Username/email
     "password",       // ✅ Password
     "notes",          // ✅ Notes
     "customFields",   // ✅ Custom fields JSON
-    "cardNumber",     // ✅ NEW: Credit card number
-    "cardholderName", // ✅ NEW: Cardholder name
-    "cardExpiry",     // ✅ NEW: Card expiry date
-    "cardCVV",        // ✅ NEW: Card CVV
-    "cardPIN",        // ✅ NEW: Card PIN
+    "cardNumber",     // ✅ Credit card number
+    "cardholderName", // ✅ Cardholder name
+    "cardExpiry",     // ✅ Card expiry date
+    "cardCVV",        // ✅ Card CVV
+    "cardPIN",        // ✅ Card PIN
   ],
   totpSecrets: [
-    "issuer",         // ✅ NEW: TOTP issuer
-    "accountName",    // ✅ NEW: TOTP account name
-    "secretKey",      // ✅ TOTP secret key
-    "url",            // ✅ NEW: TOTP URL for autofill
+    "issuer",         // ✅ TOTP issuer (e.g., "Google", "GitHub")
+    "accountName",    // ✅ TOTP account name (e.g., user email/username)
+    "secretKey",      // ✅ TOTP secret key (CRITICAL - must be encrypted)
+    "url",            // ✅ TOTP URL for QR code/autofill
   ],
   folders: [
-    "name",           // ✅ NEW: Folder name (sensitive organization)
+    "name",           // ✅ Folder name (sensitive organization info)
   ],
   securityLogs: [
-    "ipAddress",      // ✅ NEW: IP address (privacy)
-    "userAgent",      // ✅ NEW: User agent (fingerprinting)
-    "details",        // ✅ NEW: Event details (may contain sensitive info)
+    "ipAddress",      // ✅ IP address (privacy)
+    "userAgent",      // ✅ User agent (fingerprinting)
+    "deviceFingerprint", // ✅ Device fingerprint
+    "details",        // ✅ Event details (may contain sensitive info)
   ],
   user: [
-    "email",          // ✅ NEW: User email
-    "check",          // ✅ NEW: Password verification check value
-    "salt",           // ✅ NEW: Encryption salt
-    "twofaSecret",    // ✅ NEW: 2FA secret
-    "backupCodes",    // ✅ NEW: 2FA backup codes
-    "passkeyBlob",    // ✅ NEW: Wrapped master key
-    "credentialId",   // ✅ NEW: WebAuthn credential ID
-    "publicKey",      // ✅ NEW: WebAuthn public key
-    "sessionFingerprint", // ✅ NEW: Session fingerprint
+    "email",          // ✅ User email
+    "check",          // ✅ Password verification check value
+    "salt",           // ✅ Encryption salt
+    "twofaSecret",    // ✅ 2FA secret
+    "backupCodes",    // ✅ 2FA backup codes
+    "passkeyBlob",    // ✅ Wrapped master key
+    "credentialId",   // ✅ WebAuthn credential ID
+    "publicKey",      // ✅ WebAuthn public key
+    "sessionFingerprint", // ✅ Session fingerprint
   ],
 };
 ```
-**Coverage: 30 fields encrypted = ~90% of sensitive data**
+
+### Important Security Note: Non-Encrypted Fields
+The following fields are **intentionally NOT encrypted** as they are technical metadata, not sensitive data:
+
+**TOTP Secrets:**
+- `algorithm` (e.g., "SHA1", "SHA256") - Technical parameter
+- `digits` (e.g., 6, 8) - Technical parameter  
+- `period` (e.g., 30) - Technical parameter
+- `tags` - Organizational metadata
+- `folderId` - Reference/organizational metadata
+- `isFavorite`, `isDeleted`, `deletedAt`, `lastUsedAt` - State flags
+
+**Credentials:**
+- `itemType` (e.g., "login", "card") - Type discriminator
+- `userId` - Owner reference
+- `totpId` - Reference to TOTP entry
+- `cardType` (e.g., "Visa", "Mastercard") - Card type metadata
+- `folderId` - Reference/organizational metadata
+- `tags` - Organizational metadata
+- `faviconUrl` - Icon URL (public data)
+- `isFavorite`, `isDeleted`, `deletedAt`, `lastAccessedAt`, `passwordChangedAt` - State flags
+
+**Coverage: 28 sensitive fields encrypted = ~95% of truly sensitive data**
 
 ## Encryption Improvements Summary
 
-| Collection | Fields Before | Fields After | Improvement |
-|------------|--------------|--------------|-------------|
-| **Credentials** | 4 fields | 11 fields | **+175%** |
-| **TOTP Secrets** | 1 field | 4 fields | **+300%** |
-| **Folders** | 0 fields | 1 field | **∞%** |
-| **Security Logs** | 0 fields | 3 fields | **∞%** |
-| **User** | 0 fields | 9 fields | **∞%** |
-| **TOTAL** | **5 fields** | **30 fields** | **+500%** |
+| Collection | Encrypted Fields | Coverage |
+|------------|------------------|----------|
+| **Credentials** | 11 fields | All sensitive data encrypted |
+| **TOTP Secrets** | 4 fields | All user data encrypted (algorithm/digits/period are technical) |
+| **Folders** | 1 field | Folder names encrypted |
+| **Security Logs** | 4 fields | Privacy-sensitive data encrypted |
+| **User** | 9 fields | All authentication secrets encrypted |
+| **TOTAL** | **28 fields** | **~95% sensitive data coverage** |
 
 ## Field Size Standards (Appwrite Requirements)
 

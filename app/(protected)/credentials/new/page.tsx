@@ -154,6 +154,11 @@ export default function NewCredentialPage() {
           userId: user.$id,
           name: formData.name,
           parentFolderId: null,
+          icon: null,
+          color: null,
+          sortOrder: 0,
+          isDeleted: false,
+          deletedAt: null,
           // createdAt/updatedAt are server-managed; omit to avoid type clashes
         } as unknown as Omit<Folders, "$id" | "$createdAt" | "$updatedAt">);
         toast.success("Folder created!");

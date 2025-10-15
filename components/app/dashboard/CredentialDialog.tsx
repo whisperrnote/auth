@@ -99,14 +99,27 @@ export default function CredentialDialog({
         "$id" | "$createdAt" | "$updatedAt"
       > = {
         userId: user.$id,
+        itemType: initial?.itemType || "login",
         name: form.name.trim(),
         url: null,
         username: form.username.trim(),
         notes: null,
-        folderId: null,
+        totpId: initial?.totpId || null,
+        cardNumber: initial?.cardNumber || null,
+        cardholderName: initial?.cardholderName || null,
+        cardExpiry: initial?.cardExpiry || null,
+        cardCVV: initial?.cardCVV || null,
+        cardPIN: initial?.cardPIN || null,
+        cardType: initial?.cardType || null,
+        folderId: initial?.folderId || null,
         tags: null,
         customFields: null,
         faviconUrl: null,
+        isFavorite: initial?.isFavorite || false,
+        isDeleted: initial?.isDeleted || false,
+        deletedAt: initial?.deletedAt || null,
+        lastAccessedAt: initial?.lastAccessedAt || null,
+        passwordChangedAt: initial?.passwordChangedAt || null,
         password: form.password.trim(),
         createdAt:
           initial && initial.createdAt
