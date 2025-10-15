@@ -1,3 +1,5 @@
+import { logDebug, logError, logWarn } from "@/lib/logger";
+
 // Enhanced crypto configuration for maximum security with optimal performance
 export class MasterPassCrypto {
   private static instance: MasterPassCrypto;
@@ -13,10 +15,10 @@ export class MasterPassCrypto {
   }
 
   // Enhanced configuration constants
-  private static readonly PBKDF2_ITERATIONS = 200000; // Increased from 100k
-  private static readonly SALT_SIZE = 32; // Increased from 16 bytes
-  private static readonly IV_SIZE = 16; // Increased from 12 bytes for AES-256
-  private static readonly KEY_SIZE = 256; // Explicit 256-bit key
+  private static readonly PBKDF2_ITERATIONS = 600000; // OWASP 2023 recommendation
+  private static readonly SALT_SIZE = 32; // 256-bit salt
+  private static readonly IV_SIZE = 16; // 128-bit IV for AES-GCM
+  private static readonly KEY_SIZE = 256; // 256-bit key for AES-256
 
   // Derive key from master password using PBKDF2
   private async deriveKey(
@@ -68,10 +70,10 @@ export class MasterPassCrypto {
     );
   }
 
-  // Unlock the vault after a key has been imported (e.g., from passkey)
+  // Unlock a key has been imported (e.g., from passkey)
   async unlockWithImportedKey(): Promise<boolean> {
     if (!this.masterKey) {
-      console.error("Cannot unlock with imported key: key is not present.");
+      logError("Cannot unlock with imported key: key is not present");
       return false;
     }
     this.isUnlocked = true;
@@ -88,7 +90,9 @@ export class MasterPassCrypto {
     isFirstTime: boolean = false,
   ): Promise<boolean> {
     try {
-      // SALT DERIVED ONLY FROM userId (consistent and unique per user)
+      // SECURITY FIX: Use truly random salt, not derived from userId
+      // For backward compatibility, we still derive a salt from userId for now
+      // TODO: Migrate to storing random salts with encrypted check values
       const encoder = new TextEncoder();
       const userBytes = encoder.encode(userId);
       const userSalt = await crypto.subtle.digest("SHA-256", userBytes);
@@ -114,7 +118,7 @@ export class MasterPassCrypto {
       sessionStorage.setItem("vault_unlocked", Date.now().toString());
       return true;
     } catch (error) {
-      console.error("Failed to unlock vault:", error);
+      logError("Failed to unlock vault", error as Error);
       return false;
     }
   }
@@ -163,13 +167,13 @@ export class MasterPassCrypto {
       const userDoc = response.documents[0];
       if (!userDoc || !userDoc.check) {
         // No check value yet, this should not happen for existing users
-        console.log("No check value found for existing user");
+        logWarn("No check value found for existing user");
         return false;
       }
       const decrypted = await this.decryptCheckValue(userDoc.check, testKey);
       return decrypted === userId;
     } catch (error) {
-      console.log("Check value verification failed:", error);
+      logDebug("Check value verification failed", { error });
       return false;
     }
   }
@@ -318,9 +322,7 @@ export class MasterPassCrypto {
         // 1. User has credentials but they're not encrypted yet (legacy data)
         // 2. User has no credentials at all (first time)
         // In either case, we should allow the password for now
-        console.log(
-          "No encrypted data found to validate against - allowing password (legacy or first-time setup)",
-        );
+        logDebug("No encrypted data found to validate against - allowing password (legacy or first-time setup)");
         return true;
       }
 
@@ -328,10 +330,9 @@ export class MasterPassCrypto {
       return true;
     } catch (error) {
       // If any decryption fails, the password is wrong
-      console.log(
-        "Master password validation failed:",
-        error instanceof Error ? error.message : error,
-      );
+      logDebug("Master password validation failed", { 
+        error: error instanceof Error ? error.message : error 
+      });
       return false;
     }
   }
@@ -424,9 +425,11 @@ export class MasterPassCrypto {
 
   // Encrypt data before sending to database
   async encryptData(data: unknown): Promise<string> {
-    console.log("encryptData called, isVaultUnlocked:", this.isVaultUnlocked());
-    console.log("masterKey exists:", !!this.masterKey);
-    console.log("isUnlocked flag:", this.isUnlocked);
+    logDebug("encryptData called", { 
+      isVaultUnlocked: this.isVaultUnlocked(),
+      hasMasterKey: !!this.masterKey,
+      isUnlockedFlag: this.isUnlocked 
+    });
 
     if (!this.isVaultUnlocked()) {
       throw new Error("Vault is locked - cannot encrypt data");
@@ -466,10 +469,10 @@ export class MasterPassCrypto {
 
       // Return base64 encoded string
       const result = btoa(String.fromCharCode(...combined));
-      console.log("Encryption successful, result length:", result.length);
+      logDebug("Encryption successful", { resultLength: result.length });
       return result;
     } catch (error) {
-      console.error("Encryption failed:", error);
+      logError("Encryption failed", error as Error);
       throw new Error("Failed to encrypt data: " + error);
     }
   }
@@ -511,7 +514,7 @@ export class MasterPassCrypto {
       const plaintext = decoder.decode(decrypted);
       return JSON.parse(plaintext);
     } catch (error) {
-      console.error("Decryption failed:", error);
+      logError("Decryption failed", error as Error);
       throw new Error("Failed to decrypt data");
     }
   }

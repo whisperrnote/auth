@@ -18,6 +18,7 @@ import {
   logoutAppwrite,
 } from "@/lib/appwrite";
 import { masterPassCrypto } from "./(protected)/masterpass/logic";
+import { logDebug, logWarn } from "@/lib/logger";
 
 // Types
 import type { Models } from "appwrite";
@@ -66,16 +67,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [needsMasterPassword, setNeedsMasterPassword] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const verbose =
-    typeof window !== "undefined" &&
-    (window as unknown as Record<string, unknown>).NEXT_PUBLIC_LOGGING_VERBOSE
-      ? String(
-          (window as unknown as Record<string, unknown>)
-            .NEXT_PUBLIC_LOGGING_VERBOSE,
-        ).toLowerCase() === "true"
-      : typeof process !== "undefined"
-        ? process.env.NEXT_PUBLIC_LOGGING_VERBOSE === "true"
-        : false;
+  const verbose = process.env.NODE_ENV === "development";
 
   // Fetch current user and check master password status
   const fetchUser = async () => {
@@ -84,20 +76,20 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
       const account = await appwriteAccount.get();
       setUser(account);
 
-      if (verbose) console.log("[auth] account.get ->", !!account);
+      if (verbose) logDebug("[auth] account.get success", { hasAccount: !!account });
 
       // Check if user needs master password
       if (account) {
         const hasMp = await hasMasterpass(account.$id);
         const unlocked = masterPassCrypto.isVaultUnlocked();
         if (verbose)
-          console.log("[auth] hasMasterpass", hasMp, "unlocked", unlocked);
+          logDebug("[auth] master password status", { hasMasterpass: hasMp, unlocked });
         setNeedsMasterPassword(!hasMp || !unlocked);
       } else {
         setNeedsMasterPassword(false);
       }
     } catch (e) {
-      if (verbose) console.warn("[auth] account.get error", e);
+      if (verbose) logWarn("[auth] account.get error", { error: e });
       setUser(null);
       setNeedsMasterPassword(false);
     }
@@ -145,7 +137,7 @@ export function AppwriteProvider({ children }: { children: ReactNode }) {
 
   const isVaultUnlocked = () => {
     const unlocked = masterPassCrypto.isVaultUnlocked();
-    if (verbose) console.log("[auth] vault unlock status:", unlocked);
+    if (verbose) logDebug("[auth] vault unlock status", { unlocked });
     return unlocked;
   };
 
