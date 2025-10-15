@@ -94,6 +94,7 @@ export default function NewCredentialPage() {
         const credentialData: Pick<
           Credentials,
           | "userId"
+          | "itemType"
           | "name"
           | "url"
           | "username"
@@ -102,11 +103,14 @@ export default function NewCredentialPage() {
           | "tags"
           | "customFields"
           | "faviconUrl"
+          | "isFavorite"
+          | "isDeleted"
           | "createdAt"
           | "updatedAt"
           | "password"
         > = {
           userId: user.$id,
+          itemType: "login",
           name: formData.name.trim(),
           url: null,
           username: formData.username.trim(),
@@ -115,6 +119,8 @@ export default function NewCredentialPage() {
           tags: null,
           customFields: null,
           faviconUrl: null,
+          isFavorite: false,
+          isDeleted: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           password: formData.password.trim(),
@@ -167,9 +173,12 @@ export default function NewCredentialPage() {
           algorithm: "SHA1",
           digits: 6,
           period: 30,
+          url: null,
+          tags: null,
+          isFavorite: false,
+          isDeleted: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          url: null,
         } as Omit<TotpSecrets, "$id" | "$createdAt" | "$updatedAt">);
         toast.success("TOTP code added!");
         router.push("/totp");

@@ -115,7 +115,6 @@ const ENCRYPTED_FIELDS = {
     "password",       // Password
     "notes",          // Notes
     "customFields",   // Custom fields JSON
-    "tags",           // Tags array (organizational info)
     "cardNumber",     // Credit card number
     "cardholderName", // Cardholder name
     "cardExpiry",     // Card expiry date
@@ -123,13 +122,10 @@ const ENCRYPTED_FIELDS = {
     "cardPIN",        // Card PIN
   ],
   totpSecrets: [
-    "issuer",         // TOTP issuer
-    "accountName",    // TOTP account name
-    "secretKey",      // TOTP secret key
-    "url",            // TOTP URL for autofill
-    "algorithm",      // TOTP algorithm setting
-    "digits",         // TOTP digits
-    "period",         // TOTP period
+    "issuer",         // TOTP issuer (e.g., "Google", "GitHub")
+    "accountName",    // TOTP account name (e.g., user email/username)
+    "secretKey",      // TOTP secret key (CRITICAL - must be encrypted)
+    "url",            // TOTP URL for QR code/autofill
   ],
   folders: [
     "name",           // Folder name (sensitive organization info)
@@ -137,6 +133,7 @@ const ENCRYPTED_FIELDS = {
   securityLogs: [
     "ipAddress",      // IP address (privacy)
     "userAgent",      // User agent (fingerprinting)
+    "deviceFingerprint", // Device fingerprint
     "details",        // Event details (may contain sensitive info)
   ],
   user: [
@@ -148,7 +145,6 @@ const ENCRYPTED_FIELDS = {
     "passkeyBlob",    // Wrapped master key
     "credentialId",   // WebAuthn credential ID
     "publicKey",      // WebAuthn public key
-    "counter",        // WebAuthn counter (security critical)
     "sessionFingerprint", // Session fingerprint
   ],
 } as const;
@@ -168,17 +164,30 @@ export const COLLECTION_SCHEMAS = {
     plaintext: getPlaintextFields<Credentials>(
       [
         "userId",
+        "itemType",
         "name",
         "url",
         "username",
+        "password",
         "notes",
+        "totpId",
+        "cardNumber",
+        "cardholderName",
+        "cardExpiry",
+        "cardCVV",
+        "cardPIN",
+        "cardType",
         "folderId",
         "tags",
         "customFields",
         "faviconUrl",
+        "isFavorite",
+        "isDeleted",
+        "deletedAt",
+        "lastAccessedAt",
+        "passwordChangedAt",
         "createdAt",
         "updatedAt",
-        "password",
         "$id",
         "$createdAt",
         "$updatedAt",
@@ -197,7 +206,13 @@ export const COLLECTION_SCHEMAS = {
         "algorithm",
         "digits",
         "period",
+        "url",
         "folderId",
+        "tags",
+        "isFavorite",
+        "isDeleted",
+        "deletedAt",
+        "lastUsedAt",
         "createdAt",
         "updatedAt",
         "$id",
@@ -214,6 +229,11 @@ export const COLLECTION_SCHEMAS = {
         "userId",
         "name",
         "parentFolderId",
+        "icon",
+        "color",
+        "sortOrder",
+        "isDeleted",
+        "deletedAt",
         "createdAt",
         "updatedAt",
         "$id",
@@ -231,7 +251,10 @@ export const COLLECTION_SCHEMAS = {
         "eventType",
         "ipAddress",
         "userAgent",
+        "deviceFingerprint",
         "details",
+        "success",
+        "severity",
         "timestamp",
         "$id",
         "$createdAt",
@@ -247,8 +270,24 @@ export const COLLECTION_SCHEMAS = {
         "userId",
         "email",
         "masterpass",
-        "twofa",
         "check",
+        "salt",
+        "twofa",
+        "twofaSecret",
+        "backupCodes",
+        "isPasskey",
+        "passkeyBlob",
+        "credentialId",
+        "publicKey",
+        "counter",
+        "authVersion",
+        "v2Migrated",
+        "mustCreatePasskey",
+        "sessionFingerprint",
+        "lastLoginAt",
+        "lastPasswordChangeAt",
+        "createdAt",
+        "updatedAt",
         "$id",
         "$createdAt",
         "$updatedAt",
