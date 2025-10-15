@@ -49,7 +49,12 @@
             "$id": "chat",
             "name": "chat",
             "enabled": true
-        }
+        },
+            {
+      "$id": "passwordManagerDb",
+      "name": "PasswordManagerDB",
+      "enabled": true
+    }
     ],
     "tables": [
         {

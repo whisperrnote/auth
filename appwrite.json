@@ -1,0 +1,1207 @@
+{
+  "projectId": "684332040001eee05350",
+  "projectName": "auth",
+  "settings": {
+    "services": {
+      "account": true,
+      "avatars": true,
+      "databases": true,
+      "locale": true,
+      "health": true,
+      "storage": true,
+      "teams": true,
+      "users": true,
+      "sites": true,
+      "functions": true,
+      "graphql": true,
+      "messaging": true
+    },
+    "auth": {
+      "methods": {
+        "jwt": true,
+        "phone": true,
+        "invites": true,
+        "anonymous": true,
+        "email-otp": true,
+        "magic-url": true,
+        "email-password": true
+      },
+      "security": {
+        "duration": 31536000,
+        "limit": 10,
+        "sessionsLimit": 5,
+        "passwordHistory": 5,
+        "passwordDictionary": true,
+        "personalDataCheck": true,
+        "sessionAlerts": true,
+        "mockNumbers": []
+      }
+    }
+  },
+  "tablesDB": [
+    {
+      "$id": "passwordManagerDb",
+      "name": "PasswordManagerDB",
+      "enabled": true
+    }
+  ],
+  "tables": [
+    {
+      "$id": "credentials",
+      "$permissions": ["create(\"users\")"],
+      "databaseId": "passwordManagerDb",
+      "name": "Credentials",
+      "enabled": true,
+      "rowSecurity": true,
+      "columns": [
+        {
+          "key": "userId",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "itemType",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 50,
+          "default": "login",
+          "encrypt": false
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2048,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "username",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "password",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "notes",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "totpId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "cardNumber",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "cardholderName",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "cardExpiry",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "cardCVV",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "cardPIN",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "cardType",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 50,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "folderId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 100,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "customFields",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "faviconUrl",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2048,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "isFavorite",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "isDeleted",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "deletedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "lastAccessedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "passwordChangedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "createdAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "updatedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        }
+      ],
+      "indexes": [
+        {
+          "key": "idx_userId",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId"],
+          "orders": []
+        },
+        {
+          "key": "idx_itemType",
+          "type": "key",
+          "status": "available",
+          "columns": ["itemType"],
+          "orders": []
+        },
+        {
+          "key": "idx_folderId",
+          "type": "key",
+          "status": "available",
+          "columns": ["folderId"],
+          "orders": []
+        },
+        {
+          "key": "idx_tags",
+          "type": "key",
+          "status": "available",
+          "columns": ["tags"],
+          "orders": [null]
+        },
+        {
+          "key": "idx_isFavorite",
+          "type": "key",
+          "status": "available",
+          "columns": ["isFavorite"],
+          "orders": []
+        },
+        {
+          "key": "idx_isDeleted",
+          "type": "key",
+          "status": "available",
+          "columns": ["isDeleted"],
+          "orders": []
+        },
+        {
+          "key": "idx_totpId",
+          "type": "key",
+          "status": "available",
+          "columns": ["totpId"],
+          "orders": []
+        },
+        {
+          "key": "idx_lastAccessed",
+          "type": "key",
+          "status": "available",
+          "columns": ["lastAccessedAt"],
+          "orders": ["DESC"]
+        },
+        {
+          "key": "idx_user_type",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId", "itemType"],
+          "orders": [null, null]
+        }
+      ]
+    },
+    {
+      "$id": "totpSecrets",
+      "$permissions": ["create(\"users\")"],
+      "databaseId": "passwordManagerDb",
+      "name": "TOTP Secrets",
+      "enabled": true,
+      "rowSecurity": true,
+      "columns": [
+        {
+          "key": "userId",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "issuer",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "accountName",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "secretKey",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "algorithm",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 20,
+          "default": "SHA1",
+          "encrypt": false
+        },
+        {
+          "key": "digits",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "min": 6,
+          "max": 8,
+          "default": 6
+        },
+        {
+          "key": "period",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "min": 15,
+          "max": 300,
+          "default": 30
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2048,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "folderId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 100,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "isFavorite",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "isDeleted",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "deletedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "lastUsedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "createdAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "updatedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        }
+      ],
+      "indexes": [
+        {
+          "key": "idx_userId",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId"],
+          "orders": []
+        },
+        {
+          "key": "idx_folderId",
+          "type": "key",
+          "status": "available",
+          "columns": ["folderId"],
+          "orders": []
+        },
+        {
+          "key": "idx_tags",
+          "type": "key",
+          "status": "available",
+          "columns": ["tags"],
+          "orders": [null]
+        },
+        {
+          "key": "idx_isFavorite",
+          "type": "key",
+          "status": "available",
+          "columns": ["isFavorite"],
+          "orders": []
+        },
+        {
+          "key": "idx_isDeleted",
+          "type": "key",
+          "status": "available",
+          "columns": ["isDeleted"],
+          "orders": []
+        },
+        {
+          "key": "idx_lastUsed",
+          "type": "key",
+          "status": "available",
+          "columns": ["lastUsedAt"],
+          "orders": ["DESC"]
+        }
+      ]
+    },
+    {
+      "$id": "identities",
+      "$permissions": ["create(\"users\")"],
+      "databaseId": "passwordManagerDb",
+      "name": "Identities",
+      "enabled": true,
+      "rowSecurity": true,
+      "columns": [
+        {
+          "key": "userId",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "identityType",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 50,
+          "default": "passkey",
+          "encrypt": false
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "credentialId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "publicKey",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "counter",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "min": 0,
+          "max": 9223372036854775807,
+          "default": 0
+        },
+        {
+          "key": "passkeyBlob",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "transports",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 50,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "aaguid",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "deviceInfo",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "isPrimary",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "isBackup",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "lastUsedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "createdAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "updatedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        }
+      ],
+      "indexes": [
+        {
+          "key": "idx_userId",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId"],
+          "orders": []
+        },
+        {
+          "key": "idx_identityType",
+          "type": "key",
+          "status": "available",
+          "columns": ["identityType"],
+          "orders": []
+        },
+        {
+          "key": "idx_isPrimary",
+          "type": "key",
+          "status": "available",
+          "columns": ["isPrimary"],
+          "orders": []
+        },
+        {
+          "key": "idx_lastUsed",
+          "type": "key",
+          "status": "available",
+          "columns": ["lastUsedAt"],
+          "orders": ["DESC"]
+        },
+        {
+          "key": "idx_user_type",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId", "identityType"],
+          "orders": [null, null]
+        }
+      ]
+    },
+    {
+      "$id": "folders",
+      "$permissions": ["create(\"users\")"],
+      "databaseId": "passwordManagerDb",
+      "name": "Folders",
+      "enabled": true,
+      "rowSecurity": true,
+      "columns": [
+        {
+          "key": "userId",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "parentFolderId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "icon",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "color",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "sortOrder",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "min": 0,
+          "max": 2147483647,
+          "default": 0
+        },
+        {
+          "key": "isDeleted",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "deletedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "createdAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "updatedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        }
+      ],
+      "indexes": [
+        {
+          "key": "idx_userId",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId"],
+          "orders": []
+        },
+        {
+          "key": "idx_parentFolderId",
+          "type": "key",
+          "status": "available",
+          "columns": ["parentFolderId"],
+          "orders": []
+        },
+        {
+          "key": "idx_isDeleted",
+          "type": "key",
+          "status": "available",
+          "columns": ["isDeleted"],
+          "orders": []
+        },
+        {
+          "key": "idx_sortOrder",
+          "type": "key",
+          "status": "available",
+          "columns": ["sortOrder"],
+          "orders": ["ASC"]
+        }
+      ]
+    },
+    {
+      "$id": "securityLogs",
+      "$permissions": ["create(\"users\")"],
+      "databaseId": "passwordManagerDb",
+      "name": "Security Logs",
+      "enabled": true,
+      "rowSecurity": true,
+      "columns": [
+        {
+          "key": "userId",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "eventType",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "ipAddress",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 45,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "userAgent",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 512,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "deviceFingerprint",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "details",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "success",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": true
+        },
+        {
+          "key": "severity",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "info",
+          "encrypt": false
+        },
+        {
+          "key": "timestamp",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "format": "",
+          "default": null
+        }
+      ],
+      "indexes": [
+        {
+          "key": "idx_userId",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId"],
+          "orders": []
+        },
+        {
+          "key": "idx_eventType",
+          "type": "key",
+          "status": "available",
+          "columns": ["eventType"],
+          "orders": []
+        },
+        {
+          "key": "idx_timestamp",
+          "type": "key",
+          "status": "available",
+          "columns": ["timestamp"],
+          "orders": ["DESC"]
+        },
+        {
+          "key": "idx_success",
+          "type": "key",
+          "status": "available",
+          "columns": ["success"],
+          "orders": []
+        },
+        {
+          "key": "idx_severity",
+          "type": "key",
+          "status": "available",
+          "columns": ["severity"],
+          "orders": []
+        },
+        {
+          "key": "idx_user_time",
+          "type": "key",
+          "status": "available",
+          "columns": ["userId", "timestamp"],
+          "orders": [null, "DESC"]
+        }
+      ]
+    },
+    {
+      "$id": "user",
+      "$permissions": ["create(\"users\")"],
+      "databaseId": "passwordManagerDb",
+      "name": "user",
+      "enabled": true,
+      "rowSecurity": true,
+      "columns": [
+        {
+          "key": "userId",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "email",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "masterpass",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "check",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "salt",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "twofa",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "twofaSecret",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "backupCodes",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "isPasskey",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "passkeyBlob",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 65535,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "credentialId",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "publicKey",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 10000,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "counter",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "min": -9223372036854775808,
+          "max": 9223372036854775807,
+          "default": null
+        },
+        {
+          "key": "authVersion",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "min": 1,
+          "max": 100,
+          "default": 1
+        },
+        {
+          "key": "v2Migrated",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "mustCreatePasskey",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": false
+        },
+        {
+          "key": "sessionFingerprint",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": true
+        },
+        {
+          "key": "lastLoginAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "lastPasswordChangeAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "createdAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        },
+        {
+          "key": "updatedAt",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "format": "",
+          "default": null
+        }
+      ],
+      "indexes": [
+        {
+          "key": "idx_userId",
+          "type": "unique",
+          "status": "available",
+          "columns": ["userId"],
+          "orders": []
+        },
+        {
+          "key": "idx_authVersion",
+          "type": "key",
+          "status": "available",
+          "columns": ["authVersion"],
+          "orders": []
+        }
+      ]
+    }
+  ],
+  "buckets": [
+    {
+      "$id": "userAvatars",
+      "$permissions": [
+        "create(\"users\")",
+        "read(\"users\")",
+        "update(\"users\")",
+        "delete(\"users\")"
+      ],
+      "fileSecurity": true,
+      "name": "User Avatars",
+      "enabled": true,
+      "maximumFileSize": 2000000,
+      "allowedFileExtensions": ["jpg", "jpeg", "png", "webp", "avif"],
+      "compression": "gzip",
+      "encryption": true,
+      "antivirus": true
+    },
+    {
+      "$id": "encryptedDataBackups",
+      "$permissions": ["create(\"users\")"],
+      "fileSecurity": true,
+      "name": "Encrypted Data Backups",
+      "enabled": true,
+      "maximumFileSize": 100000000,
+      "allowedFileExtensions": ["backup", "enc", "json"],
+      "compression": "gzip",
+      "encryption": true,
+      "antivirus": true
+    },
+    {
+      "$id": "secureDocuments",
+      "$permissions": ["create(\"users\")"],
+      "fileSecurity": true,
+      "name": "Secure Documents",
+      "enabled": true,
+      "maximumFileSize": 50000000,
+      "allowedFileExtensions": ["pdf", "doc", "docx", "txt", "md"],
+      "compression": "gzip",
+      "encryption": true,
+      "antivirus": true
+    }
+  ]
+}
