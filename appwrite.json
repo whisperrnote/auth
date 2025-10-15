@@ -48,7 +48,9 @@
   "tables": [
     {
       "$id": "credentials",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "databaseId": "passwordManagerDb",
       "name": "Credentials",
       "enabled": true,
@@ -113,7 +115,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -203,7 +205,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -276,70 +278,98 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "columns": ["userId"],
+          "columns": [
+            "userId"
+          ],
           "orders": []
         },
         {
           "key": "idx_itemType",
           "type": "key",
           "status": "available",
-          "columns": ["itemType"],
+          "columns": [
+            "itemType"
+          ],
           "orders": []
         },
         {
           "key": "idx_folderId",
           "type": "key",
           "status": "available",
-          "columns": ["folderId"],
+          "columns": [
+            "folderId"
+          ],
           "orders": []
         },
         {
           "key": "idx_tags",
           "type": "key",
           "status": "available",
-          "columns": ["tags"],
-          "orders": [null]
+          "columns": [
+            "tags"
+          ],
+          "orders": [
+            null
+          ]
         },
         {
           "key": "idx_isFavorite",
           "type": "key",
           "status": "available",
-          "columns": ["isFavorite"],
+          "columns": [
+            "isFavorite"
+          ],
           "orders": []
         },
         {
           "key": "idx_isDeleted",
           "type": "key",
           "status": "available",
-          "columns": ["isDeleted"],
+          "columns": [
+            "isDeleted"
+          ],
           "orders": []
         },
         {
           "key": "idx_totpId",
           "type": "key",
           "status": "available",
-          "columns": ["totpId"],
+          "columns": [
+            "totpId"
+          ],
           "orders": []
         },
         {
           "key": "idx_lastAccessed",
           "type": "key",
           "status": "available",
-          "columns": ["lastAccessedAt"],
-          "orders": ["DESC"]
+          "columns": [
+            "lastAccessedAt"
+          ],
+          "orders": [
+            "DESC"
+          ]
         },
         {
           "key": "idx_user_type",
           "type": "key",
           "status": "available",
-          "columns": ["userId", "itemType"],
-          "orders": [null, null]
+          "columns": [
+            "userId",
+            "itemType"
+          ],
+          "orders": [
+            null,
+            null
+          ]
         }
       ]
     },
     {
       "$id": "totpSecrets",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "databaseId": "passwordManagerDb",
       "name": "TOTP Secrets",
       "enabled": true,
@@ -487,49 +517,67 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "columns": ["userId"],
+          "columns": [
+            "userId"
+          ],
           "orders": []
         },
         {
           "key": "idx_folderId",
           "type": "key",
           "status": "available",
-          "columns": ["folderId"],
+          "columns": [
+            "folderId"
+          ],
           "orders": []
         },
         {
           "key": "idx_tags",
           "type": "key",
           "status": "available",
-          "columns": ["tags"],
-          "orders": [null]
+          "columns": [
+            "tags"
+          ],
+          "orders": [
+            null
+          ]
         },
         {
           "key": "idx_isFavorite",
           "type": "key",
           "status": "available",
-          "columns": ["isFavorite"],
+          "columns": [
+            "isFavorite"
+          ],
           "orders": []
         },
         {
           "key": "idx_isDeleted",
           "type": "key",
           "status": "available",
-          "columns": ["isDeleted"],
+          "columns": [
+            "isDeleted"
+          ],
           "orders": []
         },
         {
           "key": "idx_lastUsed",
           "type": "key",
           "status": "available",
-          "columns": ["lastUsedAt"],
-          "orders": ["DESC"]
+          "columns": [
+            "lastUsedAt"
+          ],
+          "orders": [
+            "DESC"
+          ]
         }
       ]
     },
     {
       "$id": "identities",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "databaseId": "passwordManagerDb",
       "name": "Identities",
       "enabled": true,
@@ -567,7 +615,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 2000,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -586,7 +634,7 @@
           "required": false,
           "array": false,
           "min": 0,
-          "max": 9223372036854775807,
+          "max": 9223372036854776000,
           "default": 0
         },
         {
@@ -594,7 +642,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -621,7 +669,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -669,42 +717,60 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "columns": ["userId"],
+          "columns": [
+            "userId"
+          ],
           "orders": []
         },
         {
           "key": "idx_identityType",
           "type": "key",
           "status": "available",
-          "columns": ["identityType"],
+          "columns": [
+            "identityType"
+          ],
           "orders": []
         },
         {
           "key": "idx_isPrimary",
           "type": "key",
           "status": "available",
-          "columns": ["isPrimary"],
+          "columns": [
+            "isPrimary"
+          ],
           "orders": []
         },
         {
           "key": "idx_lastUsed",
           "type": "key",
           "status": "available",
-          "columns": ["lastUsedAt"],
-          "orders": ["DESC"]
+          "columns": [
+            "lastUsedAt"
+          ],
+          "orders": [
+            "DESC"
+          ]
         },
         {
           "key": "idx_user_type",
           "type": "key",
           "status": "available",
-          "columns": ["userId", "identityType"],
-          "orders": [null, null]
+          "columns": [
+            "userId",
+            "identityType"
+          ],
+          "orders": [
+            null,
+            null
+          ]
         }
       ]
     },
     {
       "$id": "folders",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "databaseId": "passwordManagerDb",
       "name": "Folders",
       "enabled": true,
@@ -801,35 +867,47 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "columns": ["userId"],
+          "columns": [
+            "userId"
+          ],
           "orders": []
         },
         {
           "key": "idx_parentFolderId",
           "type": "key",
           "status": "available",
-          "columns": ["parentFolderId"],
+          "columns": [
+            "parentFolderId"
+          ],
           "orders": []
         },
         {
           "key": "idx_isDeleted",
           "type": "key",
           "status": "available",
-          "columns": ["isDeleted"],
+          "columns": [
+            "isDeleted"
+          ],
           "orders": []
         },
         {
           "key": "idx_sortOrder",
           "type": "key",
           "status": "available",
-          "columns": ["sortOrder"],
-          "orders": ["ASC"]
+          "columns": [
+            "sortOrder"
+          ],
+          "orders": [
+            "ASC"
+          ]
         }
       ]
     },
     {
       "$id": "securityLogs",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "databaseId": "passwordManagerDb",
       "name": "Security Logs",
       "enabled": true,
@@ -858,7 +936,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 45,
+          "size": 200,
           "default": null,
           "encrypt": true
         },
@@ -919,49 +997,69 @@
           "key": "idx_userId",
           "type": "key",
           "status": "available",
-          "columns": ["userId"],
+          "columns": [
+            "userId"
+          ],
           "orders": []
         },
         {
           "key": "idx_eventType",
           "type": "key",
           "status": "available",
-          "columns": ["eventType"],
+          "columns": [
+            "eventType"
+          ],
           "orders": []
         },
         {
           "key": "idx_timestamp",
           "type": "key",
           "status": "available",
-          "columns": ["timestamp"],
-          "orders": ["DESC"]
+          "columns": [
+            "timestamp"
+          ],
+          "orders": [
+            "DESC"
+          ]
         },
         {
           "key": "idx_success",
           "type": "key",
           "status": "available",
-          "columns": ["success"],
+          "columns": [
+            "success"
+          ],
           "orders": []
         },
         {
           "key": "idx_severity",
           "type": "key",
           "status": "available",
-          "columns": ["severity"],
+          "columns": [
+            "severity"
+          ],
           "orders": []
         },
         {
           "key": "idx_user_time",
           "type": "key",
           "status": "available",
-          "columns": ["userId", "timestamp"],
-          "orders": [null, "DESC"]
+          "columns": [
+            "userId",
+            "timestamp"
+          ],
+          "orders": [
+            null,
+            "DESC"
+          ]
         }
       ]
     },
     {
       "$id": "user",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "databaseId": "passwordManagerDb",
       "name": "user",
       "enabled": true,
@@ -1031,7 +1129,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -1047,7 +1145,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 65535,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -1056,7 +1154,7 @@
           "type": "string",
           "required": false,
           "array": false,
-          "size": 2000,
+          "size": 10000,
           "default": null,
           "encrypt": true
         },
@@ -1074,8 +1172,8 @@
           "type": "integer",
           "required": false,
           "array": false,
-          "min": -9223372036854775808,
-          "max": 9223372036854775807,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000,
           "default": null
         },
         {
@@ -1148,14 +1246,18 @@
           "key": "idx_userId",
           "type": "unique",
           "status": "available",
-          "columns": ["userId"],
+          "columns": [
+            "userId"
+          ],
           "orders": []
         },
         {
           "key": "idx_authVersion",
           "type": "key",
           "status": "available",
-          "columns": ["authVersion"],
+          "columns": [
+            "authVersion"
+          ],
           "orders": []
         }
       ]
@@ -1174,31 +1276,51 @@
       "name": "User Avatars",
       "enabled": true,
       "maximumFileSize": 2000000,
-      "allowedFileExtensions": ["jpg", "jpeg", "png", "webp", "avif"],
+      "allowedFileExtensions": [
+        "jpg",
+        "jpeg",
+        "png",
+        "webp",
+        "avif"
+      ],
       "compression": "gzip",
       "encryption": true,
       "antivirus": true
     },
     {
       "$id": "encryptedDataBackups",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "fileSecurity": true,
       "name": "Encrypted Data Backups",
       "enabled": true,
       "maximumFileSize": 100000000,
-      "allowedFileExtensions": ["backup", "enc", "json"],
+      "allowedFileExtensions": [
+        "backup",
+        "enc",
+        "json"
+      ],
       "compression": "gzip",
       "encryption": true,
       "antivirus": true
     },
     {
       "$id": "secureDocuments",
-      "$permissions": ["create(\"users\")"],
+      "$permissions": [
+        "create(\"users\")"
+      ],
       "fileSecurity": true,
       "name": "Secure Documents",
       "enabled": true,
       "maximumFileSize": 50000000,
-      "allowedFileExtensions": ["pdf", "doc", "docx", "txt", "md"],
+      "allowedFileExtensions": [
+        "pdf",
+        "doc",
+        "docx",
+        "txt",
+        "md"
+      ],
       "compression": "gzip",
       "encryption": true,
       "antivirus": true
