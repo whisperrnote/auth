@@ -106,12 +106,46 @@ export const APPWRITE_COLLECTION_USER_ID =
 
 // --- Collection Structure & Field Mappings ---
 // Dynamically derive encrypted/plaintext fields from the types
+// These fields receive CLIENT-SIDE end-to-end encryption (on top of Appwrite's database encryption)
 const ENCRYPTED_FIELDS = {
-  credentials: ["username", "password", "notes", "customFields"],
-  totpSecrets: ["secretKey"],
-  folders: [],
-  securityLogs: [],
-  user: [], // Remove 'check' from here - it's manually encrypted
+  credentials: [
+    "name",           // Credential name
+    "url",            // URL/website
+    "username",       // Username/email
+    "password",       // Password
+    "notes",          // Notes
+    "customFields",   // Custom fields JSON
+    "cardNumber",     // Credit card number
+    "cardholderName", // Cardholder name
+    "cardExpiry",     // Card expiry date
+    "cardCVV",        // Card CVV
+    "cardPIN",        // Card PIN
+  ],
+  totpSecrets: [
+    "issuer",         // TOTP issuer
+    "accountName",    // TOTP account name
+    "secretKey",      // TOTP secret key
+    "url",            // TOTP URL for autofill
+  ],
+  folders: [
+    "name",           // Folder name (sensitive organization info)
+  ],
+  securityLogs: [
+    "ipAddress",      // IP address (privacy)
+    "userAgent",      // User agent (fingerprinting)
+    "details",        // Event details (may contain sensitive info)
+  ],
+  user: [
+    "email",          // User email
+    "check",          // Password verification check value
+    "salt",           // Encryption salt
+    "twofaSecret",    // 2FA secret
+    "backupCodes",    // 2FA backup codes
+    "passkeyBlob",    // Wrapped master key
+    "credentialId",   // WebAuthn credential ID
+    "publicKey",      // WebAuthn public key
+    "sessionFingerprint", // Session fingerprint
+  ],
 } as const;
 
 function getPlaintextFields<T>(
