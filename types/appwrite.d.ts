@@ -38,6 +38,131 @@ export enum Status {
     TRIALING = "trialing"
 }
 
+export enum ContentType {
+    TEXT = "text",
+    IMAGE = "image",
+    VIDEO = "video",
+    AUDIO = "audio",
+    FILE = "file",
+    GIF = "gif",
+    STICKER = "sticker",
+    LOCATION = "location",
+    CONTACT = "contact",
+    POLL = "poll",
+    VOICE = "voice",
+    CRYPTO_TX = "crypto_tx",
+    NFT = "nft",
+    TOKEN_GIFT = "token_gift",
+    LINK = "link",
+    REPLY = "reply",
+    FORWARD = "forward",
+    STORY_REPLY = "story_reply",
+    GAME = "game"
+}
+
+export enum Status {
+    SENDING = "sending",
+    SENT = "sent",
+    DELIVERED = "delivered",
+    READ = "read",
+    FAILED = "failed"
+}
+
+export enum Status {
+    ONLINE = "online",
+    AWAY = "away",
+    BUSY = "busy",
+    OFFLINE = "offline"
+}
+
+export enum Type {
+    DIRECT = "direct",
+    GROUP = "group",
+    CHANNEL = "channel",
+    BROADCAST = "broadcast",
+    COMMUNITY = "community"
+}
+
+export enum Relationship {
+    FRIEND = "friend",
+    FAMILY = "family",
+    COLLEAGUE = "colleague",
+    ACQUAINTANCE = "acquaintance",
+    BLOCKED = "blocked",
+    FAVORITE = "favorite"
+}
+
+export enum Status {
+    PENDING = "pending",
+    PROCESSING = "processing",
+    DELIVERED = "delivered",
+    FAILED = "failed"
+}
+
+export enum ContentType {
+    TEXT = "text",
+    IMAGE = "image",
+    VIDEO = "video",
+    AUDIO = "audio",
+    POLL = "poll",
+    ARTICLE = "article"
+}
+
+export enum Privacy {
+    PUBLIC = "public",
+    FRIENDS = "friends",
+    PRIVATE = "private",
+    CUSTOM = "custom"
+}
+
+export enum ContentType {
+    IMAGE = "image",
+    VIDEO = "video",
+    TEXT = "text",
+    AUDIO = "audio"
+}
+
+export enum Privacy {
+    PUBLIC = "public",
+    FRIENDS = "friends",
+    CLOSE_FRIENDS = "close_friends",
+    PRIVATE = "private"
+}
+
+export enum Status {
+    PENDING = "pending",
+    ACCEPTED = "accepted",
+    BLOCKED = "blocked"
+}
+
+export enum Chain {
+    ETHEREUM = "ethereum",
+    POLYGON = "polygon",
+    BSC = "bsc",
+    SOLANA = "solana",
+    AVALANCHE = "avalanche",
+    ARBITRUM = "arbitrum",
+    OPTIMISM = "optimism",
+    BASE = "base"
+}
+
+export enum WalletType {
+    METAMASK = "metamask",
+    WALLETCONNECT = "walletconnect",
+    COINBASE = "coinbase",
+    PHANTOM = "phantom",
+    TRUST = "trust",
+    OTHER = "other"
+}
+
+export enum Category {
+    FACE = "face",
+    WORLD = "world",
+    SKY = "sky",
+    HAND = "hand",
+    BODY = "body"
+}
+
 export type Users = Models.Row & {
     id: string | null;
     email: string | null;
@@ -304,6 +429,325 @@ export type User = Models.Row & {
     sessionFingerprint: string | null;
     lastLoginAt: string | null;
     lastPasswordChangeAt: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+}
+
+export type Messages = Models.Row & {
+    conversationId: string;
+    senderId: string;
+    content: string;
+    contentType: ContentType;
+    plainText: string | null;
+    mediaUrls: string[];
+    mediaFileIds: string[];
+    thumbnailUrl: string | null;
+    thumbnailFileId: string | null;
+    metadata: string | null;
+    replyToMessageId: string | null;
+    forwardedFromMessageId: string | null;
+    forwardedFromConversationId: string | null;
+    editedAt: string | null;
+    deletedAt: string | null;
+    deletedFor: string[];
+    isSystemMessage: boolean;
+    isPinned: boolean;
+    pinnedAt: string | null;
+    reactions: string | null;
+    mentions: string[];
+    links: string[];
+    readBy: string[];
+    deliveredTo: string[];
+    status: Status;
+    expiresAt: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+}
+
+export type Presence = Models.Row & {
+    userId: string;
+    status: Status;
+    device: string | null;
+    lastSeen: string;
+    expiresAt: string;
+}
+
+export type Conversations = Models.Row & {
+    type: Type;
+    name: string | null;
+    description: string | null;
+    avatarUrl: string | null;
+    avatarFileId: string | null;
+    creatorId: string;
+    participantIds: string[];
+    adminIds: string[];
+    moderatorIds: string[];
+    participantCount: number;
+    maxParticipants: number;
+    isEncrypted: boolean;
+    encryptionVersion: string | null;
+    isPinned: string[];
+    isMuted: string[];
+    isArchived: string[];
+    lastMessageId: string | null;
+    lastMessageText: string | null;
+    lastMessageAt: string | null;
+    lastMessageSenderId: string | null;
+    unreadCount: string | null;
+    settings: string | null;
+    isPublic: boolean;
+    inviteLink: string | null;
+    inviteLinkExpiry: string | null;
+    category: string | null;
+    tags: string[];
+    createdAt: string | null;
+    updatedAt: string | null;
+}
+
+export type Contacts = Models.Row & {
+    userId: string;
+    contactUserId: string;
+    nickname: string | null;
+    relationship: Relationship;
+    isBlocked: boolean;
+    isFavorite: boolean;
+    notes: string | null;
+    tags: string[];
+    lastInteraction: string | null;
+    addedAt: string | null;
+    updatedAt: string | null;
+}
+
+export type TypingIndicators = Models.Row & {
+    conversationId: string;
+    userId: string;
+    isTyping: boolean;
+    expiresAt: string;
+}
+
+export type MessageQueue = Models.Row & {
+    messageId: string;
+    conversationId: string;
+    recipientIds: string[];
+    pendingFor: string[];
+    priority: number;
+    retryCount: number;
+    maxRetries: number;
+    status: Status;
+    error: string | null;
+    scheduledFor: string | null;
+    createdAt: string | null;
+    processedAt: string | null;
+}
+
+export type Posts = Models.Row & {
+    userId: string;
+    content: string | null;
+    contentType: ContentType;
+    mediaUrls: string[];
+    mediaFileIds: string[];
+    thumbnails: string | null;
+    mentions: string[];
+    hashtags: string[];
+    location: string | null;
+    privacy: Privacy;
+    allowComments: boolean;
+    allowShares: boolean;
+    likeCount: number;
+    commentCount: number;
+    shareCount: number;
+    viewCount: number;
+    isPinned: boolean;
+    isSponsored: boolean;
+    createdAt: string | null;
+    updatedAt: string | null;
+}
+
+export type StoryViews = Models.Row & {
+    storyId: string;
+    viewerId: string;
+    watchDuration: number;
+    completedView: boolean;
+    viewedAt: string | null;
+}
+
+export type Stories = Models.Row & {
+    userId: string;
+    contentType: ContentType;
+    mediaUrl: string | null;
+    mediaFileId: string | null;
+    thumbnailUrl: string | null;
+    text: string | null;
+    backgroundColor: string | null;
+    duration: number;
+    filters: string | null;
+    stickers: string | null;
+    music: string | null;
+    location: string | null;
+    mentions: string[];
+    viewerIds: string[];
+    viewCount: number;
+    reactionCount: number;
+    replyCount: number;
+    shareCount: number;
+    privacy: Privacy;
+    allowReplies: boolean;
+    expiresAt: string;
+    createdAt: string | null;
+}
+
+export type MediaLibrary = Models.Row & {
+    userId: string;
+    fileId: string;
+    fileName: string;
+    fileType: string;
+    mimeType: string | null;
+    fileSize: number | null;
+    width: number | null;
+    height: number | null;
+    duration: number | null;
+    thumbnailFileId: string | null;
+    url: string | null;
+    metadata: string | null;
+    tags: string[];
+    album: string | null;
+    isPublic: boolean;
+    uploadedAt: string | null;
+}
+
+export type Follows = Models.Row & {
+    followerId: string;
+    followingId: string;
+    status: Status;
+    isCloseFriend: boolean;
+    notificationsEnabled: boolean;
+    createdAt: string | null;
+}
+
+export type GiFs = Models.Row & {
+    title: string;
+    url: string;
+    fileId: string | null;
+    thumbnailUrl: string | null;
+    source: string | null;
+    externalId: string | null;
+    tags: string[];
+    category: string | null;
+    width: number | null;
+    height: number | null;
+    usageCount: number;
+    createdAt: string | null;
+}
+
+export type TokenHoldings = Models.Row & {
+    userId: string;
+    walletAddress: string;
+    chain: string;
+    tokenAddress: string;
+    tokenSymbol: string | null;
+    tokenName: string | null;
+    balance: string | null;
+    decimals: number;
+    usdValue: number | null;
+    pricePerToken: number | null;
+    lastSynced: string | null;
+}
+
+export type Wallets = Models.Row & {
+    userId: string;
+    address: string;
+    chain: Chain;
+    walletType: WalletType;
+    isPrimary: boolean;
+    nickname: string | null;
+    balance: string | null;
+    nftsCount: number;
+    lastSynced: string | null;
+    isVerified: boolean;
+    verifiedAt: string | null;
+    addedAt: string | null;
+}
+
+export type Stickers = Models.Row & {
+    name: string;
+    description: string | null;
+    creatorId: string | null;
+    packId: string | null;
+    imageUrl: string;
+    imageFileId: string | null;
+    animatedUrl: string | null;
+    animatedFileId: string | null;
+    tags: string[];
+    category: string | null;
+    isPremium: boolean;
+    isAnimated: boolean;
+    usageCount: number;
+    isPublic: boolean;
+    createdAt: string | null;
+}
+
+export type StickerPacks = Models.Row & {
+    name: string;
+    description: string | null;
+    creatorId: string | null;
+    coverImageUrl: string | null;
+    coverImageFileId: string | null;
+    stickerCount: number;
+    isPremium: boolean;
+    price: number;
+    currency: string | null;
+    downloadCount: number;
+    isPublic: boolean;
+    tags: string[];
+    createdAt: string | null;
+    updatedAt: string | null;
+}
+
+export type Polls = Models.Row & {
+    creatorId: string;
+    conversationId: string | null;
+    messageId: string | null;
+    question: string;
+    options: string;
+    votes: string | null;
+    totalVotes: number;
+    allowMultiple: boolean;
+    isAnonymous: boolean;
+    expiresAt: string | null;
+    createdAt: string | null;
+}
+
+export type ArFilters = Models.Row & {
+    name: string;
+    description: string | null;
+    creatorId: string | null;
+    thumbnailUrl: string;
+    thumbnailFileId: string | null;
+    filterDataUrl: string;
+    filterDataFileId: string | null;
+    category: Category;
+    tags: string[];
+    isPremium: boolean;
+    usageCount: number;
+    isPublic: boolean;
+    createdAt: string | null;
+}
+
+export type UserStickers = Models.Row & {
+    userId: string;
+    stickerPackId: string;
+    isPurchased: boolean;
+    isFavorite: boolean;
+    addedAt: string | null;
+}
+
+export type Users = Models.Row & {
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    avatarFileId: string | null;
+    bio: string | null;
+    walletAddress: string | null;
     createdAt: string | null;
     updatedAt: string | null;
 }
